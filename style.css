@@ -1,0 +1,814 @@
+/* ยูเรเนียนออฟไลน์ — ระบบหน้าตาแนว "เครื่องมือมืออาชีพ"
+ *
+ * กติกา 3 ข้อที่ยึดทั้งไฟล์:
+ *   1. สีทุกสีมาจากโทเคน — ห้าม rgba() ดิบในกฎคอมโพเนนต์ ไม่งั้นโหมดสว่าง/มืดเพี้ยน
+ *   2. ระยะและขนาดตัวอักษรมาจากสเกล (--s*, --t*) — ไม่มีเลขครึ่งพิกเซล
+ *   3. แอปนี้ทำงานออฟไลน์ ห้ามลิงก์ฟอนต์จากเน็ต ใช้ฟอนต์ในเครื่อง + สแตกสำรอง
+ */
+
+:root{
+  /* ── ฟอนต์ (ต้องมีสแตกสำรอง เพราะเครื่องผู้ใช้อาจไม่มี IBM Plex) ───────── */
+  --sans:"IBM Plex Sans Thai","Noto Sans Thai","Sarabun",system-ui,-apple-system,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,"SF Mono",Menlo,
+         "DejaVu Sans Mono",monospace;
+  --sym:"Apple Symbols","Segoe UI Symbol","Noto Sans Symbols 2",system-ui,sans-serif;
+
+  /* ── สเกลระยะ (ทุก margin/padding/gap ต้องหยิบจากนี่) ─────────────────── */
+  --s1:4px; --s2:6px; --s3:8px; --s4:12px; --s5:16px; --s6:24px; --s7:34px;
+
+  /* ── สเกลตัวอักษร ────────────────────────────────────────────────────── */
+  --t-xs:11px; --t-sm:12px; --t-md:13px; --t-base:15px; --t-lg:17px; --t-xl:21px;
+
+  --r-sm:3px; --r-md:5px;
+
+  /* ── สี: เทาเอียงน้ำเงินเล็กน้อย ให้เข้ากับหน้าจอเครื่องมือ ไม่ใช่เทากลาง ── */
+  --bg:#fafbfd; --panel:#ffffff; --sunk:#eff2f7; --raise:#ffffff;
+  --rule:#d9dfe8; --rule-soft:#e8ecf2;
+  --ink:#141a23; --dim:#586274; --faint:#8a94a4;
+  --accent:#1560c4; --accent-ink:#ffffff;
+  --accent-soft:rgba(21,96,196,.11); --accent-line:rgba(21,96,196,.42);
+  --warn-soft:rgba(196,124,20,.14); --warn-line:rgba(196,124,20,.45);
+  --warn-ink:#a5660f;
+  --hover:rgba(20,26,35,.045);
+  --pos:#146c3f; --neg:#c02626;
+  --f-personal:#1668c4; --f-good:#12703c; --f-bad:#c62828;
+  --f-booster:#b06d05; --f-neutral:#6b7280;
+  --shadow-1:0 1px 2px rgba(16,24,40,.05);
+  --shadow-2:0 4px 14px rgba(16,24,40,.10);
+  --focus:0 0 0 2px var(--bg),0 0 0 4px var(--accent-line);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d1117; --panel:#151b24; --sunk:#1b222c; --raise:#1a212b;
+    --rule:#2a323d; --rule-soft:#222933;
+    --ink:#e0e7ef; --dim:#96a1b0; --faint:#6e7887;
+    --accent:#6cb0f8; --accent-ink:#0d1117;
+    --accent-soft:rgba(108,176,248,.15); --accent-line:rgba(108,176,248,.46);
+    --warn-soft:rgba(240,167,66,.15); --warn-line:rgba(240,167,66,.45);
+    --warn-ink:#f0a742;
+    --hover:rgba(224,231,239,.055);
+    --pos:#57c98d; --neg:#ff7b7b;
+    --f-personal:#63b3f6; --f-good:#57c98a; --f-bad:#ff7b7b;
+    --f-booster:#f0a742; --f-neutral:#98a2b0;
+    --shadow-1:0 1px 2px rgba(0,0,0,.32);
+    --shadow-2:0 6px 20px rgba(0,0,0,.42);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d1117; --panel:#151b24; --sunk:#1b222c; --raise:#1a212b;
+  --rule:#2a323d; --rule-soft:#222933;
+  --ink:#e0e7ef; --dim:#96a1b0; --faint:#6e7887;
+  --accent:#6cb0f8; --accent-ink:#0d1117;
+  --accent-soft:rgba(108,176,248,.15); --accent-line:rgba(108,176,248,.46);
+  --warn-soft:rgba(240,167,66,.15); --warn-line:rgba(240,167,66,.45);
+  --warn-ink:#f0a742;
+  --hover:rgba(224,231,239,.055);
+  --pos:#57c98d; --neg:#ff7b7b;
+  --f-personal:#63b3f6; --f-good:#57c98a; --f-bad:#ff7b7b;
+  --f-booster:#f0a742; --f-neutral:#98a2b0;
+  --shadow-1:0 1px 2px rgba(0,0,0,.32);
+  --shadow-2:0 6px 20px rgba(0,0,0,.42);
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+  font-size:var(--t-base);line-height:1.55;-webkit-text-size-adjust:100%;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1500px;margin:0 auto;padding:var(--s6) var(--s5) 60px}
+
+/* โฟกัสคีย์บอร์ดต้องเห็นทุกตัวที่กดได้ — เดิมมีแค่ช่องกรอก */
+:where(button,select,input,textarea,[tabindex]):focus-visible{
+  outline:none;box-shadow:var(--focus);border-radius:var(--r-sm)}
+
+/* ── หัวหน้า ──────────────────────────────────────────────────────────── */
+header.top{border:1px solid var(--rule);border-radius:var(--r-md);
+  background:var(--panel);box-shadow:var(--shadow-1);
+  padding:var(--s5) var(--s5) var(--s4);margin-bottom:var(--s5)}
+header.top h1{margin:0 0 var(--s2);font-size:var(--t-xl);font-weight:700;
+  letter-spacing:-.01em;display:flex;align-items:center;gap:var(--s3);
+  flex-wrap:wrap}
+header.top h1 .tag{font-size:10px;font-weight:700;color:var(--accent);
+  background:var(--accent-soft);border:1px solid var(--accent-line);
+  border-radius:var(--r-sm);padding:2px var(--s2);vertical-align:2px;
+  font-family:var(--mono);letter-spacing:.1em}
+.meta{display:flex;flex-wrap:wrap;gap:var(--s2) var(--s6);font-size:var(--t-md);
+  color:var(--dim);line-height:1.6}
+.meta b{color:var(--accent);font-weight:600}
+.meta .mono{font-family:var(--mono);font-size:var(--t-md);color:var(--ink);
+  font-variant-numeric:tabular-nums}
+.chips{display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s3)}
+.chip{font-size:var(--t-sm);border:1px solid var(--rule);background:var(--sunk);
+  border-radius:var(--r-sm);padding:2px var(--s3);color:var(--dim)}
+.chip b{color:var(--ink);font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* ── ฟอร์มกรอกดวง ─────────────────────────────────────────────────────── */
+.form{border:1px solid var(--rule);border-radius:var(--r-md);background:var(--panel);
+  box-shadow:var(--shadow-1);padding:var(--s5);margin-bottom:var(--s5);
+  display:flex;flex-wrap:wrap;gap:var(--s4) var(--s5);align-items:end}
+.form .fg{display:flex;flex-direction:column;gap:var(--s1)}
+.form label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--faint);font-weight:700;font-family:var(--mono)}
+.form input,.form select{background:var(--bg);color:var(--ink);
+  border:1px solid var(--rule);border-radius:var(--r-sm);
+  padding:var(--s2) var(--s3);font-size:14px;font-family:inherit;min-width:0;
+  transition:border-color .12s}
+.form input:hover,.form select:hover{border-color:var(--dim)}
+.form input:focus,.form select:focus{outline:none;border-color:var(--accent);
+  box-shadow:var(--focus)}
+.form .num{width:72px;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.form button{background:var(--accent);color:var(--accent-ink);border:1px solid transparent;
+  border-radius:var(--r-sm);padding:var(--s3) var(--s6);
+  font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;
+  box-shadow:var(--shadow-1);transition:filter .12s}
+.form button:hover{filter:brightness(1.1)}
+.form button:active{filter:brightness(.94)}
+.form .note{font-size:var(--t-sm);color:var(--faint);width:100%;margin-top:calc(var(--s1) * -1)}
+#status{font-size:var(--t-md);color:var(--dim);margin:0 0 var(--s4);
+  font-variant-numeric:tabular-nums}
+#status.err{color:var(--neg);font-weight:600}
+.ctnote{font-size:var(--t-sm);color:var(--f-booster);margin:0 0 var(--s2)}
+.ctnote:empty{display:none}
+.ctnote.warn{color:var(--f-bad)}
+
+/* ── แท็บ ─────────────────────────────────────────────────────────────── */
+.tabs{display:flex;flex-wrap:wrap;gap:0;margin:0 0 var(--s5);
+  border-bottom:1px solid var(--rule)}
+.tab{background:none;border:0;border-bottom:2px solid transparent;
+  padding:var(--s3) var(--s4);font:inherit;font-size:var(--t-md);font-weight:500;
+  color:var(--faint);cursor:pointer;border-radius:0;margin-bottom:-1px;
+  transition:color .12s,border-color .12s;white-space:nowrap}
+.tab:hover{color:var(--dim)}
+.tab.on{color:var(--ink);font-weight:600;border-bottom-color:var(--accent)}
+.panel{display:none}
+.panel.on{display:block}
+
+/* ── แถบตัวกรอง (ติดบนสุดเวลาเลื่อน) ──────────────────────────────────── */
+.tools{position:sticky;top:0;z-index:5;background:var(--panel);
+  border:1px solid var(--rule);border-radius:var(--r-md);
+  box-shadow:var(--shadow-1);
+  padding:var(--s3) var(--s4);margin-bottom:var(--s5);
+  display:flex;flex-wrap:wrap;gap:var(--s3) var(--s5);align-items:center}
+.tools .lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--faint);font-weight:700;font-family:var(--mono)}
+.tools label{display:inline-flex;align-items:center;gap:var(--s2);font-size:var(--t-md);
+  color:var(--dim);cursor:pointer;user-select:none}
+.tools input{accent-color:var(--accent);cursor:pointer;margin:0}
+.tools .sep{width:1px;height:18px;background:var(--rule)}
+.tools .hint{font-size:var(--t-sm);color:var(--faint);margin-left:auto}
+.tools .fwarn{font-size:var(--t-md);font-weight:700;color:var(--neg);
+  border:1px solid var(--neg);border-radius:var(--r-sm);padding:2px var(--s3);
+  margin-left:auto}
+.tools .clearf{background:var(--sunk);color:var(--ink);border:1px solid var(--rule);
+  border-radius:var(--r-sm);font:inherit;font-size:var(--t-sm);
+  padding:var(--s1) var(--s3);cursor:pointer;transition:border-color .12s,color .12s}
+.tools .clearf:hover{border-color:var(--accent);color:var(--accent)}
+.tools label.on{color:var(--ink);font-weight:600}
+
+/* ── ตารางดูดวงจร 13 เดือน ────────────────────────────────────────────── */
+.band{margin-bottom:var(--s6)}
+.band h2{margin:0 0 var(--s3);font-size:var(--t-base);font-weight:700;
+  letter-spacing:-.005em;padding-bottom:var(--s2);border-bottom:1px solid var(--rule)}
+.band h2 .ce{color:var(--faint);font-weight:400;font-size:var(--t-md);margin-left:var(--s3)}
+.strip{display:flex;gap:var(--s3);overflow-x:auto;padding-bottom:var(--s3);
+  scrollbar-width:thin}
+.mcol{flex:0 0 272px;border:1px solid var(--rule);border-radius:var(--r-md);
+  background:var(--panel);box-shadow:var(--shadow-1);
+  display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.mhead{padding:var(--s3) var(--s4);background:var(--sunk);
+  border-bottom:1px solid var(--rule)}
+.mname{font-weight:700;font-size:14px;display:flex;align-items:baseline;gap:var(--s2)}
+.mname .yr{color:var(--faint);font-weight:400;font-size:var(--t-sm)}
+.mname .net{margin-left:auto;font-family:var(--mono);font-size:var(--t-md);
+  font-weight:700;padding:0 var(--s1);border:1px solid var(--rule);
+  border-radius:var(--r-sm);font-variant-numeric:tabular-nums}
+.net.pos{color:var(--pos)} .net.neg{color:var(--neg)} .net.zero{color:var(--faint)}
+.sline{font-size:var(--t-sm);color:var(--dim);margin-top:2px}
+.sline b{color:var(--ink);font-family:var(--mono);font-size:var(--t-md)}
+.sline .pp{margin-left:var(--s1);font-size:var(--t-sm);color:var(--f-personal)}
+.sline.g b{color:var(--pos)} .sline.r b{color:var(--neg)}
+.sline .g{color:var(--pos)} .sline .r{color:var(--neg)}
+.mbody{overflow:auto;max-height:520px;padding:var(--s3) var(--s4) var(--s4);
+  scrollbar-width:thin;content-visibility:auto;contain-intrinsic-size:auto 520px}
+.tsec{margin-bottom:var(--s3)}
+.thead{font-family:var(--mono);font-size:var(--t-sm);font-weight:700;
+  color:var(--dim);padding-bottom:2px;margin-bottom:var(--s1);
+  display:grid;grid-template-columns:1fr auto;align-items:baseline;
+  column-gap:var(--s2);border-bottom:1px solid var(--rule-soft)}
+.thead .tt{display:flex;align-items:center;gap:var(--s2);letter-spacing:.04em}
+.thead .tt::after{content:"";flex:1 1 auto;height:1px;background:var(--rule-soft)}
+.thead .tn{font-weight:400;color:var(--faint);font-size:var(--t-xs);
+  font-variant-numeric:tabular-nums}
+.thead span{grid-column:1/-1;display:block;font-family:inherit;font-weight:400;
+  font-size:var(--t-xs);color:var(--faint);letter-spacing:0}
+.frow{font-family:var(--mono);font-size:12.5px;line-height:1.75;white-space:nowrap}
+.frow b{font-weight:700}
+.frow i{font-style:normal;font-size:9.5px;vertical-align:sub;color:var(--faint)}
+.frow u{text-decoration:none;color:var(--faint)}
+.f-personal{color:var(--f-personal)} .f-good{color:var(--f-good)}
+.f-bad{color:var(--f-bad)} .f-booster{color:var(--f-booster)}
+.f-neutral{color:var(--f-neutral)}
+.frow.hide,.tsec.hide{display:none}
+.frow{cursor:pointer;border-radius:var(--r-sm);padding:0 var(--s1);margin:0 calc(var(--s1) * -1)}
+.frow:hover{background:var(--hover)}
+.frow.on{background:var(--accent-soft);outline:1px solid var(--accent-line)}
+/* กล่องคำแปลของตารางเดือน — วางใต้แถบเดือน ไม่ยัดในคอลัมน์กว้าง 272px */
+#tmean{margin-top:var(--s3)}
+#tmean[hidden]{display:none}
+.mcol.empty .mbody::after{content:"ไม่มีแถวที่ตรงตัวกรอง";display:block;
+  font-family:var(--sans);font-size:var(--t-md);color:var(--faint)}
+
+/* ── กล่องคำอธิบาย / แผงควบคุมของแต่ละแท็บ ───────────────────────────── */
+.legend{border:1px solid var(--rule);border-radius:var(--r-md);background:var(--panel);
+  box-shadow:var(--shadow-1);padding:var(--s4) var(--s5);margin-bottom:var(--s5)}
+.legend h3{margin:0 0 var(--s3);font-size:10px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--faint);font-family:var(--mono);
+  font-weight:700;display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap}
+.legend h3 .hint{font-size:var(--t-sm);letter-spacing:0;text-transform:none;
+  font-weight:400;font-family:var(--sans);color:var(--faint)}
+.lgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(228px,1fr));
+  gap:var(--s1) var(--s6);font-size:var(--t-md);color:var(--dim)}
+.lgrid code{font-family:var(--mono);font-size:var(--t-sm);color:var(--ink);font-weight:700}
+.lgrid code.f-personal{color:var(--f-personal)} .lgrid code.f-good{color:var(--f-good)}
+.lgrid code.f-bad{color:var(--f-bad)} .lgrid code.f-booster{color:var(--f-booster)}
+.lgrid code.f-neutral{color:var(--f-neutral)}
+footer{margin-top:var(--s7);padding-top:var(--s4);border-top:1px solid var(--rule);
+  font-size:var(--t-sm);color:var(--faint)}
+
+/* ── ปุ่มชิปเล็ก (ใช้ร่วมกันทุกแผง: ชั้นดวง · มุม 60 · ดาวหลัก) ─────────── */
+.laychips,.plchips{display:inline-flex;flex-wrap:wrap;gap:2px;vertical-align:middle}
+.laychips{margin:0 var(--s1)}
+.laychip,.plchip{font:600 var(--t-xs)/1 var(--mono);padding:var(--s1) var(--s2);
+  cursor:pointer;border:1px solid var(--rule);background:transparent;
+  color:var(--faint);border-radius:var(--r-sm);transition:color .12s,border-color .12s}
+.plchip{padding:2px var(--s1);line-height:1;color:inherit}
+.laychip:hover,.plchip:hover{color:var(--dim);border-color:var(--dim)}
+.laychip.on,.plchip.on{background:var(--accent-soft);border-color:var(--accent-line);
+  color:var(--ink)}
+.laychip.a60{margin-left:var(--s1)}
+.laychip.a60.on{background:var(--warn-soft);border-color:var(--warn-line)}
+
+/* ── ปุ่ม/ช่องเลือกรอง (ใช้ในแถบเครื่องมือของทุกแท็บ) ────────────────────
+ * เดิมปุ่มใน .tlbar ไม่มีกฎเลย จึงเป็นปุ่มเทาดีฟอลต์ของเบราว์เซอร์
+ * ปนอยู่กับปุ่มที่จัดสไตล์แล้ว — รวมให้เป็นชุดเดียว */
+.tlbar button,.cmprow button,.tools .clearf{
+  background:var(--sunk);color:var(--ink);border:1px solid var(--rule);
+  border-radius:var(--r-sm);font:inherit;font-size:var(--t-md);font-weight:500;
+  padding:var(--s2) var(--s4);cursor:pointer;
+  transition:border-color .12s,color .12s,background .12s}
+.tlbar button:hover,.cmprow button:hover,.tools .clearf:hover{
+  border-color:var(--accent);color:var(--accent)}
+.tlbar button:active,.cmprow button:active{background:var(--accent-soft)}
+.tlbar select,.cmprow select,.tlbar input[type=number]{
+  background:var(--bg);color:var(--ink);border:1px solid var(--rule);
+  border-radius:var(--r-sm);padding:var(--s2) var(--s3);font:inherit;
+  font-size:var(--t-md);cursor:pointer;transition:border-color .12s}
+.tlbar select:hover,.cmprow select:hover{border-color:var(--dim)}
+.tlbar input[type=checkbox]{accent-color:var(--accent);cursor:pointer;margin:0}
+
+/* ── ตำแหน่งดาว 9 ชั้น ────────────────────────────────────────────────── */
+.postab{overflow-x:auto;border:1px solid var(--rule);border-radius:var(--r-md);
+  background:var(--panel);box-shadow:var(--shadow-1)}
+.postab table{border-collapse:collapse;min-width:640px;width:100%;
+  font-family:var(--mono);font-size:var(--t-xs)}
+.postab th{position:sticky;top:0;z-index:1;background:var(--sunk);
+  border-bottom:1px solid var(--rule);border-left:1px solid var(--rule);
+  padding:var(--s1) var(--s2);text-align:center;font-weight:400;
+  cursor:pointer;white-space:nowrap;line-height:1.25}
+.postab th:first-child{border-left:0;text-align:left;left:0;z-index:2;
+  background:var(--sunk)}
+.postab th b{display:block;font-size:var(--t-xs);font-weight:600;color:var(--ink)}
+.postab th i{font-style:normal;font-size:10px;color:var(--faint)}
+.postab th:hover{background:color-mix(in srgb,var(--sunk) 70%,var(--rule))}
+.postab td{border-left:1px solid var(--rule-soft);
+  border-bottom:1px solid var(--rule-soft);
+  padding:2px var(--s2);text-align:right;color:var(--dim);white-space:nowrap;
+  font-variant-numeric:tabular-nums}
+/* ตรึงคอลัมน์ปัจจัยไว้ ไม่งั้นเลื่อนดูชั้นขวา ๆ แล้วไม่รู้ว่าแถวไหน */
+.postab td:first-child,.postab th:first-child{position:sticky;left:0}
+.postab td:first-child{border-left:0;text-align:left;background:var(--panel);
+  box-shadow:1px 0 0 var(--rule)}
+.postab tr:hover td:first-child{background:var(--sunk)}
+.postab td.fk{font-weight:700;color:var(--ink)}
+.postab tr:hover td{background:var(--hover)}
+#laynote{min-height:1.2em;margin:var(--s2) 2px 0;font-size:var(--t-md);color:var(--dim)}
+.posgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));
+  gap:var(--s1) var(--s4);font-family:var(--mono);font-size:var(--t-sm);
+  margin-top:var(--s3);font-variant-numeric:tabular-nums}
+.posgrid span{color:var(--dim)}
+
+/* ── ไทม์ไลน์ช่วงวัน ─────────────────────────────────────────────────── */
+.tlbar{display:flex;flex-wrap:wrap;gap:var(--s2) var(--s4);align-items:center;
+  margin:0 0 var(--s3)}
+.tlbar label{display:flex;gap:var(--s2);align-items:center;font-size:var(--t-md);
+  color:var(--dim);white-space:nowrap}
+/* บรรทัดคำอธิบายใต้แถบเครื่องมือ (#dlcount, #dlhandout) — เดิมไม่มีกฎ
+ * เลยตกไปที่ขนาดตัวอักษรของ body 15px ดังกว่าเนื้อหาจริง */
+p.hint{font-size:var(--t-md);color:var(--dim);margin:var(--s2) 0;line-height:1.6}
+p.hint:empty{display:none}
+.gantt{border:1px solid var(--rule);border-radius:var(--r-md);background:var(--panel);
+  box-shadow:var(--shadow-1);overflow-x:auto}
+.gwrap{min-width:520px}
+.gscale{position:relative;height:22px;background:var(--sunk);
+  border-bottom:1px solid var(--rule);margin-left:194px;margin-right:84px}
+.gscale div{position:absolute;top:var(--s1);font-size:10px;color:var(--faint);
+  font-family:var(--mono);transform:translateX(-50%)}
+.grow{display:flex;align-items:center;gap:var(--s3);padding:1px var(--s3) 1px var(--s4);
+  border-bottom:1px solid var(--rule-soft)}
+.grow:hover{background:var(--hover)}
+.grow{cursor:pointer}
+.grow.on{background:var(--accent-soft)}
+.glab{flex:0 0 176px;font-size:var(--t-xs);white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis}
+.gtrack{position:relative;flex:1 1 auto;height:16px}
+.gbar{position:absolute;top:var(--s1);height:8px;border-radius:4px;opacity:.88}
+.gbar.good{background:var(--f-good)}
+.gbar.bad{background:var(--f-bad)}
+.gbar.mix{background:linear-gradient(90deg,var(--f-good),var(--f-bad))}
+.gbar.neutral{background:var(--f-neutral)}
+.gpk{position:absolute;top:0;width:2px;height:16px;background:var(--ink);opacity:.8}
+.gdate{flex:0 0 76px;text-align:right;font-size:10.5px;color:var(--dim);
+  font-family:var(--mono);white-space:nowrap;font-variant-numeric:tabular-nums}
+.gempty{padding:var(--s4);color:var(--faint);font-size:var(--t-md)}
+
+/* ── แผนที่ชีวิต ──────────────────────────────────────────────────────── */
+.lifewrap{border:1px solid var(--rule);border-radius:var(--r-md);background:var(--panel);
+  box-shadow:var(--shadow-1);max-height:70vh;overflow-y:auto}
+.lrow{display:flex;align-items:center;gap:var(--s3);padding:0 var(--s3);min-height:17px;
+  border-bottom:1px solid var(--rule-soft)}
+.lrow:hover{background:var(--hover)}
+.lage{flex:0 0 26px;text-align:right;font-family:var(--mono);
+  font-size:10.5px;color:var(--dim);font-variant-numeric:tabular-nums}
+.lyear{flex:0 0 34px;font-family:var(--mono);font-size:10px;color:var(--faint);
+  font-variant-numeric:tabular-nums}
+.lbars{flex:1 1 auto;display:flex;flex-wrap:wrap;gap:1.5px;padding:2px 0}
+.lnum{flex:0 0 28px;text-align:right;font-family:var(--mono);font-size:10px;
+  color:var(--faint);font-variant-numeric:tabular-nums}
+.lp{width:6px;height:6px;border-radius:50%;display:block;opacity:.85;cursor:help}
+.lp.good{background:var(--f-good)} .lp.bad{background:var(--f-bad)}
+.lp.mix{background:linear-gradient(135deg,var(--f-good) 50%,var(--f-bad) 50%)}
+.lp.neutral{background:var(--f-neutral)}
+.lp{cursor:pointer}
+.lp.on{outline:2px solid var(--accent);outline-offset:1px;opacity:1}
+/* แถบอ่านค่าของจุดที่แตะ — คงอยู่ ไม่ใช่ tooltip ที่หายไปเมื่อยกนิ้ว */
+.lfsel{white-space:pre-line;font-family:var(--mono);font-size:var(--t-sm);
+  color:var(--ink);background:var(--sunk);border:1px solid var(--rule);
+  border-radius:var(--r-sm);padding:var(--s2) var(--s3);margin:var(--s3) 0 0;
+  line-height:1.6}
+.lfsel:empty{display:none}
+
+/* ── จาน 90° ──────────────────────────────────────────────────────────── */
+.dialwrap{position:relative;display:flex;justify-content:center;padding:var(--s3) 0}
+.dialwrap canvas{max-width:100%}
+.dialinfo{position:absolute;inset:0;pointer-events:none;line-height:1.4}
+.dialinfo>div{position:absolute;max-width:34%}
+.dialinfo b{display:block;color:var(--ink);font-size:var(--t-md);font-weight:700}
+.dialinfo span{display:block;font-size:var(--t-xs);color:var(--dim);
+  font-variant-numeric:tabular-nums}
+.dialinfo sub{font-size:9px;color:var(--faint)}
+.dialinfo .dl-tl{left:0;top:0;text-align:left}
+.dialinfo .dl-tr{right:0;top:0;text-align:right}
+.dialinfo .dl-bl{left:0;bottom:0;text-align:left}
+.dialinfo .dl-br{right:0;bottom:0;text-align:right;color:var(--f-personal)}
+.dialinfo .dl-br b,.dialinfo .dl-br span{color:var(--f-personal)}
+#dlcv{cursor:grab;touch-action:none;border-radius:50%}
+#dlcv:active{cursor:grabbing}
+#dlhandout{min-height:1.3em;font-size:var(--t-md);color:var(--dim)}
+#dlhandout sub{font-size:9px;color:var(--faint)}
+.dialkey{display:block;margin:var(--s2) auto 2px;max-width:100%}
+.picbox{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));
+  gap:var(--s2);margin-top:var(--s4)}
+.pic{border:1px solid var(--rule);border-radius:var(--r-sm);background:var(--panel);
+  padding:var(--s2) var(--s3);font-size:var(--t-sm);line-height:1.5}
+.pic b{display:block;font-family:var(--mono);font-size:var(--t-sm)}
+.pic span{color:var(--faint);font-family:var(--mono);font-size:10.5px}
+
+/* ── แผงแกน A, A/B (แตะดาวบนจาน) ─────────────────────────────────────── */
+.axbox{border:1px solid var(--rule);border-radius:var(--r-md);background:var(--panel);
+  box-shadow:var(--shadow-1);margin-top:var(--s4);
+  padding:var(--s4);font-size:var(--t-md)}
+.axbox h4{margin:0 0 var(--s1);font-size:14px;display:flex;align-items:center;
+  gap:var(--s2);flex-wrap:wrap}
+.axbox .axdeg{color:var(--dim);font-family:var(--mono);font-size:var(--t-sm);
+  font-weight:400;font-variant-numeric:tabular-nums}
+.axsec{margin:var(--s4) 0 2px;font-weight:700;font-size:var(--t-sm);color:var(--dim);
+  padding-top:var(--s2);border-top:1px solid var(--rule-soft)}
+.axsec:first-of-type{border-top:0;padding-top:0}
+.axrows{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));
+  gap:2px var(--s4)}
+.axrow{font-family:var(--mono);font-size:var(--t-sm);
+  display:flex;align-items:center;gap:var(--s1);white-space:nowrap}
+/* ป้ายชั้นดวงห้อยท้ายสัญลักษณ์ดาว (r/v1/v2/t) — เล็ก บาง ไม่แย่งสายตา */
+.axbox .pl{display:inline-flex;align-items:flex-end;gap:0}
+.axbox .lay{color:var(--faint);font-size:9px;font-style:normal;font-weight:400;
+  opacity:.72;letter-spacing:0;line-height:1;padding-bottom:1px;margin-left:.5px}
+.axrow .op{color:var(--faint);margin:0 -2px}
+.axrow .orb{color:var(--dim);font-variant-numeric:tabular-nums}
+.axrow.tight .orb{color:var(--f-bad);font-weight:700}
+.axarc{color:var(--faint);font-size:10.5px;margin-left:2px;
+  font-variant-numeric:tabular-nums}
+.axg{display:inline-flex;align-items:center;justify-content:center;
+  width:15px;font-family:var(--sym);font-size:14px;line-height:1}
+.axg svg{display:block;width:11px;height:13px}
+.axg b{font-size:10px;font-family:var(--mono)}
+.axnote{color:var(--faint);font-size:var(--t-xs);margin:var(--s2) 0 0;line-height:1.6}
+/* หัวกลุ่มมุมในหัวข้อ 2 ดาว — กินเต็มแถวกริด ไม่แทรกกลางคอลัมน์ */
+.anghead{grid-column:1/-1;display:flex;align-items:center;gap:var(--s2);
+  font-family:var(--mono);font-size:var(--t-xs);font-weight:700;
+  color:var(--dim);margin:var(--s3) 0 1px}
+.anghead:first-child{margin-top:1px}
+.anghead::after{content:"";flex:1 1 auto;height:1px;background:var(--rule-soft)}
+.anghead .angn{font-weight:400;color:var(--faint);font-size:10.5px}
+.angsum{font-family:var(--mono);font-size:10.5px;font-weight:400;
+  color:var(--faint);margin:2px 0 0}
+/* องศาเล็กมุมบนตัวเลข — อ่าน orb ได้เร็วกว่าคำว่า orb นำหน้า */
+.axrow .dg{font-style:normal;font-size:.66em;vertical-align:super;
+  line-height:0;margin-left:.5px}
+/* สถานะออฟไลน์ท้ายหน้า — ต้องเห็นผลจริงตอนทดสอบติดตั้ง */
+#swstat.ok{color:var(--f-good)}
+#swstat.warn{color:var(--f-bad)}
+
+/* ── คำแปลผสมดาว (กดที่สูตรจึงแสดง) ─────────────────────────────────────── */
+.axrow.mean{cursor:pointer;border-radius:var(--r-sm);padding:1px var(--s1);
+  margin:-1px calc(var(--s1) * -1)}
+.axrow.mean:hover{background:var(--hover)}
+.axrow.mean.on{background:var(--accent-soft)}
+.mbox{grid-column:1/-1;border-left:2px solid var(--f-personal);
+  border-radius:0 var(--r-sm) var(--r-sm) 0;
+  background:var(--sunk);margin:var(--s1) 0 var(--s3);padding:var(--s3) var(--s4);
+  font-size:var(--t-sm);line-height:1.62}
+.mbox .mtext{color:var(--ink)}
+.mbox .mwitte{margin-top:var(--s1);color:var(--dim);font-size:var(--t-xs);line-height:1.55}
+.mbox .mnone{color:var(--faint);font-size:var(--t-xs)}
+.mbox .mnote{color:var(--f-booster);font-size:var(--t-xs);margin-bottom:var(--s2)}
+.mbox .mpart{margin-top:var(--s2)}
+.mbox .mpart:first-of-type{margin-top:0}
+.mbox .mpart>b{font-family:var(--mono);font-size:var(--t-xs);color:var(--dim)}
+
+/* ── เทียบกับเว็บ ─────────────────────────────────────────────────────── */
+.cmp{display:flex;flex-direction:column;gap:var(--s3)}
+.cmprow{display:flex;gap:var(--s3);align-items:center;flex-wrap:wrap}
+.cmprow label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--faint);font-weight:700;font-family:var(--mono)}
+.cmprow select,.cmprow button{background:var(--bg);color:var(--ink);
+  border:1px solid var(--rule);border-radius:var(--r-sm);
+  padding:var(--s2) var(--s3);font:inherit;font-size:var(--t-md);cursor:pointer;
+  transition:border-color .12s,color .12s}
+.cmprow button:hover{border-color:var(--accent);color:var(--accent)}
+#cmptext{width:100%;background:var(--bg);color:var(--ink);border:1px solid var(--rule);
+  border-radius:var(--r-sm);padding:var(--s3);font-family:var(--mono);
+  font-size:var(--t-sm);resize:vertical}
+.cmpout{font-size:var(--t-md)}
+.cmpsum{padding:var(--s2) 0}
+.cmpsum .ok{color:var(--pos)} .cmpsum .bad{color:var(--neg)}
+.cmpgrp{margin-top:var(--s2);border-top:1px solid var(--rule);padding-top:var(--s2);
+  max-height:220px;overflow:auto}
+.cmpgrp>b{display:block;font-size:var(--t-sm);color:var(--dim);margin-bottom:2px}
+.cmpitem{font-family:var(--mono);font-size:var(--t-sm)}
+.cmpitem.miss{color:var(--neg);font-weight:700}
+.cmpitem.extra{color:var(--faint)}
+
+/* ── ตารางศูนย์รังสี 360° ─────────────────────────────────────────────── */
+.ctrctl{display:flex;flex-direction:column;gap:var(--s2);margin-top:var(--s2)}
+.ctrrow{display:flex;align-items:center;flex-wrap:wrap;gap:var(--s1)}
+.ctrrow .lbl{font-size:10px;letter-spacing:.09em;text-transform:uppercase;
+  font-family:var(--mono);font-weight:700;color:var(--faint);
+  min-width:68px;flex:0 0 68px}
+.ctrrow .sep{width:1px;height:14px;background:var(--rule);margin:0 var(--s1)}
+.ctrdash{color:var(--faint);margin:0 2px}
+.ctrrow input[type=number]{width:56px;font:600 var(--t-xs)/1 var(--mono);
+  padding:var(--s1);background:var(--bg);color:inherit;
+  border:1px solid var(--rule);border-radius:var(--r-sm);
+  font-variant-numeric:tabular-nums}
+.ctrtitle{margin:var(--s5) 0 0;font-size:var(--t-md);font-weight:700;
+  display:flex;align-items:center;gap:var(--s2);
+  padding-bottom:var(--s2);border-bottom:1px solid var(--rule)}
+.ctrtitle .axg{width:17px;font-size:15px}
+.ctrtitle .lay{color:var(--faint);font-size:10px;font-style:normal;margin-left:1px}
+.ctrhead{font-size:var(--t-sm);color:var(--dim);margin:var(--s4) 0 var(--s2);
+  display:flex;justify-content:space-between;flex-wrap:wrap;gap:var(--s2);
+  align-items:baseline}
+.ctrhead .axg{width:13px;font-size:12px;vertical-align:-1px}
+.ctrleg{color:var(--faint);font-family:var(--mono);font-size:var(--t-xs)}
+.ctrgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));
+  gap:0 var(--s4)}
+.ctrrw{display:grid;grid-template-columns:62px 46px 52px 22px 32px;gap:var(--s1);
+  align-items:center;font:var(--t-xs)/1.55 var(--mono);
+  border-bottom:1px solid var(--rule-soft);padding:0 var(--s1);
+  border-radius:var(--r-sm)}
+.ctrrw:hover{background:var(--hover)}
+.ctrrw.ctrhd{font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--faint);font-weight:700;border-bottom:1px solid var(--rule);
+  padding-bottom:2px;margin-bottom:2px;background:none;cursor:default}
+.ctrrw.ctrhd:hover{background:none}
+.ctrrw.asp{background:var(--accent-soft)}
+.ctrrw{cursor:pointer}
+.ctrrw.on{outline:1px solid var(--accent-line);outline-offset:-1px}
+.ctrrw.ctrhd{cursor:default}
+.ctrrw .cpt{display:inline-flex;align-items:flex-end;gap:0}
+.ctrrw .mslash{color:var(--faint);font-size:10px;margin:0 1px}
+.ctrrw .lay{color:var(--faint);font-size:9px;font-style:normal;margin-left:1px}
+.ctrrw .cdg,.ctrrw .cdt{text-align:right;font-variant-numeric:tabular-nums}
+.ctrrw .cdg{color:var(--ink)}
+.ctrrw .cag{text-align:right;color:var(--dim);font-variant-numeric:tabular-nums}
+.ctrrw .cas{text-align:right;color:var(--accent);font-weight:700}
+
+/* ── ตรวจสูตร ─────────────────────────────────────────────────────────── */
+.fxpick{display:flex;flex-wrap:wrap;align-items:end;gap:var(--s3) var(--s5);
+  margin-top:var(--s3)}
+.fxmid,.fxpick .fxgo{display:flex;flex-direction:column;gap:var(--s1)}
+.fxside{flex:1 1 320px}
+.fxmid{flex:0 0 auto}
+.fxpick .fxgo{flex-direction:row;align-items:end;gap:var(--s3);flex-wrap:wrap}
+.fxpick .lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--faint);font-weight:700;font-family:var(--mono)}
+.fxpick select{background:var(--bg);color:var(--ink);border:1px solid var(--rule);
+  border-radius:var(--r-sm);padding:var(--s2) var(--s3);font:inherit;
+  font-size:var(--t-md);cursor:pointer;transition:border-color .12s;max-width:100%}
+.fxpick select:hover{border-color:var(--dim)}
+.fxside{display:flex;flex-direction:row;flex-wrap:wrap;
+  gap:var(--s1) var(--s2);align-items:end}
+.fxside .lbl{flex:1 0 100%}
+.fxside select{flex:1 1 128px;min-width:0}
+.fxside select.fxmode{flex:0 0 auto;font-size:var(--t-sm)}
+.fxside select[hidden]{display:none}
+.fxside select.fxlay{flex:0 0 62px;font-family:var(--mono);font-size:var(--t-sm)}
+.fxmid select{min-width:170px}
+.fxpick label{display:flex;align-items:center;gap:var(--s2);font-size:var(--t-md);
+  color:var(--dim)}
+#fxorb{width:56px;background:var(--bg);color:var(--ink);border:1px solid var(--rule);
+  border-radius:var(--r-sm);padding:var(--s2);font:inherit;font-size:var(--t-md);
+  font-variant-numeric:tabular-nums}
+#fxgo{font-weight:700;background:var(--accent);color:var(--accent-ink);
+  border:1px solid transparent;border-radius:var(--r-sm);
+  padding:var(--s2) var(--s5);font:inherit;font-weight:700;cursor:pointer}
+#fxgo:hover{filter:brightness(1.1)}
+#fxeq{font-family:var(--mono);font-size:var(--t-sm);color:var(--faint);
+  align-self:center}
+/* สรุปสูตรที่เลือก — สัญลักษณ์ดาวบรรทัดบน คำไทยบรรทัดล่าง */
+.fxsum{margin:var(--s4) 0 var(--s2);padding:var(--s3) var(--s4);
+  border:1px solid var(--rule);border-left:3px solid var(--accent);
+  border-radius:0 var(--r-sm) var(--r-sm) 0;background:var(--sunk)}
+.fxsym{display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap;
+  font-family:var(--mono);font-size:var(--t-base)}
+.fxsym .pl{display:inline-flex;align-items:flex-end;gap:0}
+.fxsym .lay{color:var(--faint);font-size:9px;font-style:normal;
+  padding-bottom:2px;margin-left:.5px}
+.fxsym .op{color:var(--faint);margin:0 1px}
+.fxsym .axg{width:19px;font-size:18px}
+.fxsym .axg svg{width:15px;height:17px}
+.fxang{font-weight:700;color:var(--accent);padding:0 var(--s2);
+  font-variant-numeric:tabular-nums}
+.fxth{margin-top:var(--s2);font-size:var(--t-md);color:var(--dim);line-height:1.6}
+.fxth b{color:var(--ink)}
+.ctrnat{color:var(--accent)}
+/* คำแปลในกล่องสรุป — จำกัดความสูงไม่ให้กล่องลอยบังตารางทั้งจอ */
+.ctrmean{margin-top:var(--s3);max-height:26vh;overflow:auto;
+  font-size:var(--t-sm);line-height:1.62}
+.ctrmean:empty{display:none}
+.ctrmean .mtext{color:var(--ink)}
+.ctrmean .mwitte{margin-top:var(--s1);color:var(--dim);font-size:var(--t-xs)}
+.ctrmean .mnone{color:var(--faint);font-size:var(--t-xs)}
+.ctrmean .mnote{color:var(--f-booster);font-size:var(--t-xs);margin-bottom:var(--s2)}
+.ctrmean .mpart{margin-top:var(--s2)}
+.ctrmean .mpart>b{font-family:var(--mono);font-size:var(--t-xs);color:var(--dim)}
+/* แถบสรุปแถวที่กดในตาราง ใช้กล่องหน้าตาเดียวกับตรวจสูตร
+ * ตารางยาวหลายร้อยแถว ถ้าปล่อยไว้ท้ายสุดจะกดแถวบนแล้วมองไม่เห็น
+ * จึงให้ลอยติดขอบล่างจอตราบที่ยังเลือกแถวอยู่ */
+#ctrsel{white-space:normal;font-family:var(--sans);background:none;border:0;padding:0;
+  position:sticky;bottom:0;z-index:4;margin:0}
+#ctrsel:empty{display:none}
+#ctrsel .fxsum{margin:var(--s3) 0 0;background:var(--panel);
+  box-shadow:var(--shadow-2);border-radius:var(--r-md);
+  border:1px solid var(--rule);border-left:3px solid var(--accent)}
+/* คำตอบหลัก — ต้องเด่นกว่ารายละเอียด "ณ เวลาดวงจร" */
+.fxlead{font-size:var(--t-base);margin:var(--s3) 0 var(--s2);
+  padding:var(--s3) var(--s4);border-radius:var(--r-sm);
+  border:1px solid var(--rule);border-left:3px solid var(--dim);line-height:1.6}
+/* เกิด = เขียว · ไม่เกิด = แดง — ใช้โทเคน pos/neg ที่ตัดกับพื้นทั้งสองโหมด
+ * "เกิดแล้ว" กับ "เกิดแต่ยังไม่ถึงเวลา" เขียวเหมือนกันเพราะมันเกิดทั้งคู่
+ * ต่างกันแค่เส้นซ้าย (ทึบ = เกิดแล้ว · จาง = ยังมาไม่ถึง) */
+.fxlead.yes,.fxlead.soon{color:var(--pos);border-left-color:var(--pos);
+  background:color-mix(in srgb,var(--pos) 8%,transparent)}
+.fxlead.yes b,.fxlead.soon b{color:var(--pos)}
+.fxlead.soon{border-left-style:dashed}
+.fxlead.no{color:var(--neg);border-left-color:var(--neg);
+  background:color-mix(in srgb,var(--neg) 8%,transparent)}
+.fxlead.no b{color:var(--neg)}
+.fxnow{font-size:var(--t-md);margin:var(--s3) 0 var(--s2);padding:var(--s2) var(--s3);
+  border-radius:var(--r-sm);border:1px solid var(--rule);font-family:var(--mono);
+  font-variant-numeric:tabular-nums}
+.fxnow.yes{border-color:var(--pos);color:var(--ink);
+  background:color-mix(in srgb,var(--pos) 6%,transparent)}
+.fxnow.no{border-color:var(--rule);color:var(--dim)}
+.fxnow b{color:var(--ink)}
+.fxnote{font-size:var(--t-sm);color:var(--dim);margin:var(--s2) 0}
+.fxrows{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));
+  gap:0 var(--s4);max-height:260px;overflow:auto}
+.fxrw{display:grid;grid-template-columns:44px 56px 1fr 64px;gap:var(--s1);
+  align-items:center;font:var(--t-xs)/1.6 var(--mono);
+  border-bottom:1px solid var(--rule-soft);font-variant-numeric:tabular-nums}
+.fxrw .cas{color:var(--accent);font-weight:700;text-align:right}
+.fxrw.fxhd{font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--faint);font-weight:700;border-bottom:1px solid var(--rule)}
+.fxrw.fxhd .cas,.fxrw.fxhd .cdg,.fxrw.fxhd .cag{color:var(--faint);font-weight:700}
+.fxrw .cdg{color:var(--dim);text-align:right}
+.fxrw .cag{color:var(--faint);text-align:right}
+
+/* ── จอแคบ ────────────────────────────────────────────────────────────── */
+@media (max-width:820px){
+  .wrap{padding:var(--s5) var(--s4) 46px}
+  header.top{padding:var(--s4)}
+  header.top h1{font-size:var(--t-lg)}
+  .form{padding:var(--s4);gap:var(--s3) var(--s4)}
+  .tabs{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .mcol{flex-basis:250px}
+  .tools .hint{margin-left:0;width:100%}
+  .glab{flex-basis:132px}
+  .gscale{margin-left:150px}
+  .ctrrow .lbl{flex-basis:100%;min-width:0;margin-bottom:2px}
+  /* แถบเครื่องมือเหนือจานสูงถึง 191px บนจอ 375px — กินหน้าจอไปหนึ่งในสาม
+   * ก่อนจะเห็นจานเสียอีก · บีบขนาดคอนโทรลให้ของเรียงต่อกันได้มากขึ้นต่อบรรทัด
+   * (บังคับเป็นกริด 2 ช่องไม่ช่วย เพราะจำนวนบรรทัดเท่าเดิม) */
+  .tlbar{gap:var(--s2) var(--s3)}
+  .tlbar label{font-size:var(--t-sm);gap:var(--s1)}
+  .tlbar button,.tlbar select,.tlbar input[type=number],.tlbar .num{
+    padding:var(--s1) var(--s2);font-size:var(--t-sm)}
+  .tlbar .num{width:52px!important}
+}
+@media (max-width:640px){
+  /* 4 มุมรอบจานเดิม "ซ่อนทิ้ง" บนมือถือ — ข้อมูลดวงกำเนิด/ดวงจร/อายุ/โค้ง
+   * และค่าตั้งจานหายไปทั้งชุด · ย้ายลงมาเป็นบล็อกใต้จานแทนการซ่อน */
+  .dialwrap{flex-direction:column;align-items:stretch}
+  .dialinfo{position:static;display:grid;grid-template-columns:1fr 1fr;
+    gap:var(--s2) var(--s4);margin-top:var(--s3);padding-top:var(--s3);
+    border-top:1px solid var(--rule-soft)}
+  .dialinfo>div{position:static;max-width:none;text-align:left!important}
+  .dialinfo b{font-size:var(--t-sm)}
+  .dialinfo span{font-size:10px}
+}
+@media (max-width:480px){
+  .wrap{padding:var(--s4) var(--s3) 40px}
+  .form .fg{flex:1 1 auto}
+  .form button{width:100%}
+  .ctrgrid{grid-template-columns:1fr}
+  .axrows{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important;animation:none!important}
+}
+
+/* ── ช่วงตารางดูดวงจร ─────────────────────────────────────────────────────
+   เดิมเป็น select สองอันคั่นด้วยขีด เห็นแค่ "6 – 6" ต้องชี้เมาส์ถึงจะรู้ว่า
+   อันไหนย้อนหลังอันไหนล่วงหน้า — มือถือไม่มีการชี้เลย จึงติดป้ายไว้ในตัว */
+.mrange { display: flex; gap: var(--s2); align-items: center; flex-wrap: wrap; }
+.mrange select { min-width: 3.6em; }
+.mrlab { font-size: var(--t-xs); color: var(--dim); white-space: nowrap; }
+.mrsum { color: var(--accent); font-weight: 600; white-space: nowrap; }
+
+/* คำเตือนของตารางศูนย์รังสี — ชั้นที่เลือกทำให้ "วันที่" ไม่ได้แปลอย่างที่เขียนไว้ */
+/* --warn-soft ปรับมาเพื่อ "ชิป" เล็ก ๆ (a60) พอเอามาระบายเป็นบล็อกยาว
+   15% จางจนแทบไม่เห็น — กล่องเตือนต้องอ่านออกว่าเป็นคำเตือน จึงใส่ ⚠ นำหน้า
+   ด้วยสี --warn-ink ที่ประกาศครบทั้งสามธีมเหมือนโทเคนตัวอื่นในไฟล์นี้
+   (เคยเขียน :root:not([data-theme="light"]) ไว้นอก @media ทำให้ธีมสว่าง
+    ไปหยิบสีของธีมมืดมาใช้ — โทเคนแก้ปัญหานี้ในตัว) */
+.ctrwarn { font-size: var(--t-sm); line-height: 1.55; color: var(--ink);
+  margin: var(--s3) 0 0; padding: var(--s3) var(--s4) var(--s3) var(--s6);
+  position: relative;
+  background: var(--warn-soft); border: 1px solid var(--warn-line);
+  border-radius: var(--r-sm); }
+.ctrwarn::before { content: "⚠"; position: absolute;
+  left: var(--s3); top: var(--s3); color: var(--warn-ink);
+  font-size: var(--t-base); line-height: 1.2; }
+.ctrwarn b { color: var(--ink); }
+/* หมายเหตุเชิงข้อมูล (ชั้นภาพนิ่ง) — เงียบกว่ากรอบเหลือง เพราะไม่ใช่ปัญหา */
+.ctrnote { font-size: var(--t-sm); color: var(--dim); margin: var(--s2) 0 0; }
+
+/* แถบจานหมุนของตารางดูดวงจร — ชุดเดียวกับเว็บ 360/90/45/22°30′/11°15′ */
+.dialchips { display: inline-flex; gap: var(--s1); flex-wrap: wrap;
+  vertical-align: middle; }
+/* หมายเหตุใต้แถบ: จานไม่ใช่ค่าปริยาย หรือมีเดือนที่ไม่มีแถวเลย */
+.dialnote { flex-basis: 100%; font-size: var(--t-sm); line-height: 1.5;
+  color: var(--ink); margin: var(--s2) 0 0;
+  padding: var(--s2) var(--s3) var(--s2) var(--s6); position: relative;
+  background: var(--warn-soft); border: 1px solid var(--warn-line);
+  border-radius: var(--r-sm); }
+.dialnote::before { content: "⚠"; position: absolute;
+  left: var(--s3); top: var(--s2); color: var(--warn-ink); }
+.dialnote b { color: var(--ink); }
+
+/* ── ป๊อปอัพแก้ข้อมูลดวงจากสี่มุมของจานหมุน ─────────────────────────────── */
+/* มุมบนสองมุมกดได้ — ต้องเห็นว่ากดได้ ไม่ใช่ให้เดา */
+/* .dialinfo ตั้ง pointer-events:none ไว้ให้ลากหมุนจานทะลุตัวหนังสือได้
+   สองมุมที่กดแก้ข้อมูลจึงต้อง **เปิดรับ event กลับมาเอง** ไม่งั้นเมาส์จริงคลิกไม่โดน
+   (สคริปต์เทสต์ที่เรียก .click() ตรง ๆ จะผ่าน เพราะข้าม pointer-events —
+    ต้องตรวจด้วย document.elementFromPoint() ถึงจะรู้ว่าคลิกจริงโดนไหม) */
+.dl-edit { pointer-events: auto; cursor: pointer;
+  padding: var(--s1) var(--s2); margin: calc(var(--s1) * -1) calc(var(--s2) * -1);
+  border-radius: var(--r-sm);
+  transition: background .12s, box-shadow .12s; }
+.dl-edit:hover, .dl-edit:focus-visible { background: var(--hover);
+  box-shadow: 0 0 0 1px var(--accent-line); outline: none; }
+
+.edlg { border: 1px solid var(--rule); border-radius: var(--r-md);
+  background: var(--panel); color: var(--ink); padding: var(--s5);
+  max-width: min(92vw, 380px); box-shadow: var(--shadow-2); }
+.edlg::backdrop { background: rgba(0, 0, 0, .5); }
+.edlg h3 { margin: 0 0 var(--s4); font-size: var(--t-lg); }
+.edrow { display: flex; align-items: center; gap: var(--s3);
+  margin-bottom: var(--s3); }
+.edrow > span:first-child { flex: 0 0 76px; font-size: var(--t-sm);
+  color: var(--dim); }
+.edtrio { display: flex; gap: var(--s2); }
+.edtrio input { width: 56px; }
+.ederr { font-size: var(--t-sm); line-height: 1.5; color: var(--ink);
+  margin: var(--s3) 0 0; padding: var(--s2) var(--s3);
+  background: var(--warn-soft); border: 1px solid var(--warn-line);
+  border-radius: var(--r-sm); }
+.edbtns { display: flex; gap: var(--s3); justify-content: flex-end;
+  margin-top: var(--s5); }
+
+/* หมายเหตุเขตเวลาเมื่อเลือกเมืองต่างประเทศ — DST เป็นสาเหตุคลาดเคลื่อน 1 ชม.
+   ที่พบบ่อยที่สุดในดวงต่างประเทศ ต้องเตือนตรงจุดที่เพิ่งเลือก ไม่ใช่ซ่อนใน help */
+.tznote { flex-basis: 100%; font-size: var(--t-sm); line-height: 1.5;
+  color: var(--ink); margin: var(--s2) 0 0;
+  padding: var(--s2) var(--s3) var(--s2) var(--s6); position: relative;
+  background: var(--warn-soft); border: 1px solid var(--warn-line);
+  border-radius: var(--r-sm); }
+.tznote::before { content: "⚠"; position: absolute;
+  left: var(--s3); top: var(--s2); color: var(--warn-ink); }
+.tznote b { color: var(--ink); }
+#place { max-width: 220px; }
+
+/* ── เดินอัตโนมัติบนจาน ───────────────────────────────────────────────── */
+/* ปุ่มเปิดอยู่ใน #dlBR ซึ่ง drawDial() เขียนทับทุกเฟรม — จึงผูก event แบบ
+   delegation ที่ .dialinfo ไม่ใช่ที่ตัวปุ่ม · pointer-events ใส่ inline ที่ตัวปุ่ม
+   ด้วย (ดู RULES ข้อ 10) กฎตรงนี้เป็นแค่หน้าตา */
+.dl-auto{pointer-events:auto;cursor:pointer;margin-top:var(--s2);
+  font:600 var(--t-xs)/1 var(--sans);padding:var(--s1) var(--s2);
+  color:var(--dim);background:var(--raise);border:1px solid var(--rule);
+  border-radius:var(--r-sm)}
+.dl-auto:hover,.dl-auto:focus-visible{color:var(--accent);
+  border-color:var(--accent-line);background:var(--accent-soft)}
+.dl-auto.on{color:var(--accent);border-color:var(--accent-line);
+  background:var(--accent-soft)}
+
+.autodlg{position:fixed;inset:auto var(--s4) var(--s4) auto;margin:0;
+  width:236px;padding:0;z-index:40;color:var(--ink);background:var(--panel);
+  border:1px solid var(--rule);border-radius:var(--r-md);
+  box-shadow:0 8px 28px rgba(0,0,0,.32)}
+.autodlg::backdrop{background:none}      /* ไม่ใช่ modal — ห้ามหรี่จานข้างหลัง */
+.auhead{display:flex;align-items:center;gap:var(--s2);
+  padding:9px var(--s2) 9px var(--s3);border-bottom:1px solid var(--rule);
+  background:var(--sunk);border-radius:var(--r-md) var(--r-md) 0 0}
+.auhead b{flex:1 1 auto;font-size:var(--t-md);font-weight:600}
+.aux{width:26px;height:26px;padding:0;line-height:1;color:var(--dim);
+  background:none;border:1px solid transparent;border-radius:var(--r-sm);
+  cursor:pointer;font-size:var(--t-md)}
+.aux:hover{color:var(--ink);border-color:var(--rule);background:var(--raise)}
+.aubody{padding:var(--s3);display:flex;flex-direction:column;gap:9px}
+
+/* กริดสี่คอลัมน์ ให้ทุกแถวเรียงตรงกันเป็นสัน ไม่ใช่ flex ที่กล่องเลื่อนตามความยาว
+   ป้าย — แถวเดิมกว้างไม่เท่ากันจนดูรุงรัง */
+.aurow{display:grid;grid-template-columns:52px 60px 1fr;
+  align-items:center;gap:var(--s2);font-size:var(--t-sm);cursor:pointer;
+  margin:0}
+.aurow>span{color:var(--dim)}
+.aurow em{font-style:normal;color:var(--dim);font-size:var(--t-xs)}
+.aurow .num,.aurow select{height:30px;box-sizing:border-box}
+.aurow .num{width:100%;text-align:right;padding:0 2px 0 var(--s2)}
+.aurow select{width:100%}
+.autop{border-top:1px solid var(--rule);padding-top:9px;cursor:default}
+
+.aubtns{display:grid;grid-template-columns:34px 1fr 34px;gap:var(--s2)}
+.aubtns button{height:34px;padding:0;
+  font:600 var(--t-sm)/1 var(--sans);color:var(--ink);background:var(--raise);
+  border:1px solid var(--rule);border-radius:var(--r-sm);cursor:pointer}
+.aubtns button:hover{border-color:var(--accent-line);background:var(--accent-soft)}
+.aubtns button:active{transform:scale(.97)}
+.augo{color:var(--accent)!important;border-color:var(--accent-line)!important}
+.augo.run{color:var(--f-bad)!important;border-color:var(--f-bad)!important}
+.austat{margin:0;font:var(--t-xs)/1.5 var(--mono);color:var(--dim);
+  text-align:center;min-height:2.6em}
+.austat.warn{color:var(--warn-ink)}
+.auhint{margin:0;padding-top:9px;border-top:1px solid var(--rule);
+  font-size:var(--t-xs);color:var(--faint);text-align:center}
+
+/* กล่องค้นหาวันที่สมการเกิด — โครงเดียวกับกล่องเดินอัตโนมัติ แต่อยู่มุมซ้ายล่าง */
+.fsdlg{inset:auto auto var(--s4) var(--s4);width:250px}
+.fspick{margin:0;font-size:var(--t-xs);color:var(--dim);line-height:1.5}
+.fspick b{color:var(--accent);font-family:var(--mono)}
+.fspick span{color:var(--faint)}
+.fspick .no{color:var(--warn-ink)}
+.fsrow2{grid-template-columns:52px 1fr 52px}
+.aurow.fsrow2:has(> select ~ select ~ select){grid-template-columns:52px 1fr 1fr 52px}
+.fsrow2 select{width:100%;height:30px;box-sizing:border-box}
+.fslab{color:var(--dim)}
+.fsangs{display:flex;gap:var(--s2);align-items:flex-start;font-size:var(--t-sm)}
+.fsangs .fslab{flex:0 0 44px;padding-top:3px}
+.fsangs .laychips{margin:0;gap:3px}
+.fsangs .laychip{cursor:pointer;padding:3px 5px}
+.fsnote{display:block;margin-top:3px;color:var(--warn-ink)}

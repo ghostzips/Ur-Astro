@@ -1,0 +1,16 @@
+{
+  "name": "ยูเรเนียนออฟไลน์",
+  "short_name": "ยูเรเนียน",
+  "description": "ตารางดูดวงจร ±6 เดือน · ไทม์ไลน์ · แผนที่ชีวิต · จานหมุน · ตำแหน่งดาว 9 ชั้น — คำนวณในเครื่องทั้งหมด ไม่ใช้อินเทอร์เน็ต",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0e1116",
+  "theme_color": "#0e1116",
+  "lang": "th",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon-maskable.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

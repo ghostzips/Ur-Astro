@@ -1,0 +1,3348 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0e1116">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<title>ยูเรเนียนออฟไลน์</title>
+<!-- ?v= ผูกกับ SW_CACHE — บังคับให้เบราว์เซอร์ดึงไฟล์ใหม่ทุกครั้งที่ปล่อยเวอร์ชัน
+     ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
+     (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
+     test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
+<link rel="stylesheet" href="style.css?v=urain-v63">
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+  <h1>ยูเรเนียนออฟไลน์ <span class="tag">OFFLINE</span></h1>
+  <div class="meta">
+    <span>คำนวณในเครื่องทั้งหมด ไม่ใช้อินเทอร์เน็ต · ตารางดูดวงจรเลือกช่วงได้ ·
+      ไทม์ไลน์ช่วงวัน · แผนที่ชีวิต · จาน 90° · ตำแหน่งดาว 9 ชั้น ·
+      สอบเทียบกับ uraniansystem.com แล้ว</span>
+  </div>
+</header>
+
+<form class="form" id="f" onsubmit="return false">
+  <div class="fg"><label>ชื่อดวง</label>
+    <input id="cname" value="" placeholder="ไม่ระบุ" style="width:130px"></div>
+  <div class="fg"><label>ประเภทดวง</label>
+    <select id="ctype">
+      <option value="บุคคล">บุคคล</option>
+      <option value="ประเทศ/เมือง">ประเทศ/เมือง</option>
+      <option value="บริษัท/องค์กร">บริษัท/องค์กร</option>
+      <option value="หุ้น/ตลาดหลักทรัพย์">หุ้น/ตลาดหลักทรัพย์</option>
+    </select></div>
+  <div class="fg"><label id="blab">วันเกิด (วัน/เดือน/ปี พ.ศ. หรือ ค.ศ.)</label>
+    <div style="display:flex;gap:5px">
+      <input class="num" id="bd" value="20" inputmode="numeric">
+      <input class="num" id="bm" value="9" inputmode="numeric">
+      <input class="num" id="by" value="2530" inputmode="numeric" style="width:88px">
+    </div></div>
+  <div class="fg"><label id="tlab">เวลาเกิด</label>
+    <input id="bt" value="11:16" style="width:84px" inputmode="numeric"></div>
+  <div class="fg"><label>เขตเวลา</label>
+    <input class="num" id="tz" value="7" inputmode="decimal" style="width:64px"></div>
+  <div class="fg"><label>ประเทศ</label>
+    <select id="pcountry">
+      <option value="th">ไทย</option>
+      <option value="intl">ต่างประเทศ</option>
+    </select></div>
+  <div class="fg"><label id="plab">สถานที่เกิด</label>
+    <select id="place"></select></div>
+  <div class="fg" id="latlon" style="display:none"><label>lat, lon</label>
+    <input id="ll" value="13.7563, 100.5018" style="width:150px"></div>
+  <p class="tznote" id="tznote" hidden></p>
+  <div class="fg"><label>ดวงจร (วัน/เดือน/ปี)</label>
+    <div style="display:flex;gap:5px">
+      <input class="num" id="td" inputmode="numeric">
+      <input class="num" id="tm" inputmode="numeric">
+      <input class="num" id="ty" inputmode="numeric" style="width:88px">
+    </div></div>
+  <div class="fg"><label>เวลาดวงจร</label>
+    <input id="tt" style="width:84px"></div>
+  <div class="fg"><label>ช่วงตาราง (เดือน)</label>
+    <div class="mrange">
+      <span class="mrlab">ย้อนหลัง</span>
+      <select id="mback" title="ย้อนหลังกี่เดือน"></select>
+      <span class="mrlab">ล่วงหน้า</span>
+      <select id="mfwd" title="ล่วงหน้ากี่เดือน"></select>
+    </div></div>
+  <div class="fg"><button id="go">คำนวณ</button></div>
+  <div class="note">ปีใส่ได้ทั้ง พ.ศ. (เช่น 2530) และ ค.ศ. (เช่น 1987) ·
+    ช่วงตารางเลือกได้ตั้งแต่ย้อนหลัง 6 เดือน ถึงล่วงหน้า 12 เดือน (นับรอบเดือนดวงจร)
+    <b id="mrsum" class="mrsum"></b></div>
+</form>
+
+<p class="ctnote" id="ctnote"></p>
+<p class="ctnote warn" id="warnpre" hidden>⚠️ ดวงจรอยู่<b>ก่อน</b>วันเกิด — โค้งสุริยยาตร์ติดลบ ตัวเลขคำนวณได้แต่ไม่มีความหมายทางโหราศาสตร์</p>
+<p id="status">พร้อมคำนวณ</p>
+
+<nav class="tabs" id="tabs" style="display:none">
+  <button type="button" class="tab on" data-p="pdial">จานหมุน</button>
+  <button type="button" class="tab" data-p="ptable">ตารางดูดวงจร</button>
+  <button type="button" class="tab" data-p="ptl">ไทม์ไลน์</button>
+  <button type="button" class="tab" data-p="plife">แผนที่ชีวิต</button>
+  <button type="button" class="tab" data-p="pctr">ศูนย์รังสี 360°</button>
+  <button type="button" class="tab" data-p="ppos">ตำแหน่งดาว</button>
+  <button type="button" class="tab" data-p="pcmp">เทียบกับเว็บ</button>
+</nav>
+
+<div class="panel" id="ptable">
+<div class="tools" id="tools" style="display:none">
+  <span class="lbl">จานหมุน</span>
+  <span class="dialchips" id="mdial"></span>
+  <span class="sep"></span>
+  <span class="lbl">ตัวกรอง</span>
+  <label><input type="checkbox" data-k="t1" checked> TYPE 1</label>
+  <label><input type="checkbox" data-k="t2" checked> TYPE 2</label>
+  <label><input type="checkbox" data-k="t3" checked> TYPE 3</label>
+  <label><input type="checkbox" data-k="t4" checked> TYPE 4</label>
+  <span class="sep"></span>
+  <label><input type="checkbox" data-k="onlyPer"> เฉพาะถึงเจ้าชะตา 🔵</label>
+  <label><input type="checkbox" data-k="onlyGood"> มีดาวดี 🟢</label>
+  <label><input type="checkbox" data-k="onlyBad"> มีดาวร้าย 🔴</label>
+  <button type="button" id="clearf" class="clearf" hidden>ล้างตัวกรอง</button>
+  <span class="fwarn" id="fwarn" hidden></span>
+  <p class="dialnote" id="mdialnote" hidden></p>
+</div>
+
+<section class="band" id="out"></section>
+<div class="mbox" id="tmean" hidden></div>
+</div><!-- /ptable -->
+
+<div class="panel" id="pcmp">
+
+<section class="legend" id="cmpbox">
+  <h3>เทียบกับเว็บ</h3>
+  <div class="cmp">
+    <div class="cmprow">
+      <label>เลือกเดือน</label>
+      <select id="cmpmonth"></select>
+      <button type="button" id="cmpgo">เทียบ</button>
+      <button type="button" id="cmpclear">ล้าง</button>
+    </div>
+    <textarea id="cmptext" rows="6" placeholder="คัดลอกสูตรจากเว็บ AISTRO (โหมด &quot;รหัส&quot;) ของเดือนนั้นมาวางที่นี่ — วางทั้งก้อนได้เลย จะมีบรรทัด === TYPE n === ปนมาก็ไม่เป็นไร"></textarea>
+    <div id="cmpout" class="cmpout"></div>
+  </div>
+</section>
+</div><!-- /pcmp -->
+
+<div class="panel" id="ptl">
+<section class="legend" id="tlbox" style="display:none">
+  <h3>ไทม์ไลน์ช่วงวัน
+    <span class="hint">แต่ละสูตรไม่ได้ทำงานทั้งเดือน — แถบคือช่วงที่อยู่ในระยะ orb จริง</span>
+  </h3>
+  <div class="tlbar">
+    <label>ช่วง <select id="tlrange">
+      <option value="1">เดือนเดียว</option>
+      <option value="13">ทั้ง 13 เดือน</option>
+    </select></label>
+    <label id="tlmonthwrap">เดือน <select id="tlmonth"></select></label>
+    <label><input type="checkbox" id="tlper"> เฉพาะถึงเจ้าชะตา 🔵</label>
+    <span class="hint" id="tlcount"></span>
+  </div>
+  <div class="gantt"><div class="gwrap" id="gwrap"></div></div>
+  <p class="lfsel" id="tlsel"></p>
+</section>
+</div><!-- /ptl -->
+
+<div class="panel" id="plife">
+<section class="legend" id="lifebox" style="display:none">
+  <h3>แผนที่ชีวิต
+    <span class="hint">ทุกสูตรตั้งแต่เกิดจนถึงอายุที่เลือก — แก้สมการตรง ไม่ไล่ทีละเดือน</span>
+  </h3>
+  <div class="tlbar">
+    <label>ถึงอายุ <select id="lfage">
+      <option>30</option><option>50</option><option selected>70</option><option>90</option>
+    </select> ปี</label>
+    <label><input type="checkbox" id="lfper" checked> เฉพาะถึงเจ้าชะตา 🔵</label>
+    <label><input type="checkbox" id="lft4"> รวม TYPE 4 (ดาวจร)</label>
+    <button type="button" id="lfgo">คำนวณ</button>
+    <span class="hint" id="lfcount"></span>
+  </div>
+  <p class="ctnote warn" id="lfcut" hidden></p>
+  <div class="lifewrap" id="lifewrap"></div>
+  <p class="lfsel" id="lfsel"></p>
+</section>
+</div><!-- /plife -->
+
+<div class="panel on" id="pdial">
+<section class="legend" id="dialbox" style="display:none">
+  <h3>จานหมุน
+    <span class="hint">พับวงกลมลงตามขนาดจาน — ดาวที่ตรงกันคือคู่ที่ทำมุมแข็ง</span>
+  </h3>
+  <div class="tlbar">
+    <label>วงนอกสุด <select id="dlr3"></select></label>
+    <label>วงเหลือง <select id="dlr2"></select></label>
+    <label>วงฟ้า <select id="dlr1"></select></label>
+    <label>จาน <select id="dldial">
+      <option value="360">360°</option>
+      <option value="90" selected>90°</option>
+      <option value="45">45°</option>
+      <option value="22.5">22°30'</option>
+      <option value="11.25">11°15'</option>
+    </select></label>
+    <label>orb <select id="dlorb">
+      <option>0.5</option><option selected>1</option><option>1.2</option><option>2</option>
+    </select>°</label>
+    <label>เข็ม <input class="num" id="dlhand" value="0" inputmode="decimal"
+      style="width:64px">°</label>
+    <button type="button" id="dlreset">รีเซ็ตเข็ม</button>
+    <label>แกนองศา <input class="num" id="axdeg" value="" inputmode="decimal"
+      placeholder="0–360" style="width:74px">°</label>
+    <button type="button" id="axhand">ใช้องศาเข็ม</button>
+    <button type="button" id="axclear">ล้างแกน</button>
+  </div>
+  <p class="hint" id="dlcount"></p>
+  <div class="dialwrap">
+    <canvas id="dlcv" width="760" height="760"></canvas>
+    <div class="dialinfo">
+      <div class="dl-tl" id="dlTL"></div>
+      <div class="dl-tr" id="dlTR"></div>
+      <div class="dl-bl" id="dlBL"></div>
+      <div class="dl-br" id="dlBR"></div>
+    </div>
+  </div>
+  <canvas id="dlkey" class="dialkey" width="1200" height="120"></canvas>
+  <dialog id="edlg" class="edlg">
+    <form method="dialog" id="edform">
+      <h3 id="edtitle"></h3>
+      <div id="edbody"></div>
+      <p class="ederr" id="ederr" hidden></p>
+      <div class="edbtns">
+        <button type="button" id="edcancel" class="clearf">ยกเลิก</button>
+        <button type="button" id="edsave">บันทึกและคำนวณใหม่</button>
+      </div>
+    </form>
+  </dialog>
+  <!-- เดินอัตโนมัติ — **ไม่ใช่ modal** (`show()` ไม่ใช่ `showModal()`)
+       ทั้งหมดของฟีเจอร์นี้คือดูดาวขยับ ถ้าหรี่จานไว้ข้างหลังก็หมดประโยชน์ -->
+  <dialog id="autodlg" class="autodlg">
+    <div class="auhead">
+      <b>▶ เดินอัตโนมัติ</b>
+      <button type="button" id="auclose" class="aux" aria-label="ปิด">✕</button>
+    </div>
+    <div class="aubody">
+      <label class="aurow"><span>ครั้งละ</span>
+        <input type="number" class="num" id="austept" value="1" min="1" step="1">
+        <select id="auunit">
+          <!-- ชุดหน่วยของเว็บคือ นาที/ชั่วโมง/วัน/เดือน/ปี (สำรวจ 31 ส.ค. 2026)
+               เราเพิ่ม "สัปดาห์" ตามที่ผู้ใช้ขอ -->
+          <option value="mi">นาที</option>
+          <option value="h">ชั่วโมง</option>
+          <option value="d" selected>วัน</option>
+          <option value="w">สัปดาห์</option>
+          <option value="m">เดือน</option>
+          <option value="y">ปี</option>
+        </select>
+      </label>
+      <label class="aurow"><span>ทุก</span>
+        <input type="number" class="num" id="ausec" value="1" min="0.25" step="0.25">
+        <em>วินาที</em>
+      </label>
+      <label class="aurow"><span>ทิศทาง</span>
+        <select id="audir" style="grid-column:2/4">
+          <option value="1">เดินหน้า</option>
+          <option value="-1">ถอยหลัง</option>
+        </select>
+      </label>
+      <div class="aubtns">
+        <button type="button" id="auback" title="ถอยหนึ่งก้าว">‹</button>
+        <button type="button" id="augo" class="augo">▶ เริ่ม</button>
+        <button type="button" id="aufwd" title="เดินหน้าหนึ่งก้าว">›</button>
+      </div>
+      <p class="austat" id="austat"></p>
+      <p class="auhint">Esc · ปิดหน้าต่าง · แตะจาน = หยุดทันที</p>
+    </div>
+  </dialog>
+  <!-- ค้นหาวันที่สมการเกิด — อยู่มุมซ้ายล่าง ตรงข้ามกับเดินอัตโนมัติ
+       ข้างซ้ายของสมการผูกกับ "ดาวที่เลือกบนจาน" จึงไม่ต้องเลือกซ้ำ
+       ไม่ใช่ modal เหมือนกัน — ต้องเห็นจานหมุนไปตามวันที่กด -->
+  <dialog id="fsdlg" class="autodlg fsdlg">
+    <div class="auhead">
+      <b>🔍 ค้นหาวันที่สมการเกิด</b>
+      <button type="button" id="fsclose" class="aux" aria-label="ปิด">✕</button>
+    </div>
+    <div class="aubody">
+      <div class="fsangs"><span class="fslab">วิธี</span>
+        <span class="laychips" id="fsmode"></span>
+      </div>
+      <div class="aurow fsrow2"><span class="fslab">ดาว</span>
+        <select id="fsa1"></select>
+        <select id="fsas"></select>
+      </div>
+      <p class="fspick" id="fspick"></p>
+      <div class="fsangs"><span class="fslab">ทำมุม</span>
+        <span class="laychips" id="fsang"></span>
+      </div>
+      <label class="aurow"><span>กับ</span>
+        <select id="fsbm" style="grid-column:2/4"></select>
+      </label>
+      <div class="aurow fsrow2"><span></span>
+        <select id="fsb1"></select>
+        <select id="fsb2"></select>
+        <select id="fsbs"></select>
+      </div>
+      <label class="aurow"><span>orb</span>
+        <input type="number" class="num" id="fsorb" value="1" min="0.1" max="5" step="0.1">
+        <em>องศา</em>
+      </label>
+      <label class="aurow"><span>ภายใน</span>
+        <input type="number" class="num" id="fsyears" value="100" min="1" max="120" step="10">
+        <em>ปี</em>
+      </label>
+      <div class="aubtns">
+        <button type="button" id="fsprev" title="ครั้งก่อนหน้า">‹</button>
+        <button type="button" id="fsgo" class="augo">🔍 ค้นหา</button>
+        <button type="button" id="fsnext" title="ครั้งถัดไป">›</button>
+      </div>
+      <p class="austat" id="fsstat"></p>
+      <p class="auhint">กด › เพื่อไล่ไปทีละครั้ง · จานจะหมุนตามวันที่เจอ</p>
+    </div>
+  </dialog>
+  <p class="hint" id="dlhandout"></p>
+  <div class="axbox" id="axbox" style="display:none"></div>
+  <div class="picbox" id="dlpics"></div>
+</section>
+</div><!-- /pdial -->
+
+<div class="panel" id="pctr">
+<section class="legend" id="ctrbox" style="display:none">
+  <h3>ตารางศูนย์รังสี 360°
+    <span class="hint">เรียงตามองศา · วันที่คือวันที่โค้งสุริยยาตร์เดินมาถึงจุดนั้น</span>
+  </h3>
+  <div class="ctrctl" id="ctrctl"></div>
+</section>
+<section class="band" id="ctrout"></section>
+<p class="lfsel" id="ctrsel"></p>
+<section class="legend" id="fxbox" style="display:none">
+  <h3>ตรวจสูตร
+    <span class="hint">เลือกดาว · เลือกมุม · เลือกดาวที่ไปเจอ
+      แล้วดูว่าเกิดจริงไหม และโค้งพาให้เกิดเมื่อไหร่บ้าง</span>
+  </h3>
+  <div class="fxpick">
+    <div class="fxside">
+      <span class="lbl">ดาว</span>
+      <select id="fxam" class="fxmode"></select>
+      <select id="fxa1"></select>
+      <select id="fxa2"></select>
+      <select id="fxa3"></select>
+      <select id="fxas" class="fxlay"></select>
+    </div>
+    <div class="fxmid">
+      <span class="lbl">ทำมุม</span>
+      <select id="fxang"></select>
+    </div>
+    <div class="fxside">
+      <span class="lbl">กับ</span>
+      <select id="fxbm" class="fxmode"></select>
+      <select id="fxb1"></select>
+      <select id="fxb2"></select>
+      <select id="fxb3"></select>
+      <select id="fxbs" class="fxlay"></select>
+    </div>
+    <div class="fxgo">
+      <label>orb <input type="number" id="fxorb" value="1" min="0.1" max="5" step="0.1"></label>
+      <button type="button" id="fxgo">ตรวจ</button>
+      <code id="fxeq"></code>
+    </div>
+  </div>
+  <div id="fxout"></div>
+</section>
+
+</div><!-- /pctr -->
+
+<div class="panel" id="ppos">
+<section class="legend" id="radixbox" style="display:none">
+  <h3>ตำแหน่งดาว 9 ชั้น
+    <span class="hint" id="layhint">องศาแบบ 360° · กดหัวคอลัมน์เพื่อดูคำอธิบายชั้น</span>
+  </h3>
+  <div class="postab"><table id="laytab"></table></div>
+  <p class="hint" id="laynote"></p>
+</section>
+</div><!-- /ppos -->
+
+<section class="legend">
+  <h3>สัญลักษณ์</h3>
+  <div class="lgrid">
+    <div><code class="f-personal">AR MC AS SU MO NO</code> จุดเจ้าชะตา</div>
+    <div><code class="f-good">VE JU KR AP</code> ดาวดี</div>
+    <div><code class="f-bad">SA NE HA AD</code> ดาวร้าย</div>
+    <div><code class="f-booster">MA UR PL ZE VU</code> ดาวเสริมแรง</div>
+    <div><code class="f-neutral">ME CU PO</code> ดาวกลาง</div>
+  </div>
+</section>
+
+<footer>เอนจินพอร์ตจาก aistro.py · ตำแหน่งดาว Chebyshev 1900–2100
+  (คลาดเคลื่อน ≤ 0.14″) · ไม่ใช่คำพยากรณ์ — แสดงเฉพาะสูตรตามกติกาเว็บ
+  <span id="swstat"></span></footer>
+</div>
+
+<script src="glyphs.js?v=urain-v63"></script>
+<script src="places.js?v=urain-v63"></script>
+<script src="engine.js?v=urain-v63"></script>
+<script src="render.js?v=urain-v63"></script>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const SW_CACHE = "urain-v63";   // ต้องตรงกับ CACHE ใน sw.js
+let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
+let DIALHITS = [], DIALSEL = null, AXLAY = null;
+// ตัวจับเวลาของ "เดินอัตโนมัติ" — ประกาศไว้บนสุดเพราะ drawDial() อ่านค่านี้
+// ตั้งแต่การคำนวณครั้งแรก ถ้าประกาศไว้ใต้ฟังก์ชันจะติด TDZ
+const AUTO = { timer: null };
+// เขตเวลาอ่านจากช่องกรอก ค่าเริ่มต้น +7 (ไทย) — ตรึงไว้เฉย ๆ ไม่ได้
+// เพราะช่อง "กำหนดเอง" ให้ใส่พิกัดต่างประเทศได้ แล้วเวลาจะเพี้ยนเงียบ ๆ
+let TZ = 7.0;
+
+// ค่าตั้งต้นดวงจร = วันนี้ เวลานี้
+(function () {
+  const now = new Date();
+  $("td").value = now.getDate();
+  $("tm").value = now.getMonth() + 1;
+  $("ty").value = now.getFullYear() + 543;
+  $("tt").value = String(now.getHours()).padStart(2, "0") + ":" +
+                  String(now.getMinutes()).padStart(2, "0");
+})();
+
+function ceYear(v) {
+  const y = parseInt(v, 10);
+  return y >= 2300 ? y - 543 : y;   // พ.ศ. -> ค.ศ.
+}
+function parseTime(v) {
+  const m = String(v).trim().match(/^(\d{1,2})[:.](\d{1,2})(?:[:.](\d{1,2}))?$/);
+  if (!m) return null;
+  const h = +m[1], mi = +m[2], se = +(m[3] || 0);
+  // ต้องดักขอบเขต ไม่งั้น "25:99" ผ่านแล้วเลื่อนไปวันถัดไปเงียบ ๆ
+  if (h > 23 || mi > 59 || se > 59) return null;
+  return h + mi / 60 + se / 3600;
+}
+
+// ล้างผลลัพธ์ทุกแท็บ — ถ้าไม่ล้าง ผลของดวงก่อนหน้าจะค้างอยู่และอ่านผิดคน
+// (เคยเกิดจริง: กรอกเวลาผิด ขึ้น error แต่ทุกแท็บยังโชว์ตัวเลขของดวงเดิมครบ)
+function clearResults() {
+  TL = null; LIFE = null; LAST = null; DIALSTATE = null; DIALPOS = null;
+  DIALSEL = null; AXLAY = null; CTRLAY = null; $("axbox").style.display = "none";
+  $("ctrout").innerHTML = "";
+  for (const id of ["lfsel", "tlsel"]) $(id).textContent = "";
+  $("ctrsel").innerHTML = "";
+  $("tmean").hidden = true; $("tmean").innerHTML = "";
+  $("out").innerHTML = "";
+  $("laytab").innerHTML = "";
+  $("laynote").textContent = "";
+  $("gwrap").innerHTML = "";
+  $("lifewrap").innerHTML = "";
+  $("lfcount").textContent = "";
+  $("lfcut").hidden = true;
+  $("dlpics").innerHTML = "";
+  $("dlcount").textContent = "";
+  $("cmpout").innerHTML = "";
+  // ข้อความที่วางไว้เป็นของดวงเก่า ถ้าไม่ล้างจะถูกเอาไปเทียบกับดวงใหม่เงียบ ๆ
+  $("cmptext").value = "";
+  // ช่องแกนองศาต้องล้างตาม DIALSEL ไม่งั้นช่องโชว์ 123° ทั้งที่ไม่มีแกนทำงานอยู่
+  $("axdeg").value = "";
+  MEANSEQ++;                 // ตัดคำแปลของดวงเก่าที่กำลังโหลดค้างอยู่
+  const cv = $("dlcv"), cx = cv.getContext("2d");
+  cx.setTransform(1, 0, 0, 1, 0, 0);
+  cx.clearRect(0, 0, cv.width, cv.height);
+  $("fxout").innerHTML = "";
+  for (const id of ["tabs", "tools", "radixbox", "tlbox", "lifebox", "dialbox",
+                    "ctrbox", "fxbox"]) {
+    $(id).style.display = "none";
+  }
+  $("fwarn").hidden = true;
+  $("clearf").hidden = true;
+  $("warnpre").hidden = true;
+}
+
+function run() {
+  const st = $("status");
+  clearResults();
+  try {
+    const by = ceYear($("by").value), bm = +$("bm").value, bd = +$("bd").value;
+    const bh = parseTime($("bt").value);
+    const ty = ceYear($("ty").value), tm = +$("tm").value, td = +$("td").value;
+    const th = parseTime($("tt").value);
+    const okDate = (y, m, d) => {
+      if (!y || !(m >= 1 && m <= 12) || !(d >= 1 && d <= 31)) return false;
+      const dim = [31, (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0 ? 29 : 28,
+                   31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+      return d <= dim[m - 1];
+    };
+    if (!okDate(by, bm, bd) || bh === null) throw new Error("วัน-เวลาเกิดไม่ถูกต้อง");
+    if (!okDate(ty, tm, td) || th === null) throw new Error("วัน-เวลาดวงจรไม่ถูกต้อง");
+    if (by < 1900 || by > 2099 || ty < 1900 || ty > 2099) {
+      throw new Error("รองรับ ค.ศ. 1900–2099 (พ.ศ. 2443–2642) เท่านั้น");
+    }
+    const tzv = parseFloat($("tz").value);
+    if (!isFinite(tzv) || tzv < -12 || tzv > 14) {
+      throw new Error("เขตเวลาต้องอยู่ระหว่าง −12 ถึง +14");
+    }
+    TZ = tzv;
+    let lat, lon;
+    if ($("place").value === "custom") {
+      // Number("") และ Number(" ") = 0 → "," หรือ "13.5," เคยผ่านเช็คแล้วไปคำนวณ
+      // ที่ละติจูด/ลองจิจูด 0 เงียบ ๆ · ต้องกันช่องว่างและตรวจพิสัยจริงด้วย
+      const q = $("ll").value.split(",");
+      const num = (t) => (t !== undefined && t.trim() !== "" ? Number(t) : NaN);
+      lat = num(q[0]); lon = num(q[1]);
+      if (q.length !== 2 || !isFinite(lat) || !isFinite(lon))
+        throw new Error("lat/lon ไม่ถูกต้อง — ต้องเป็นตัวเลขสองค่าคั่นด้วยจุลภาค เช่น 13.7563, 100.5018");
+      if (lat < -90 || lat > 90 || lon < -180 || lon > 180)
+        throw new Error(`lat/lon นอกพิสัย — ละติจูดต้องอยู่ −90…90 (ได้ ${lat}) ` +
+                        `ลองจิจูด −180…180 (ได้ ${lon})`);
+    } else {
+      const p = $("place").value.split(",").map(Number);
+      lat = p[0]; lon = p[1];
+    }
+    const t0 = performance.now();
+    const { R, jd } = AISTRO.buildRadix(by, bm, bd, bh, TZ, lat, lon);
+    const jdT = AISTRO.julday(ty, tm, td, th - TZ);
+    // โค้งสุริยยาตร์เดินจากวันเกิดไปข้างหน้า ถ้าดวงจรอยู่ก่อนเกิดจะติดลบ
+    // เลขยังคำนวณได้แต่ไม่มีความหมายทางโหร — ต้องบอกให้เห็น ไม่ใช่เงียบ
+    $("warnpre").hidden = jdT >= jd;
+    // ช่วงเดือนตามที่เลือก — ย้อนหลัง mb เดือน ล่วงหน้า mf เดือน รอบเดือนดวงจร
+    const [mb, mf] = monthRange();
+    const months = [];
+    for (let k = -mb; k <= mf; k++) {
+      const mm = tm - 1 + k;
+      months.push([ty + Math.floor(mm / 12), ((mm % 12) + 12) % 12 + 1]);
+    }
+    // ช่วงที่กางออกไปอาจเลยช่วงข้อมูล ทั้งที่ปีที่กรอกยังอยู่ในช่วง
+    const my0 = months[0], my9 = months[months.length - 1];
+    if (my0[0] < 1900 || my9[0] > 2099) {
+      throw new Error(
+        `ตารางกางจาก ${my0[1]}/${my0[0] + 543} ถึง ${my9[1]}/${my9[0] + 543} ` +
+        `ซึ่งเลยช่วงข้อมูล (ค.ศ. 1900–2099) — ลดช่วงตาราง หรือเลือกเดือนดวงจรอื่น`);
+    }
+    const tables = months.map(([yy, mm]) =>
+      AISTRO.monthTable(R, jd, yy, mm, { jdTransit: jdT, tz: TZ, dial: MDIAL }));
+    const cols = tables.map((rows, i) =>
+      AISTRO_RENDER.monthColumnHtml(rows, months[i][0], months[i][1], i));
+    LAST = { months, rowsByMonth: tables.map(
+      (rows) => rows.map((r) => AISTRO.rowText(r))) };
+    // จานที่ไม่ใช่ค่าปริยายเปลี่ยน "เกณฑ์" ไม่ใช่แค่จำนวนแถว — ต้องบอกให้รู้
+    // และเดือนที่ได้ 0 แถวต้องแยกให้ออกจาก "เดือนนั้นไม่มีอะไรจริง ๆ"
+    {
+      const zero = tables.filter((t) => t.length === 0).length;
+      const note = [];
+      if (MDIAL !== AISTRO.DIAL_DEFAULT) {
+        const lab = (MDIALS.find((d) => d[0] === MDIAL) || [0, MDIAL])[1];
+        note.push(`จาน <b>${lab}</b> ไม่ใช่ค่าปริยาย (22°30′) — ` +
+          (MDIAL > AISTRO.DIAL_DEFAULT
+            ? "นับเฉพาะมุมที่หารจานนี้ลงตัว แถวจึงน้อยลง เห็นเฉพาะที่แรงกว่า"
+            : "จานละเอียดกว่าค่าปริยาย แถวจะมากขึ้น") +
+          ` · <b>แท็บ “เทียบกับเว็บ” จะไม่ตรง</b> เพราะข้อมูลอ้างอิงเก็บที่ 22°30′`);
+      }
+      if (zero) {
+        note.push(`<b>${zero} เดือนไม่มีแถวเลย</b> — ไม่ได้แปลว่าเดือนนั้นว่าง ` +
+          `แต่แปลว่าไม่มีสูตรไหนลงตัวกับจานนี้ ลองจานละเอียดกว่านี้`);
+      }
+      $("mdialnote").hidden = !note.length;
+      $("mdialnote").innerHTML = note.join(" · ");
+    }
+    $("cmpmonth").innerHTML = months.map(([yy, mm], i) =>
+      `<option value="${i}">${AISTRO_RENDER.MONTH_TH[mm - 1]} ${yy + 543}` +
+      ` (${tables[i].length} แถว)</option>`).join("");
+    $("tmean").hidden = true; $("tmean").innerHTML = "";
+    $("out").innerHTML =
+      `<h2>${$("ctype").value !== "บุคคล" ? $("ctype").value + " " : "ดวง "}` +
+      `${bd}/${bm}/${by + 543} ${$("bt").value}` +
+      `<span class="ce">ดวงจร ${td}/${tm}/${ty + 543} ${$("tt").value}` +
+      ` · ${months.length} เดือน (ย้อนหลัง ${mb} · ล่วงหน้า ${mf})</span></h2>` +
+      `<div class="strip">${cols.join("")}</div>`;
+    // ตำแหน่งดาวกำเนิด
+    const fmt = (v) => {
+      const d = Math.floor(v), mn = (v - d) * 60;
+      return String(d).padStart(3, " ") + "°" +
+             String(Math.floor(mn)).padStart(2, "0") + "'" +
+             String(Math.round((mn - Math.floor(mn)) * 60)).padStart(2, "0") + '"';
+    };
+    renderLayers(R, jd, jdT, lat, lon, fmt);
+    $("radixbox").style.display = "";
+    const placeTxt = $("place").selectedOptions[0]
+      ? $("place").selectedOptions[0].text.trim() : "";
+    TL = { R, jd, jdT, months, tables, lat, lon,
+           place: placeTxt === "กำหนดเอง…" ? "" : placeTxt };
+    $("tlmonth").innerHTML = $("cmpmonth").innerHTML;
+    $("tlmonth").value = String(mb);   // ดัชนีของเดือนดวงจร = จำนวนเดือนที่ย้อนหลัง
+    $("tlbox").style.display = "";
+    $("lifebox").style.display = "";
+    $("dialbox").style.display = "";
+    $("ctrbox").style.display = "";
+    $("tabs").style.display = "";
+    LIFE = null;                       // ผลเก่าใช้กับดวงใหม่ไม่ได้
+    LIFEMEMO = null; CTRRAW = null;    // แคชผูกกับดวงเดิม ต้องทิ้งด้วย
+    DIALSTATE = null; CTRLAY = null;
+    showPanel(CUR_PANEL);          // วาดแท็บที่เปิดอยู่ใหม่ด้วยดวงล่าสุด
+    $("tools").style.display = "";
+    applyFilters();
+    st.className = "";
+    st.textContent = `คำนวณ ${months.length} เดือนใน ` +
+      `${(performance.now() - t0).toFixed(0)} ms · ` +
+      `แถวรวม ${document.querySelectorAll(".frow").length} แถว`;
+  } catch (e) {
+    clearResults();          // อย่าปล่อยผลของดวงก่อนหน้าค้างไว้คู่กับข้อความผิดพลาด
+    st.className = "err";
+    st.textContent = "ผิดพลาด: " + e.message;
+  }
+}
+
+// ── ตำแหน่งดาว 9 ชั้น ─────────────────────────────────────────────────────
+const LAYERS = [
+  ["r",   "กำเนิด",        "ตำแหน่งจริง ณ เวลาเกิด"],
+  ["p",   "โปรเกรส",       "1 ปีดาราคติ (365.25636 วัน) ย่อเป็น 1 วัน"],
+  ["tp1", "Tertiary I",    "1 เดือนดาวเต็ม (27.321582 วัน) ย่อเป็น 1 วัน"],
+  ["tp2", "Minor",         "1 ปีอายุเต็ม ย่อเป็น 1 เดือนดาว"],
+  ["v1",  "สุริยยาตร์ +",   "กำเนิด + โค้งอาทิตย์ (เดินหน้า)"],
+  ["v2",  "สุริยยาตร์ −",   "กำเนิด − โค้งอาทิตย์ (ถอยหลัง)"],
+  ["l1",  "จันทรยาตร์ +",   "กำเนิด + โค้งจันทร์ (เดินหน้า)"],
+  ["l2",  "จันทรยาตร์ −",   "กำเนิด − โค้งจันทร์ (ถอยหลัง)"],
+  ["t",   "ดาวจร",         "ตำแหน่งจริง ณ เวลาดวงจร"],
+];
+
+function renderLayers(R, jdB, jdT, lat, lon, fmt) {
+  const pos = {};
+  for (const [k] of LAYERS) {
+    pos[k] = AISTRO.layerPositions(R, jdB, jdT, k, lat, lon, TZ);
+  }
+  const head = "<tr><th>ปัจจัย</th>" +
+    LAYERS.map(([k, th], i) =>
+      `<th data-l="${i}" title="คลิกเพื่อดูคำอธิบาย"><b>${th}</b><i>${k}</i></th>`)
+      .join("") + "</tr>";
+  const body = AISTRO.CODE_ORDER.map((c) =>
+    `<tr><td class="fk f-${AISTRO.FACTOR_CLASS[c]}">${c}</td>` +
+    LAYERS.map(([k]) => `<td>${fmt(pos[k][c])}</td>`).join("") + "</tr>").join("");
+  $("laytab").innerHTML = head + body;
+  $("laynote").textContent = "";
+  $("laytab").querySelectorAll("th[data-l]").forEach((th) => {
+    th.addEventListener("click", () => {
+      const [k, name, why] = LAYERS[+th.dataset.l];
+      $("laynote").textContent = `${k} · ${name} — ${why}`;
+    });
+  });
+}
+
+// ── ประเภทดวง ────────────────────────────────────────────────────────────
+// เว็บ AISTRO มีช่องนี้เหมือนกัน และ**ไม่กระทบการคำนวณเลย** (พิสูจน์แล้ว:
+// สลับบุคคล<->บริษัทแล้ว SVG จานดวงเหมือนกันทุกไบต์) มันเป็นบริบทให้คำแปล
+// เก็บไว้ก่อนเพื่อใช้ตอนทำพจนานุกรมคำแปลแยกบริบท
+const CTYPE_LABEL = {
+  "บุคคล": ["วันเกิด (วัน/เดือน/ปี พ.ศ. หรือ ค.ศ.)", "เวลาเกิด", "สถานที่เกิด"],
+  "ประเทศ/เมือง": ["วันสถาปนา (วัน/เดือน/ปี)", "เวลาสถาปนา", "สถานที่"],
+  "บริษัท/องค์กร": ["วันจดทะเบียน/ก่อตั้ง (วัน/เดือน/ปี)", "เวลาจดทะเบียน", "สถานที่จดทะเบียน"],
+  "หุ้น/ตลาดหลักทรัพย์": ["วันเข้าตลาดวันแรก (วัน/เดือน/ปี)", "เวลาเปิดตลาด", "ที่ตั้งตลาด"],
+};
+
+function syncCtype() {
+  const v = $("ctype").value;
+  const L = CTYPE_LABEL[v] || CTYPE_LABEL["บุคคล"];
+  // ใช้ id ตรง ๆ — เคยจับด้วยข้อความแล้วป้ายค้างเพราะข้อความเปลี่ยนไปแล้วจับไม่เจอ
+  $("blab").textContent = L[0];
+  $("tlab").textContent = L[1];
+  $("plab").textContent = L[2];
+  $("ctnote").textContent = v === "บุคคล" ? ""
+    : "ประเภทดวงไม่เปลี่ยนการคำนวณ — ตำแหน่งดาวและสูตรเหมือนเดิมทุกประการ " +
+      "(เว็บ AISTRO ก็ทำแบบเดียวกัน) ใช้เป็นบริบทสำหรับคำแปลในอนาคต";
+}
+$("ctype").addEventListener("change", syncCtype);
+// เลือกสถานที่แล้วต้องตั้งเขตเวลาตาม ไม่งั้นค่าเดิมค้างแล้วคำนวณผิดโดยไม่รู้ตัว
+//   จังหวัดไทย → +7 เสมอ
+//   เมืองต่างประเทศ → เขตเวลามาตรฐานของเมืองนั้น (ตัวที่สามใน value)
+//   กำหนดเอง → ไม่แตะ ปล่อยผู้ใช้ตั้งเอง
+function onPlaceChange() {
+  const v = $("place").value;
+  $("latlon").style.display = v === "custom" ? "" : "none";
+  if (v === "custom") { placeTzNote(false); return; }
+  const p = v.split(",");
+  if (p.length >= 3) {
+    const tz = Number(p[2]);
+    $("tz").value = String(tz);
+    const opt = $("place").selectedOptions[0];
+    placeTzNote(true, opt ? opt.text.trim() : "", tz);
+  } else {
+    $("tz").value = "7";
+    placeTzNote(false);
+  }
+}
+$("place").addEventListener("change", onPlaceChange);
+$("pcountry").addEventListener("change", () => {
+  // สลับประเทศแล้วเด้งไปตัวแรกตามตัวอักษร ("กระบี่") จะงง — ตั้งค่าเริ่มที่คุ้นเคยแทน
+  fillPlaces($("pcountry").value === "th" ? "13.7563,100.5018" : null);
+  onPlaceChange();
+  if (!$("go").disabled) run();
+});
+fillPlaces("13.7563,100.5018");
+
+// ── สลับแท็บ ──────────────────────────────────────────────────────────────
+// แผงหนักอย่างแผนที่ชีวิต/จาน วาดตอนเปิดครั้งแรกเท่านั้น ไม่วาดตอนกดคำนวณ
+// ช่วงตารางดูดวงจร — ย้อนหลังได้ถึง 6 เดือน ล่วงหน้าได้ถึง 12 เดือน
+// ค่าปริยาย 6–6 = 13 เดือน (พฤติกรรมเดิม fixture ทั้งหมดยึดค่านี้)
+// จานหมุนของตารางดูดวงจร — ชุดเดียวกับเว็บเป๊ะ (radio `dialSolarArcSetting`)
+//   360° · 90° · 45° · 22°30′ · 11°15′
+// เว็บเขียนกำกับไว้เองว่า "แนะนำ 90° หรือมากกว่าอายุจริง" สำหรับช่วงยาว
+// และตั้งค่าปริยายไม่เท่ากันในแต่ละหน้า — 22°30′ ในหน้าดูดวงกำเนิด+จร
+// แต่ **90°** ในหน้าดูดวงตลอดชีวิต เพราะโค้งเดินไกลกว่า ตารางจะท่วม
+// ที่นี่ใช้ 22.5 เป็นค่าปริยาย = ตรงกับหน้าที่เราสอบเทียบ fixture มา 100 ดวง
+// ── สถานที่เกิด: ไทย 77 จังหวัด / ต่างประเทศ 55 ประเทศ (app/places.js) ────
+// value ของ <option> = "lat,lon" (ไทย) หรือ "lat,lon,tz" (ต่างประเทศ)
+// run() อ่านแค่สองตัวแรกอยู่แล้ว ตัวที่สามจึงไม่กระทบการคำนวณ
+// ใช้เติมช่อง "เขตเวลา" ให้อัตโนมัติเมื่อเลือกเมืองต่างประเทศเท่านั้น
+// สร้างรายการ <option> จากข้อมูล — **ฟังก์ชันบริสุทธิ์ ไม่แตะ DOM**
+// ต้องแยกออกมาเพราะป๊อปอัพก็ใช้ ถ้าให้ป๊อปอัพยืม <select> หลักมาสร้างรายการ
+// (เคยทำแบบนั้น) ค่าที่เลือกไว้ในฟอร์มหลักจะถูกกวนจนหล่นไปตัวแรกเงียบ ๆ
+function placesHTML(mode) {
+  const intl = mode === "intl";
+  const P = globalThis.URAN_PLACES;
+  let h = "";
+  if (!P) {
+    h = '<option value="13.7563,100.5018">กรุงเทพมหานคร</option>';
+  } else if (intl) {
+    for (const [country, cities] of P.intl) {
+      h += `<optgroup label="${AISTRO_RENDER.esc(country)}">`;
+      for (const [city, la, lo, tz] of cities)
+        h += `<option value="${la},${lo},${tz}">${AISTRO_RENDER.esc(city)}</option>`;
+      h += "</optgroup>";
+    }
+  } else {
+    for (const [prov, la, lo] of P.th)
+      h += `<option value="${la},${lo}">${AISTRO_RENDER.esc(prov)}</option>`;
+  }
+  h += '<option value="custom">กำหนดเอง…</option>';
+  return h;
+}
+function fillPlaces(keepValue) {
+  $("place").innerHTML = placesHTML($("pcountry").value);
+  if (keepValue) $("place").value = keepValue;
+  if (!$("place").value) $("place").selectedIndex = 0;
+}
+// เตือนเรื่อง daylight saving — เขตเวลาในตารางเป็น "เวลามาตรฐาน" เท่านั้น
+// เกิดที่นิวยอร์กเดือน ก.ค. ต้องใช้ −4 (EDT) ไม่ใช่ −5 (EST) ถ้าไม่บอกจะได้ดวงผิด 1 ชม.
+function placeTzNote(show, city, tz) {
+  const el = $("tznote");
+  el.hidden = !show;
+  if (show) el.innerHTML =
+    `ตั้งเขตเวลาเป็น <b>${tz >= 0 ? "+" : "−"}${Math.abs(tz)}</b> ` +
+    `ตามเวลามาตรฐานของ${AISTRO_RENDER.esc(city)}แล้ว — ` +
+    `<b>ถ้าเกิดช่วง daylight saving ต้องบวกเองอีก 1 ชั่วโมง</b> ` +
+    `(และบางประเทศเคยเปลี่ยนกฎเขตเวลาในอดีต ตรวจกับเอกสารการเกิดอีกครั้ง)`;
+}
+
+const MDIALS = [[360, "360°"], [90, "90°"], [45, "45°"],
+                [22.5, "22°30′"], [11.25, "11°15′"]];
+let MDIAL = AISTRO.DIAL_DEFAULT;            // 22.5
+const MB_MAX = 12, MF_MAX = 12;
+function fillMonthRange() {
+  const opt = (n, sel) => `<option value="${n}"${n === sel ? " selected" : ""}>${n}</option>`;
+  let a = "", b = "";
+  for (let i = 0; i <= MB_MAX; i++) a += opt(i, 6);
+  for (let i = 0; i <= MF_MAX; i++) b += opt(i, 6);
+  $("mback").innerHTML = a; $("mfwd").innerHTML = b;
+}
+// สรุปสดว่าเลือกแล้วได้ตารางกี่เดือน — ไม่ต้องกดคำนวณก่อนถึงจะรู้
+function mrSum() {
+  const [mb, mf] = monthRange();
+  $("mrsum").textContent =
+    `· เลือกอยู่ = ${mb + mf + 1} เดือน (` +
+    (mb ? `ย้อนหลัง ${mb} · ` : "") + "เดือนดวงจร" + (mf ? ` · ล่วงหน้า ${mf}` : "") + ")";
+}
+fillMonthRange();
+function fillMDial() {
+  $("mdial").innerHTML = MDIALS.map(([v, lab]) =>
+    `<span class="laychip${v === MDIAL ? " on" : ""}" data-md="${v}">${lab}</span>`)
+    .join("");
+}
+fillMDial();
+$("mdial").addEventListener("click", (e) => {
+  const c = e.target.closest("[data-md]");
+  if (!c) return;
+  MDIAL = +c.dataset.md;
+  fillMDial();
+  if (!$("go").disabled) run();
+});
+
+const monthRange = () => [
+  Math.max(0, Math.min(MB_MAX, +$("mback").value || 0)),
+  Math.max(0, Math.min(MF_MAX, +$("mfwd").value || 0)),
+];
+mrSum();
+
+const PANEL_DRAW = {};
+let CUR_PANEL = "pdial";
+
+function showPanel(id) {
+  CUR_PANEL = id;
+  document.querySelectorAll(".panel").forEach(
+    (p) => p.classList.toggle("on", p.id === id));
+  document.querySelectorAll(".tab").forEach(
+    (t) => t.classList.toggle("on", t.dataset.p === id));
+  const fn = PANEL_DRAW[id];
+  // ครอบไว้ — ถ้าแผงไหนโยน exception จะได้ไม่ทำให้การสลับแท็บค้างครึ่งทาง
+  // (คลาสสลับไปแล้วแต่เนื้อหาเป็นของเก่า) และผู้ใช้ต้องเห็นว่าเกิดอะไรขึ้น
+  if (fn) {
+    try { fn(); }
+    catch (e) {
+      const st = $("status");
+      st.className = "err";
+      st.textContent = `แท็บนี้วาดไม่สำเร็จ: ${e && e.message ? e.message : e}` +
+        " — แท็บอื่นยังใช้ได้ ลองเปลี่ยนค่าแล้วคำนวณใหม่";
+    }
+  }
+}
+document.querySelectorAll(".tab").forEach((t) =>
+  t.addEventListener("click", () => showPanel(t.dataset.p)));
+
+// ── ไทม์ไลน์ช่วงวัน ────────────────────────────────────────────────────────
+
+function renderTimeline() {
+  if (!TL) return;
+  const wide = $("tlrange").value === "13";
+  $("tlmonthwrap").style.display = wide ? "none" : "";
+  const i = +$("tlmonth").value;
+  const idx = wide ? TL.months.map((_, k) => k) : [i];
+  const onlyPer = $("tlper").checked;
+  const hourUt = ((((TL.jdT + 0.5) % 1.0) + 1.0) % 1.0) * 24.0;
+  // ขอบช่วงตามเวลาไทย — ผู้ใช้อ่านวันที่แบบไทย ไม่ใช่ UT
+  const [y0, m0] = TL.months[idx[0]];
+  const [y9, m9] = TL.months[idx[idx.length - 1]];
+  const dim9 = new Date(Date.UTC(y9, m9, 0)).getUTCDate();
+  const jd0 = AISTRO.julday(y0, m0, 1, -TZ);
+  const jd1 = AISTRO.julday(y9, m9, dim9, 24 - TZ);
+  const span = jd1 - jd0;
+  const yy = wide ? null : y0;
+
+  // เดือนติดกันให้แถวเดิมซ้ำ — ยุบด้วยข้อความแถว + วันแม่นสุด
+  const seen = new Set(), items = [];
+  for (const k of idx) {
+    const [ky, km] = TL.months[k];
+    const jdRef = AISTRO.julday(ky, km, 15, hourUt);
+    for (const r of TL.tables[k]) {
+      const flags = AISTRO_RENDER.rowFlags(r);
+      if (onlyPer && flags.indexOf("has-per") < 0) continue;
+      const tone = flags.indexOf("has-good") >= 0
+        ? (flags.indexOf("has-bad") >= 0 ? "mix" : "good")
+        : (flags.indexOf("has-bad") >= 0 ? "bad" : "neutral");
+      const txt = AISTRO.rowText(r);
+      for (const [who, a, peak, b] of AISTRO.activationDates(TL.R, TL.jd, r, jdRef, { tz: TZ, dial: MDIAL })) {
+        if (b < jd0 || a > jd1) continue;      // ช่วงไม่แตะช่วงที่ดูอยู่
+        const key = txt + "|" + who + "|" + peak.toFixed(1);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        items.push({ r, who, a, peak, b, tone, flags });
+      }
+    }
+  }
+  items.sort((p, q) => p.peak - q.peak);
+
+  // ช่วงของดาวช้า (AD/AP/KR) ยาวข้ามปีได้ — ต้องเติม พ.ศ. ไม่งั้นอ่านผิดปี
+  const dd = (jd) => {
+    const c = AISTRO.revjul(jd + TZ / 24);
+    return c[2] + "/" + c[1] + (c[0] === yy ? "" : "/" + String(c[0] + 543).slice(2));
+  };
+  const clip = (jd) => Math.max(jd0, Math.min(jd1, jd));
+  const pct = (jd) => Math.max(0, Math.min(100, (jd - jd0) / span * 100));
+
+  const ticks = [];
+  if (wide) {
+    for (const k of idx) {
+      const [ky, km] = TL.months[k];
+      const at = (AISTRO.julday(ky, km, 15, -TZ) - jd0) / span * 100;
+      ticks.push(`<div style="left:${at}%">${km}</div>`);
+    }
+  } else {
+    const dim = new Date(Date.UTC(y0, m0, 0)).getUTCDate();
+    for (let k = 1; k <= dim; k += Math.max(1, Math.round(dim / 8))) {
+      ticks.push(`<div style="left:${(k - 1) / dim * 100}%">${k}</div>`);
+    }
+  }
+  const body = items.map((it) => {
+    const L = pct(clip(it.a)), Rt = pct(clip(it.b));
+    const inside = it.peak >= jd0 && it.peak <= jd1;
+    // ป้ายซ้ายถูกตัดท้ายเมื่อสูตรยาว จึงใส่ข้อความเต็มไว้ในทูลทิปด้วย
+    const tip = AISTRO.rowText(it.r) + "\n" +
+      `${it.who === "โค้ง" ? "โค้งสุริยยาตร์" : "ดาวจร " + it.who}` +
+      ` · เข้า ${dd(it.a)} · แม่นสุด ${dd(it.peak)} · ออก ${dd(it.b)}`;
+    return `<div class="grow ${it.flags}" title="${AISTRO_RENDER.esc(tip)}">` +
+      `<div class="glab">${AISTRO_RENDER.rowHtml(it.r)}</div>` +
+      `<div class="gtrack"><div class="gbar ${it.tone}" ` +
+      `style="left:${L}%;width:${Math.max(0.6, Rt - L)}%"></div>` +
+      (inside ? `<div class="gpk" style="left:${pct(it.peak)}%"></div>` : "") +
+      `</div>` +
+      `<div class="gdate">${dd(it.peak)}</div></div>`;
+  }).join("");
+
+  $("tlsel").textContent = "";   // แถบอ่านค่าชี้แถวเก่าอยู่ ต้องล้างก่อนวาดใหม่
+  $("gwrap").innerHTML =
+    `<div class="gscale">${ticks.join("")}</div>` +
+    (items.length ? body : '<div class="gempty">ไม่มีสูตรในเดือนนี้</div>');
+  $("tlcount").textContent =
+    `${items.length} ช่วง · แถบ = ช่วงในระยะ orb · ขีดตั้ง = วันแม่นสุด` +
+    ` · ตัวเลขขวา = วันแม่นสุด · แตะแถวเพื่อดูวันเข้า–ออก`;
+}
+$("tlmonth").addEventListener("change", renderTimeline);
+$("tlper").addEventListener("change", renderTimeline);
+$("tlrange").addEventListener("change", renderTimeline);
+// ต้องวาดตอนเปิดแท็บด้วย ไม่งั้นไทม์ไลน์ว่างจนกว่าจะไปแตะช่องเลือก
+// แถวไทม์ไลน์ก็บอกรายละเอียดผ่าน title อย่างเดียวเหมือนแผนที่ชีวิต
+$("gwrap").addEventListener("click", (e) => {
+  const r = e.target.closest(".grow");
+  const prev = $("gwrap").querySelector(".grow.on");
+  if (prev) prev.classList.remove("on");
+  if (!r) { $("tlsel").textContent = ""; return; }
+  r.classList.add("on");
+  $("tlsel").textContent = r.getAttribute("title") || "";
+});
+PANEL_DRAW.ptl = renderTimeline;
+
+// ── แผนที่ชีวิต ───────────────────────────────────────────────────────────
+
+function drawLife() {
+  if (!TL) return;
+  if (LIFE) return;                    // คิดแล้วไม่ต้องคิดซ้ำจนกว่าจะเปลี่ยนดวง
+  $("lifecount") && ($("lifecount").textContent = "");
+  $("lfcount").textContent = "กดคำนวณ";
+}
+
+// ผลของแผนที่ชีวิตขึ้นกับ 4 อย่างเท่านั้น (ดวง · จำนวนปี · เฉพาะจุดส่วนตัว · ชนิดแถว)
+// เดิมกดปุ่มคำนวณซ้ำด้วยค่าเดิมก็คิดใหม่หมด — 2,749 จุดใช้ 68 ms, 7,393 จุดใช้ 148 ms
+// ทุกครั้ง · เก็บทั้งผลและ HTML ที่วาดแล้วไว้ คืนของเดิมเมื่อพารามิเตอร์ไม่เปลี่ยน
+let LIFEMEMO = null;
+function runLife() {
+  if (!TL) return;
+  const years = +$("lfage").value;
+  const kinds = $("lft4").checked ? [1, 2, 3, 4] : [1, 2, 3];
+  const memoKey = [years, $("lfper").checked, kinds.join("")].join("|");
+  if (LIFEMEMO && LIFEMEMO.key === memoKey) {
+    LIFE = LIFEMEMO.ev;
+    // ถ้าสิ่งที่วาดอยู่คือชุดนี้อยู่แล้ว ก็ไม่ต้องเขียน HTML 0.7 MB ทับตัวเอง
+    if ($("lifewrap").dataset.k !== memoKey) {
+      $("lifewrap").innerHTML = LIFEMEMO.html;
+      $("lifewrap").dataset.k = memoKey;
+    }
+    $("lfcount").textContent = LIFEMEMO.count;
+    $("lfsel").textContent = "";
+    $("lfcut").hidden = !LIFEMEMO.cutTxt;
+    if (LIFEMEMO.cutTxt) $("lfcut").textContent = LIFEMEMO.cutTxt;
+    return;
+  }
+  $("lfcount").textContent = "กำลังคิด…";
+  const t0 = performance.now();
+  const ev = AISTRO.lifetimeEvents(TL.R, TL.jd,
+    { years: years, personalOnly: $("lfper").checked, kinds: kinds, tz: TZ });
+  LIFE = ev;
+  const bYear = AISTRO.revjul(TL.jd + TZ / 24)[0];
+  // จัดกลุ่มเป็นรายปีอายุ — 70 ปีมีหลายพันเหตุการณ์ แสดงรวดเดียวอ่านไม่ไหว
+  // ข้อมูลดาวจบที่ ค.ศ. 2099 ถ้าอายุที่ขอเลยไป แถวที่เหลือจะว่างทั้งที่ไม่ได้แปลว่า
+  // "ไม่มีเหตุการณ์" — ตัดแถวทิ้งแล้วบอกให้ชัดแทน
+  const maxYears = Math.floor((AISTRO.JD_MAX - TL.jd) / 365.2422);
+  const shown = Math.min(years, Math.max(0, maxYears));
+  const cut = shown < years;
+  const buckets = [];
+  for (let a = 0; a < shown; a++) buckets.push([]);
+  for (const e of ev) {
+    const age = Math.floor((e.peak - TL.jd) / 365.2422);
+    if (age >= 0 && age < shown) buckets[age].push(e);
+  }
+  const maxN = Math.max(1, ...buckets.map((b) => b.length));
+  const tone = (e) => {
+    const f = new Set([...e.lead, ...e.natal, ...e.transit]);
+    const has = (cls) => [...f].some((k) => AISTRO.FACTOR_CLASS[k] === cls);
+    const g = has("good"), b = has("bad");
+    return g && b ? "mix" : g ? "good" : b ? "bad" : "neutral";
+  };
+  const dd = (jd) => { const c = AISTRO.revjul(jd + TZ / 24);
+    return c[2] + "/" + c[1] + "/" + String(c[0] + 543).slice(2); };
+
+  const rows = buckets.map((b, age) => {
+    if (!b.length) {
+      return `<div class="lrow"><div class="lage">${age}</div>` +
+        `<div class="lyear">${bYear + age + 543}</div>` +
+        `<div class="lbars"></div><div class="lnum">0</div></div>`;
+    }
+    const bars = b.map((e) => {
+      const t = AISTRO.rowText(e);
+      const tip = `อายุ ${age} · ${t}\n` +
+        `${e.who === "โค้ง" ? "โค้งสุริยยาตร์" : "ดาวจร " + e.who}` +
+        ` · เข้า ${dd(e.start)} · แม่นสุด ${dd(e.peak)} · ออก ${dd(e.end)}`;
+      return `<i class="lp ${tone(e)}" title="${AISTRO_RENDER.esc(tip)}"></i>`;
+    }).join("");
+    const w = b.length / maxN * 100;
+    return `<div class="lrow"><div class="lage">${age}</div>` +
+      `<div class="lyear">${bYear + age + 543}</div>` +
+      `<div class="lbars" style="--w:${w}%">${bars}</div>` +
+      `<div class="lnum">${b.length}</div></div>`;
+  }).join("");
+  const countTxt =
+    `${ev.length.toLocaleString()} เหตุการณ์ · หนาสุด ${maxN} ครั้งในปีเดียว · ` +
+    `${(performance.now() - t0).toFixed(0)} ms · แตะจุดเพื่อดูสูตรกับวันที่`;
+  const cutTxt = cut
+    ? `⚠️ ตารางดาวมีถึง ค.ศ. 2099 (พ.ศ. 2642) เท่านั้น แผนที่นี้จึงหยุดที่อายุ ` +
+      `${shown} ปี ไม่ใช่ ${years} ปี — ปีที่เกินไม่ได้แปลว่าไม่มีเหตุการณ์`
+    : "";
+  $("lifewrap").innerHTML = rows;
+  $("lifewrap").dataset.k = memoKey;
+  $("lfcount").textContent = countTxt;
+  $("lfsel").textContent = "";
+  $("lfcut").hidden = !cut;
+  if (cut) $("lfcut").textContent = cutTxt;
+  LIFEMEMO = { key: memoKey, ev, html: rows, count: countTxt, cutTxt };
+}
+$("lfgo").addEventListener("click", runLife);
+// จุดในแผนที่ชีวิตเดิมบอกรายละเอียดผ่าน title อย่างเดียว = ต้อง "ชี้"
+// บนมือถือไม่มีการชี้ ข้อมูลทั้งแผนที่จึงแตะไม่ถึงเลย — เพิ่มแถบอ่านค่าถาวร
+$("lifewrap").addEventListener("click", (e) => {
+  const d = e.target.closest(".lp");
+  const prev = $("lifewrap").querySelector(".lp.on");
+  if (prev) prev.classList.remove("on");
+  if (!d) { $("lfsel").textContent = ""; return; }
+  d.classList.add("on");
+  $("lfsel").textContent = d.getAttribute("title") || "";
+});
+PANEL_DRAW.plife = drawLife;
+
+// ── สัญลักษณ์ดาว ──────────────────────────────────────────────────────────
+// ดาวหลัก 12 ตัวมีใน Unicode และฟอนต์ระบบวาดได้ (ตรวจจริงแล้ว)
+// ดาวทิพย์ 8 ตัวอยู่ที่ U+2BE0–2BE7 แต่ไม่มีฟอนต์ไหนในเครื่องรองรับ
+// จึงวาดจากเส้นขอบใน glyphs.js แทน — ไม่ต้องโหลดฟอนต์ ใช้ออฟไลน์ได้
+const GLYPH_UNI = {
+  AR: "♈", SU: "☉", MO: "☽", NO: "☊", ME: "☿",
+  VE: "♀", MA: "♂", JU: "♃", SA: "♄", UR: "♅",
+  NE: "♆", PL: "♇",
+};
+const GLYPH_BOX = {};
+function glyphBox(code) {
+  if (GLYPH_BOX[code]) return GLYPH_BOX[code];
+  let x0 = 9, y0 = 9, x1 = -9, y1 = -9;
+  for (const c of (globalThis.URAN_GLYPHS || {})[code] || []) {
+    for (let i = 1; i < c.length; i += 2) {
+      const x = c[i], y = c[i + 1];
+      if (x < x0) x0 = x; if (x > x1) x1 = x;
+      if (y < y0) y0 = y; if (y > y1) y1 = y;
+    }
+  }
+  return (GLYPH_BOX[code] = { x0, y0, x1, y1 });
+}
+// วาดสัญลักษณ์กลางที่ (x,y) สูงประมาณ h พิกเซล · คืน true ถ้าวาดได้
+function drawGlyph(ctx, code, x, y, h, color) {
+  const uni = GLYPH_UNI[code];
+  if (uni) {
+    ctx.fillStyle = color;
+    ctx.font = `${Math.round(h * 1.25)}px "Apple Symbols","Segoe UI Symbol",` +
+      `"Noto Sans Symbols 2",system-ui,sans-serif`;
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(uni, x, y);
+    return true;
+  }
+  const path = (globalThis.URAN_GLYPHS || {})[code];
+  if (!path || !path.length) return false;
+  const b = glyphBox(code);
+  const w = b.x1 - b.x0, hh = b.y1 - b.y0;
+  if (!(w > 0 && hh > 0)) return false;
+  const k = h / hh;
+  ctx.save();
+  ctx.translate(x - (b.x0 + w / 2) * k, y - (b.y0 + hh / 2) * k);
+  ctx.scale(k, k);
+  ctx.beginPath();
+  for (const c of path) {
+    if (c[0] === "M") ctx.moveTo(c[1], c[2]);
+    else if (c[0] === "L") ctx.lineTo(c[1], c[2]);
+    else if (c[0] === "Q") ctx.quadraticCurveTo(c[1], c[2], c[3], c[4]);
+    else ctx.closePath();
+  }
+  ctx.fillStyle = color; ctx.fill("nonzero");
+  ctx.restore();
+  return true;
+}
+
+// ── จาน 90° ───────────────────────────────────────────────────────────────
+// AISTRO ใช้จาน 22.5° (90/4) ในตารางดูดวงจร แต่จานที่คนอ่านคือ 90°
+// พับ 360 -> 90 ดาวที่ตรงกันคือคู่ที่ทำมุมในตระกูล 0/45/90
+
+const ZODIAC = ["♈","♉","♊","♋","♌","♍","♎","♏","♐","♑","♒","♓"];
+
+function dms(v, sep) {
+  // ใช้กับลองจิจูด/โค้ง (0–360) — ปัดวินาทีแล้วพันรอบวง กัน 359°59′59.9″ โชว์ 360:00:00
+  let t = Math.round(v * 3600) % 1296000;
+  const d = Math.floor(t / 3600); t -= d * 3600;
+  const m = Math.floor(t / 60), sec = t - m * 60;
+  return d + sep + String(m).padStart(2, "0") + sep + String(sec).padStart(2, "0");
+}
+function zodStr(lon) {
+  // ปัดเป็น "นาทีรวมทั้งวง" ก่อน แล้วค่อยแยกราศี — กันเคส 29°59.5′ ปัดเป็น 30°00′
+  // แล้วค้างราศีเดิม (ต้องทดเป็น 0°00′ ของราศีถัดไป)
+  const t = Math.round((((lon % 360) + 360) % 360) * 60) % 21600;
+  const si = Math.floor(t / 1800), r = t - si * 1800;
+  return Math.floor(r / 60) + ZODIAC[si] + String(r % 60).padStart(2, "0");
+}
+function coordStr(lat, lon) {
+  const f = (v, pos, neg) => {
+    const a = Math.abs(v), d = Math.floor(a), m = Math.round((a - d) * 60);
+    return d + (v >= 0 ? pos : neg) + String(m).padStart(2, "0");
+  };
+  return f(lon, "E", "W") + " " + f(lat, "N", "S");
+}
+function ageParts(jdB, jdT) {
+  const b = AISTRO.revjul(jdB + TZ / 24), t = AISTRO.revjul(jdT + TZ / 24);
+  let y = t[0] - b[0], m = t[1] - b[1], d = t[2] - b[2];
+  if (d < 0) { m--; d += new Date(Date.UTC(t[0], t[1] - 1, 0)).getUTCDate(); }
+  if (m < 0) { y--; m += 12; }
+  return y + "y " + m + "m " + d + "d";
+}
+
+// คำนวณใหม่โดย **คงดาวที่เลือกไว้** แล้วเลื่อนเข็มไปเกาะดาวตัวนั้น
+// คืนข้อความผิดพลาดถ้า run() ล้ม · คืน null ถ้าสำเร็จ
+//
+// run() → clearResults() ล้าง DIALSEL ทิ้งเสมอ ถ้าไม่เก็บไว้คืน แกนที่เลือกจะหลุด
+// ทุกครั้งที่คำนวณ และเข็มค้างอยู่ที่องศาเดิมขณะที่ดาวเคลื่อนไป
+// เก็บเฉพาะการเลือก "ดาว" — แกนแบบองศาดิบมาจากช่อง #axdeg ที่ run() ล้างด้วย
+// ถ้าคืน DIALSEL แบบองศากลับมาโดยช่องว่าง จะได้แกนที่ทำงานอยู่แต่ไม่มีที่มาให้เห็น
+function recalcKeepingSel() {
+  const keep = DIALSEL && DIALSEL.deg === undefined ? DIALSEL : null;
+  run();
+  if ($("status").className === "err") return $("status").textContent;
+  if (keep) {
+    DIALSEL = keep;
+    drawDial();                    // สร้าง DIALPOS/DIALSTATE ของชั่วขณะใหม่ก่อน
+    if (handToSel()) drawDial();   // แล้วค่อยเลื่อนเข็มไปเกาะดาวตัวเดิม
+    renderAxisPanel();
+  }
+  return null;
+}
+
+// เขียนวันเวลาลงช่องดวงจรจากเลขวันจูเลียน (เวลาท้องถิ่นตาม TZ ที่กรอก)
+// แล้วคำนวณใหม่โดยคงดาวที่เลือก — ใช้ทั้งตอนเดินอัตโนมัติและตอนกดผลค้นหา
+function gotoJd(jd) {
+  const [y, m, d, h] = AISTRO.revjul(jd + TZ / 24);
+  if (y < 1900 || y > 2099)
+    return `วันที่ได้ (ค.ศ. ${y}) เลยช่วงข้อมูล 1900–2099`;
+  const wasBE = parseInt($("ty").value, 10) >= 2300;
+  const hh = Math.floor(h), mm = Math.round((h - hh) * 60);
+  $("td").value = String(d);
+  $("tm").value = String(m);
+  $("ty").value = String(wasBE ? y + 543 : y);
+  $("tt").value = String(mm === 60 ? hh + 1 : hh).padStart(2, "0") + ":" +
+                  String(mm === 60 ? 0 : mm).padStart(2, "0");
+  return recalcKeepingSel();
+}
+
+// เลื่อนเข็มไปตรงดาวที่เลือกอยู่ (DIALSEL) — คืน true ถ้าทำได้
+// ใช้ทั้งตอนคลิกเลือกดาว และตอนเดินอัตโนมัติเพื่อให้เข็ม "ติดอยู่กับดาว"
+// ไม่ใช่ค้างที่องศาเดิมขณะที่ดาวเคลื่อนไป
+function handToSel() {
+  if (!DIALSEL || DIALSEL.deg !== undefined || !DIALPOS || !DIALSTATE) return false;
+  const ring = { [$("dlr1").value]: 1, [$("dlr2").value]: 2,
+                 [$("dlr3").value]: 3 }[DIALSEL.src];
+  const pos = ring && DIALPOS.POS[ring];
+  if (!pos || pos[DIALSEL.c] === undefined) return false;
+  const DLv = DIALSTATE.dial;
+  $("dlhand").value = (((pos[DIALSEL.c] % DLv) + DLv) % DLv).toFixed(2);
+  return true;
+}
+
+function drawDial() {
+  if (!TL) return;
+  for (const id of ["dlr3", "dlr2", "dlr1"]) {
+    if (!$(id).options.length) {
+      $(id).innerHTML = LAYERS.map(([k, name]) =>
+        `<option value="${k}">${name} (${k})</option>`).join("");
+    }
+  }
+  if (!DIALSTATE) { $("dlr3").value = "t"; $("dlr2").value = "v1"; $("dlr1").value = "r"; }
+  const DL = +$("dldial").value;
+  const orb = +$("dlorb").value;
+  const hand = ((parseFloat($("dlhand").value) || 0) % DL + DL) % DL;
+  const L3 = $("dlr3").value, L2 = $("dlr2").value, L1 = $("dlr1").value;
+  // ตำแหน่งดาวไม่ขึ้นกับตำแหน่งเข็ม — คิดครั้งเดียวแล้วเก็บไว้
+  // ไม่งั้นทุกครั้งที่ขยับเข็มจะไปคำนวณ ephemeris ใหม่ 66 ค่า จนหมุนสะดุด
+  const posKey = [TL.jd, TL.jdT, TL.lat, TL.lon, L1, L2, L3].join("|");
+  if (!DIALPOS || DIALPOS.key !== posKey) {
+    DIALPOS = { key: posKey, POS: {
+      3: AISTRO.layerPositions(TL.R, TL.jd, TL.jdT, L3, TL.lat, TL.lon, TZ),
+      2: AISTRO.layerPositions(TL.R, TL.jd, TL.jdT, L2, TL.lat, TL.lon, TZ),
+      1: AISTRO.layerPositions(TL.R, TL.jd, TL.jdT, L1, TL.lat, TL.lon, TZ),
+    } };
+  }
+  const POS = DIALPOS.POS;
+
+  const cv = $("dlcv"), ctx = cv.getContext("2d");
+  const dpr = window.devicePixelRatio || 1;
+  const box = cv.parentElement.clientWidth;
+  const size = Math.max(320, Math.min(760, box - 2));
+  cv.style.width = size + "px"; cv.style.height = size + "px";
+  cv.width = size * dpr; cv.height = size * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const FACE = "#fdfdfa", BAND_Y = "#fdf6d5", BAND_B = "#dde8f7";
+  const LINE = "#8b9099", LINE2 = "#cbced4", TXT = "#23262b", PINK = "#e0157a";
+  const RED = "#e01010", GREEN = "#0f9c4a", FAINT = "#e9e9e4";
+  const CLS = { personal: "#1558c0", good: "#12803f", bad: "#c0261b",
+                booster: "#b8770d", neutral: "#4d545d" };
+
+  const cx = size / 2, cy = size / 2;
+  const RG = size / 2 - 2;              // ขอบนอกสุด (ที่ glyph วงนอกสุดวางอยู่)
+  const R  = RG - size * 0.072;         // วงกลมนอกของแถบเหลือง
+  const rY = R  - size * 0.066;         // เหลือง -> ฟ้า (แคบลง)
+  const rB = rY - size * 0.066;         // ฟ้า -> สเกล (แคบลง)
+  const rS = rB - size * 0.100;         // ในสุดของแถบสเกล — วงกลางจึงโตขึ้น
+  // จานจริง: แผ่นดาวอยู่นิ่ง แผ่นใสที่มีเข็มกับสเกลเป็นตัวหมุน
+  // จึงวาดดาวด้วยองศาจริง แล้วให้เข็ม/สเกลเลื่อนไปตามค่า hand
+  const ang = (d) => (d / DL) * Math.PI * 2 - Math.PI / 2;
+  const P = (r, a) => [cx + Math.cos(a) * r, cy + Math.sin(a) * r];
+
+  ctx.clearRect(0, 0, size, size);
+  const ring = (r1, r0, fill) => {
+    ctx.beginPath(); ctx.arc(cx, cy, r1, 0, Math.PI * 2);
+    ctx.arc(cx, cy, r0, 0, Math.PI * 2, true);
+    ctx.fillStyle = fill; ctx.fill("evenodd");
+  };
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fillStyle = FACE; ctx.fill();
+  ring(R, rY, BAND_Y); ring(rY, rB, BAND_B);
+  ctx.strokeStyle = LINE; ctx.lineWidth = 1;
+  for (const r of [R, rY, rB, rS]) {
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+  }
+
+  // ── ราศีจาง ๆ กลางจาน (แบบจานอ้างอิง) ────────────────────────────────
+  ctx.fillStyle = FAINT;
+  ctx.font = `${Math.round(size * 0.095)}px "Apple Symbols","Segoe UI Symbol",serif`;
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  [["♈", -90], ["♉", 150], ["♊", 30]].forEach(([g, deg]) => {
+    const a = deg * Math.PI / 180;
+    ctx.fillText(g, cx + Math.cos(a) * rS * 0.50, cy + Math.sin(a) * rS * 0.50);
+  });
+
+  // ── สเกลหมุนตามเข็ม: นับ 0 ที่เข็ม เพิ่มขึ้นสองทางจนถึง DL/2 ──────────
+  const half = DL / 2;
+  const step = DL / 180;
+  // ไล่จาก "ระยะห่างจากเข็ม" ไม่ใช่ตำแหน่งบนจอ — ไม่งั้นค่าไม่ลงตัวที่ 2/5
+  // แล้ววาดสองฝั่งของเข็ม (เข็ม+off กับ เข็ม−off)
+  const nearM = (x, m) => Math.abs(x / m - Math.round(x / m)) < 1e-9;
+  for (let j = 0; j * step <= half + 1e-9; j++) {
+    const off = j * step;
+    // สเกลจาน 90: รอบวง = 90° ครึ่งวง = 45° · ตัวเลขแดงตัวใหญ่ทุก 5°
+    const isMaj = nearM(off, DL / 18);          // ทุก 5° — ขีดยาว + ตัวเลข
+    const isUnit = nearM(off, DL / 90);         // ทุก 1° — ขีดกลาง
+    const len = isMaj ? size * 0.034 : isUnit ? size * 0.019 : size * 0.010;
+    const sides = (off === 0 || Math.abs(off - half) < 1e-9) ? [1] : [1, -1];
+    for (const sgn of sides) {
+      const a = ang(hand + sgn * off);
+      ctx.beginPath();
+      ctx.moveTo(...P(rB, a)); ctx.lineTo(...P(rB - len, a));
+      ctx.strokeStyle = isMaj ? TXT : isUnit ? LINE : LINE2;
+      ctx.lineWidth = isMaj ? 1.4 : 1; ctx.stroke();
+      if (isMaj) {
+        const val = DL === 90 ? Math.round(off) : +off.toFixed(2);
+        ctx.save();
+        const [tx, ty] = P(rB - size * 0.034 - size * 0.022, a);
+        const flip = Math.sin(a) > 0;
+        ctx.translate(tx, ty); ctx.rotate(a + (flip ? -Math.PI / 2 : Math.PI / 2));
+        ctx.fillStyle = PINK;
+        ctx.font = `600 ${Math.round(size * 0.020)}px system-ui`;
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(String(val), 0, 0);
+        ctx.restore();
+      }
+    }
+  }
+
+  // ระยะ orb แสดงด้วยเส้นประสองข้างของแต่ละแกน (ดูส่วน orbEdges ด้านล่าง)
+  // ไม่ใช้แถบชมพูหนาแล้ว — บังสเกลและอ่านยากกว่าเส้นขอบเขต
+  ctx.beginPath(); ctx.arc(cx, cy, rS, 0, Math.PI * 2);
+  ctx.strokeStyle = "#eec3d6"; ctx.lineWidth = 1; ctx.stroke();
+
+  // ── ดาวสามวง ─────────────────────────────────────────────────────────
+  const place = (POSn, rTick, rGlyph, dir, layKey) => {
+    const items = AISTRO.CODE_ORDER
+      .map((c) => ({ c, d: ((POSn[c] % DL) + DL) % DL }))
+      .sort((a, b) => a.d - b.d);
+    const n = items.length;
+    const fs = Math.round(size * 0.021);
+    // เยื้องเฉพาะตัวที่ชิดกันจน "สัญลักษณ์ทับกันจริง" เท่านั้น
+    // ระยะขั้นต่ำจึงคิดจากความกว้างจริงของสัญลักษณ์บนวงนั้น ไม่ใช่ค่าตายตัว
+    // (บนจาน 90 ออกมาราว 1° เท่านั้น ดาวส่วนใหญ่จึงอยู่ตำแหน่งจริงไม่ขยับ)
+    const minSep = DL * (fs * 1.05) / (2 * Math.PI * rGlyph);
+    for (const it of items) it.dd = it.d;
+    for (let pass = 0; pass < 60; pass++) {
+      let moved = false;
+      for (let i = 0; i < n; i++) {
+        const j = (i + 1) % n;
+        let gap = items[j].dd - items[i].dd;
+        if (j === 0) gap += DL;
+        if (gap < minSep - 1e-9) {
+          const push = (minSep - gap) / 2;
+          items[i].dd -= push; items[j].dd += push;
+          moved = true;
+        }
+      }
+      if (!moved) break;
+    }
+    // กันไม่ให้ตัวไหนเยื้องไปไกลเกินหนึ่งความกว้างสัญลักษณ์
+    for (const it of items) {
+      const off = it.dd - it.d;
+      if (off > minSep) it.dd = it.d + minSep;
+      else if (off < -minSep) it.dd = it.d - minSep;
+    }
+    const rLab = rGlyph;
+    for (const it of items) {
+      const a0 = ang(it.d), a1 = ang(it.dd);
+      const col = CLS[AISTRO.FACTOR_CLASS[it.c]] || TXT;
+      const bent = Math.abs(it.dd - it.d) > 1e-6;
+      // เส้นตรงเฉียงจากจุดที่องศาจริงไปหาสัญลักษณ์ที่เยื้องไป (ไม่หักข้อศอก)
+      ctx.beginPath();
+      ctx.moveTo(...P(rTick, a0));
+      ctx.lineTo(...P(rLab - dir * fs * 0.70, a1));
+      ctx.strokeStyle = col;
+      ctx.lineWidth = bent ? 1 : 1.5;
+      ctx.stroke();
+      // จุดเล็กที่องศาจริง — ทำให้อ่านตำแหน่งได้แม้สัญลักษณ์จะถูกเยื้องไป
+      const [px, py] = P(rTick, a0);
+      ctx.beginPath(); ctx.arc(px, py, size * 0.0042, 0, Math.PI * 2);
+      ctx.fillStyle = col; ctx.fill();
+      const [gx, gy] = P(rLab, a1);
+      DIALHITS.push({ x: gx, y: gy, c: it.c, src: layKey, rad: fs * 1.3 });
+      if (DIALSEL && DIALSEL.deg === undefined &&
+          DIALSEL.c === it.c && DIALSEL.src === layKey) {
+        ctx.beginPath(); ctx.arc(gx, gy, fs * 0.95, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(70,130,240,0.16)"; ctx.fill();
+        ctx.strokeStyle = "rgba(70,130,240,0.75)"; ctx.lineWidth = 1.4; ctx.stroke();
+      }
+      if (!drawGlyph(ctx, it.c, gx, gy, fs * 1.1, col)) {
+        ctx.fillStyle = col;
+        ctx.font = `600 ${fs}px "IBM Plex Mono",monospace`;
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(it.c, gx, gy);
+      }
+    }
+  };
+  DIALHITS = [];
+  place(POS[1], rB, rB + size * 0.034, +1, L1);    // ฟ้า
+  place(POS[2], rY, rY + size * 0.034, +1, L2);    // เหลือง
+  place(POS[3], R,  R  + size * 0.030, +1, L3);    // นอกสุด
+
+  // ── เข็มและหมุดกำกับ ─────────────────────────────────────────────────
+  // ลูกศรทุกตัวอยู่ "ในวงสีขาว ชิดขอบนอก" ปลายแหลมจ่อรอยต่อกับวงฟ้า
+  const rTip = rB - size * 0.003;
+  const AH = size * 0.030, AW = size * 0.0105;   // สูง/ครึ่งกว้างของหัวลูกศร
+  const axis = (d, color) => {
+    const a = ang(d);
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(...P(rTip - AH * 0.9, a));
+    ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke();
+  };
+  // เส้นบางต่อจากปลายลูกศรออกไปถึงวงนอกสุด — ใช้เทียบกับดาวจรที่วงนอก
+  const reach = (d, color, alpha) => {
+    const a = ang(d);
+    ctx.save(); ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    ctx.moveTo(...P(rB, a)); ctx.lineTo(...P(RG, a));
+    ctx.strokeStyle = color; ctx.lineWidth = 0.9; ctx.stroke();
+    ctx.restore();
+  };
+  axis(hand, RED); axis(hand + half, RED);
+  reach(hand, RED, 0.75); reach(hand + half, RED, 0.75);
+
+  // จุด 22°30' และ 67°30' ไม่ลากเส้นถึงศูนย์กลาง — ทำเป็นจุดเล็กชิดขอบวงขาว
+  // พร้อมหัวลูกศรเล็กชี้ออก พอให้เล็งได้โดยไม่รกกลางจาน
+  const quarterMark = (d) => {
+    const a = ang(d);
+    const [dx, dy] = P(rTip - AH * 1.35, a);
+    ctx.beginPath(); ctx.arc(dx, dy, size * 0.0045, 0, Math.PI * 2);
+    ctx.fillStyle = TXT; ctx.fill();
+    const h = AH * 0.72, w = AW * 0.72;
+    const [tx, ty] = P(rTip, a);
+    const [bx, by] = P(rTip - h, a);
+    const nx = Math.cos(a + Math.PI / 2) * w, ny = Math.sin(a + Math.PI / 2) * w;
+    ctx.beginPath();
+    ctx.moveTo(tx, ty); ctx.lineTo(bx - nx, by - ny); ctx.lineTo(bx + nx, by + ny);
+    ctx.closePath(); ctx.fillStyle = TXT; ctx.fill();
+    // เส้นบางต่อจากปลายลูกศรออกไปถึงวงนอก เล็งเทียบกับดาวจรได้เหมือนแกนหลัก
+    ctx.save(); ctx.globalAlpha = 0.45;
+    ctx.beginPath(); ctx.moveTo(...P(rB, a)); ctx.lineTo(...P(RG, a));
+    ctx.strokeStyle = TXT; ctx.lineWidth = 0.8; ctx.stroke();
+    ctx.restore();
+  };
+  quarterMark(hand + DL / 4); quarterMark(hand + 3 * DL / 4);
+
+  // ที่ 30° สองฝั่งของเข็ม (จาน 90) ลากเส้นบางจากกลางจานออกไปถึงวงนอก
+  const thinAxis = (d) => {
+    const a = ang(d);
+    ctx.save(); ctx.globalAlpha = 0.45;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(...P(RG, a));
+    ctx.strokeStyle = RED; ctx.lineWidth = 0.8; ctx.stroke();
+    ctx.restore();
+  };
+  thinAxis(hand + DL / 3); thinAxis(hand - DL / 3);
+
+  // ขอบเขต orb ของแกน 90 · 45 · 22°30' — เส้นบางประคู่ที่ ±orb
+  // ลากจากขอบวงขาวออกไปถึงวงนอก จะได้เห็นทันทีว่าดาวดวงไหนอยู่ในระยะ
+  const orbEdges = (d, color, alpha) => {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.setLineDash([size * 0.008, size * 0.006]);
+    ctx.strokeStyle = color; ctx.lineWidth = 0.9;
+    for (const sgn of [-1, 1]) {
+      const a = ang(d + sgn * orb);
+      ctx.beginPath();
+      ctx.moveTo(...P(rB, a)); ctx.lineTo(...P(RG, a));
+      ctx.stroke();
+    }
+    ctx.restore();
+  };
+  orbEdges(hand, RED, 0.65);
+  orbEdges(hand + half, GREEN, 0.65);
+  orbEdges(hand + DL / 4, TXT, 0.45);
+  orbEdges(hand + 3 * DL / 4, TXT, 0.45);
+  // หัวลูกศรเรียว ฐานเว้าเล็กน้อย ดูคมกว่าสามเหลี่ยมทื่อ ๆ
+  const arrow = (d, color) => {
+    const a = ang(d);
+    const [tx, ty] = P(rTip, a);
+    const [bx, by] = P(rTip - AH, a);
+    const [mx, my] = P(rTip - AH * 0.72, a);
+    const nx = Math.cos(a + Math.PI / 2), ny = Math.sin(a + Math.PI / 2);
+    ctx.beginPath();
+    ctx.moveTo(tx, ty);
+    ctx.lineTo(bx - nx * AW, by - ny * AW);
+    ctx.lineTo(mx, my);
+    ctx.lineTo(bx + nx * AW, by + ny * AW);
+    ctx.closePath();
+    ctx.fillStyle = color; ctx.fill();
+    ctx.strokeStyle = FACE; ctx.lineWidth = 0.8; ctx.stroke();
+  };
+  arrow(hand, RED); arrow(hand + half, GREEN);
+  const pin = (d, label, color) => {
+    const a = ang(d), [px, py] = P(rS * 0.64, a), r = size * 0.027;
+    ctx.beginPath(); ctx.arc(px, py, r, 0, Math.PI * 2);
+    ctx.fillStyle = FACE; ctx.fill();
+    ctx.strokeStyle = color; ctx.lineWidth = 1.2; ctx.stroke();
+    ctx.fillStyle = color; ctx.font = `600 ${Math.round(size * 0.024)}px system-ui`;
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(label, px, py);
+  };
+  pin(hand, String(DL), RED);
+  pin(hand + half, String(half), GREEN);
+  ctx.beginPath(); ctx.arc(cx, cy, size * 0.011, 0, Math.PI * 2);
+  ctx.fillStyle = FACE; ctx.fill(); ctx.strokeStyle = TXT; ctx.stroke();
+
+  // ── สิ่งที่เข็มชี้ ────────────────────────────────────────────────────
+  const RINGS = [[1, L1], [2, L2], [3, L3]];
+  const hits = [];
+  for (const [n, lay] of RINGS) {
+    for (const c of AISTRO.CODE_ORDER) {
+      const d = ((POS[n][c] % DL) + DL) % DL;
+      let g = Math.abs(d - hand) % DL; g = Math.min(g, DL - g);
+      if (g <= orb) hits.push({ c, lay, g, lon: POS[n][c] });
+    }
+  }
+  hits.sort((a, b) => a.g - b.g);
+  const short = hits.map((h) => h.c + h.lay).join("=") || "—";
+  $("dlhandout").innerHTML = `<b>เข็มที่ ${hand.toFixed(2)}°</b> — ` + (hits.length
+    ? hits.map((h) => `<span class="f-${AISTRO.FACTOR_CLASS[h.c]}">${h.c}</span>` +
+        `<sub>${h.lay}</sub> ${h.g.toFixed(2)}°`).join(" · ")
+    : "ไม่มีปัจจัยในระยะ orb");
+
+  // ── สี่มุมข้อมูล ─────────────────────────────────────────────────────
+  const nm = (k) => LAYERS.find((L) => L[0] === k)[1];
+  const co = coordStr(TL.lat, TL.lon);
+  const arc = AISTRO.solarArc(
+    TL.jd, TL.jdT + AISTRO.arcExtraDays(TL.jd, TL.jdT, TZ), TZ);
+  const f2 = (n) => String(n).padStart(2, "0");
+  const bC = AISTRO.revjul(TL.jd + TZ / 24), tC = AISTRO.revjul(TL.jdT + TZ / 24);
+  // ปัดวินาทีต้องทดขึ้นนาที/ชั่วโมง ไม่งั้นได้ "10:59:60"
+  const hm = (c) => {
+    let sec = Math.round(c[3] * 3600);
+    let h = Math.floor(sec / 3600); sec -= h * 3600;
+    const mi = Math.floor(sec / 60); sec -= mi * 60;
+    return f2(h % 24) + ":" + f2(mi) + ":" + f2(sec);
+  };
+  const line = (c) => f2(c[2]) + "/" + f2(c[1]) + "/" + c[0];
+  $("dlTL").innerHTML =
+    `<b>${AISTRO_RENDER.esc($("cname").value || "ไม่ระบุ")}</b>` +
+    `<span>${line(bC)} ${hm(bC)}</span><span>${AISTRO_RENDER.esc(TL.place || "")}</span>` +
+    `<span>${co}</span><span>GMT ${TZ >= 0 ? "" : "-"}${Math.abs(TZ)}:00</span>`;
+  $("dlTR").innerHTML =
+    `<b>${nm(L3)} @${short}</b>` +
+    `<span>${line(tC)} ${hm(tC)}</span><span>${AISTRO_RENDER.esc(TL.place || "")}</span>` +
+    `<span>${co}</span><span>GMT ${TZ >= 0 ? "" : "-"}${Math.abs(TZ)}:00</span>`;
+  // มุมบนสองมุมกดแก้ได้ — ตรงนั้นคือที่ที่คนมองหาข้อมูลดวงอยู่แล้ว
+  // ไม่ต้องเลื่อนกลับขึ้นไปหาฟอร์มด้านบนสุด
+  for (const [id, hint] of [["dlTL", "คลิกเพื่อแก้ข้อมูลดวงกำเนิด"],
+                            ["dlTR", "คลิกเพื่อแก้วันเวลาดวงจร"]]) {
+    const e = $(id);
+    e.classList.add("dl-edit");
+    e.title = hint;
+    e.setAttribute("role", "button");
+    e.setAttribute("tabindex", "0");
+  }
+  const pick = hits[0];
+  $("dlBL").innerHTML =
+    `<span>Age ${ageParts(TL.jd, TL.jdT)}</span>` +
+    `<span>SolarArc ${dms(arc, ":")}</span>` +
+    (pick ? `<b>${pick.c}<sub>${pick.lay}</sub> ${dms(pick.lon, ":")} ` +
+            `${zodStr(pick.lon)}</b>` : "<b>— ยังไม่ได้เลือกจุด</b>") +
+    // ปุ่มค้นหา — เหมือนปุ่มเดินอัตโนมัติ ต้องใส่ pointer-events inline ด้วย
+    // (.dialinfo ตั้ง none ไว้ · ดู RULES ข้อ 10)
+    `<button type="button" style="pointer-events:auto" class="dl-auto" data-find>` +
+    `🔍 ค้นหาวันที่</button>`;
+  $("dlBR").innerHTML =
+    `<b>${DL === 22.5 ? "22°30'" : DL + "°"} Dial</b><span>Dial Chart</span>` +
+    `<span>${DL === 90 ? "4th Harmonic" : DL === 45 ? "8th Harmonic"
+      : DL === 22.5 ? "16th Harmonic" : DL === 180 ? "2nd Harmonic" : ""}</span>` +
+    `<span>Tropical Zodiac</span>` +
+    // ปุ่มเปิดกล่องเดินอัตโนมัติ — อยู่ล่างสุดฝั่งขวาตามที่ขอ · ถูกสร้างใหม่
+    // ทุกเฟรม จึงคงสถานะ .on ไว้ตามตัวจับเวลา ไม่ใช่ตามตัวปุ่ม
+    // **pointer-events ใส่ inline ด้วย** ไม่พึ่ง style.css อย่างเดียว —
+    // .dialinfo ตั้ง pointer-events:none ไว้ ถ้าเบราว์เซอร์เสิร์ฟ CSS ตัวเก่า
+    // (แคช HTTP ค้าง) ปุ่มจะกดไม่โดนโดยไม่มีอะไรบอกเลย · เจอจริงกับผู้ใช้
+    `<button type="button" style="pointer-events:auto" ` +
+    `class="dl-auto${AUTO.timer ? " on" : ""}" data-auto>` +
+    `${AUTO.timer ? "■ หยุดเดิน" : "▶ เดินอัตโนมัติ"}</button>`;
+
+  // คู่ดาวบนจาน — กฎ "เช็ค orb รายคู่" แบบหน้า ตารางภาพดาว /uranian-graph
+  // สอบเทียบกับเว็บ 5 ชุดแล้ว ตรงทุกคู่
+  const heavyKey = posKey + "|" + DL + "|" + orb;
+  if (DIALPOS.heavy === heavyKey) { DIALSTATE = { dial: DL, orb, hand, cx, cy, size }; return; }
+  DIALPOS.heavy = heavyKey;
+  const pr = AISTRO.pairsOnDial(POS[1], DL, orb);
+  const fold = (c) => (((POS[1][c] % DL) + DL) % DL);
+  const fmt = (v) => v.toFixed(2) + "°";
+  $("dlpics").innerHTML = pr.length
+    ? pr.map((q) => `<div class="pic"><b>` +
+        `<span class="f-${AISTRO.FACTOR_CLASS[q.a]}">${q.a}</span>=` +
+        `<span class="f-${AISTRO.FACTOR_CLASS[q.b]}">${q.b}</span></b>` +
+        `<span>${fmt(fold(q.a))} · ${fmt(fold(q.b))}` +
+        ` · ห่าง ${q.gap.toFixed(3)}°</span></div>`).join("")
+    : '<div class="pic"><span>ไม่มีคู่ที่ orb นี้</span></div>';
+  $("dlcount").textContent =
+    `วงฟ้า ${nm(L1)} · ${pr.length} คู่ · คลิกบนจานเพื่อย้ายเข็ม ` +
+    `(สเกลหมุนตามเข็ม นับ 0 ที่เข็ม ถึง ${half} ที่จุดตรงข้าม)`;
+  drawGlyphKey();
+  DIALSTATE = { dial: DL, orb, hand, cx, cy, size };
+}
+
+// ── แผงแกน A, A/B — แตะดาวบนจานเพื่อดูสูตรภาพดาวรอบดาวนั้น ──────────────
+// กติกาแกนกลางเดียวกับเว็บ (สอบเทียบ 85 ดวง ใน test_axis_site/test_axis_v):
+// [A] ดาวเดี่ยวชั้น r,v1,v2,t ทำมุมพหุคูณ 22.5° กับแกน orb ≤ 1
+// [A/B] ศูนย์รังสีคู่ดาวตกแกน orb ≤ 1 พร้อมอายุโค้ง
+// ส่วนที่ UI เพิ่มเองนอกเหนือจากเว็บ (เอนจินยังปริยายเป็นแบบเว็บ):
+//   trueAngle — ป้ายมุมจริง (ชุดจุดมุมเดิม orb เดิม เปลี่ยนแค่ชื่อ)
+//   sixty     — เพิ่มจุดมุม 60° คุมด้วยปุ่ม "60°" · มีผลทั้ง 3 หัวข้อ
+//   byAspect  — [A/B] เรียงตามความสำคัญของมุม
+// ชั้น r/v1/v2 คุมด้วยปุ่ม r/v1/v2 · มีผลเฉพาะหัวข้อ 2 ดาว และ 3 ดาว
+const URAN_SVG_D = {};
+function glyphHTML(code) {
+  const uni = GLYPH_UNI[code];
+  if (uni) return `<span class="axg">${uni}</span>`;
+  const path = (globalThis.URAN_GLYPHS || {})[code];
+  if (path && path.length) {
+    if (!URAN_SVG_D[code]) {
+      URAN_SVG_D[code] = path.map((c) =>
+        c[0] === "Z" ? "Z" : c[0] + c.slice(1).map((v) => v.toFixed(3)).join(" ")
+      ).join("");
+    }
+    const b = glyphBox(code);
+    return `<span class="axg"><svg viewBox="${b.x0.toFixed(2)} ${b.y0.toFixed(2)} ` +
+      `${(b.x1 - b.x0).toFixed(2)} ${(b.y1 - b.y0).toFixed(2)}">` +
+      `<path d="${URAN_SVG_D[code]}" fill="currentColor"/></svg></span>`;
+  }
+  return `<span class="axg"><b>${code}</b></span>`;
+}
+function dmRound(x) {
+  x = ((x % 360) + 360) % 360;
+  let d = Math.floor(x), m = Math.round((x - d) * 60);
+  if (m === 60) { d = (d + 1) % 360; m = 0; }
+  return d + "°" + String(m).padStart(2, "0") + "′";
+}
+function angLabel(a) { return (a === 22.5 ? "22.5" : String(a)) + "°"; }
+// ชั้นที่ใช้หาคู่ดาว [A/B] และสูตรสามดาว [A+B−C]
+//   r  = ดวงกำเนิด · v1 = ดวงเดิน +โค้งสุริยยาตร · v2 = ดวงเดิน −โค้งสุริยยาตร
+// v1/v2 ระยะห่างระหว่างดาวเท่าดวงกำเนิด สูตรจึงชุดเดียวกันแต่เลื่อนไปตามโค้ง
+// ที่ตกแกน "ตอนนี้" จึงคนละชุดกับชั้น r — เป็นวิธีดูจังหวะแบบยูเรเนียน
+const SUMLAYS_ALL = ["r", "v1", "v2"];
+// เปิดมุม 60° เพิ่มจากชุดพหุคูณ 22.5 (เว็บมีให้ติ๊กเหมือนกัน) — เพิ่มแถวล้วน
+let AX60 = true;
+let AXLAYON = { r: true, v1: true, v2: true };
+const SUMLAYS_TH = { r: "ดวงกำเนิด", v1: "ดวงเดิน +โค้ง", v2: "ดวงเดิน −โค้ง" };
+function sumLays() {
+  const on = SUMLAYS_ALL.filter((s) => AXLAYON[s]);
+  return on.length ? on : ["r"];
+}
+function layChips() {
+  return `<span class="laychips">` + SUMLAYS_ALL.map((s) =>
+    `<button type="button" class="laychip${AXLAYON[s] ? " on" : ""}"` +
+    ` data-lay="${s}" title="${SUMLAYS_TH[s]}">${s}</button>`).join("") +
+    `<button type="button" class="laychip a60${AX60 ? " on" : ""}" data-a60="1"` +
+    ` title="นับมุม 60° ด้วย (นอกชุดพหุคูณ 22.5 ของเว็บ)">60°</button></span>`;
+}
+// คั่นหัวกลุ่มเมื่อมุมเปลี่ยน — รายการเรียงตามความสำคัญของมุมแล้ว
+// (แถวคั่นกินเต็มความกว้างกริด จึงไม่ไปแทรกกลางคอลัมน์)
+function groupByAng(rows, render) {
+  let cur = null, out = "";
+  for (const r of rows) {
+    if (r.ang !== cur) {
+      cur = r.ang;
+      const n = rows.filter((x) => x.ang === cur).length;
+      out += `<div class="anghead">${angLabel(cur)}` +
+             `<span class="angn">${n}</span></div>`;
+    }
+    out += render(r);
+  }
+  return out;
+}
+function byAng(rows) {
+  const n = {};
+  for (const r of rows) n[r.ang] = (n[r.ang] || 0) + 1;
+  return AISTRO.ASPECT_ORDER.filter((a) => n[a])
+    .map((a) => angLabel(a) + " " + n[a]).join(" · ");
+}
+function bySrc(rows) {
+  const n = {};
+  for (const r of rows) n[r.src] = (n[r.src] || 0) + 1;
+  return SUMLAYS_ALL.filter((s) => n[s]).map((s) => s + " " + n[s]).join(" · ");
+}
+function renderAxisPanel() {
+  const box = $("axbox");
+  if (!DIALSEL || !TL) { box.style.display = "none"; return; }
+  const isDeg = DIALSEL.deg !== undefined;
+  const key = [TL.jd, TL.jdT, TL.lat, TL.lon].join("|");
+  if (!AXLAY || AXLAY.key !== key) {
+    AXLAY = { key, layers: {} };
+    for (const s of ["r", "v1", "v2", "t"])
+      AXLAY.layers[s] = AISTRO.layerPositions(TL.R, TL.jd, TL.jdT, s, TL.lat, TL.lon, TZ);
+  }
+  if (!isDeg && !AXLAY.layers[DIALSEL.src])
+    AXLAY.layers[DIALSEL.src] =
+      AISTRO.layerPositions(TL.R, TL.jd, TL.jdT, DIALSEL.src, TL.lat, TL.lon, TZ);
+  // แกนเป็นดาว → ส่ง (ชื่อ, ชั้น) · แกนเป็นองศา → ส่งตัวเลของศาไปตรงๆ
+  const aL = isDeg ? DIALSEL.deg : DIALSEL.c, aS = isDeg ? null : DIALSEL.src;
+  const SL = sumLays();
+  const pic = AISTRO.axisPictures(AXLAY.layers, aL, aS,
+    { layersAB: SL, trueAngle: true, sixty: AX60, byAspect: true });
+  // ราศีคิดจากนาทีที่ปัดแล้ว — กันรอยต่อราศี (29°59.5′ ต้องเป็น 0°00′ ราศีถัดไป)
+  const tmin = Math.round(pic.axis * 60) % 21600;
+  const si = Math.floor(tmin / 1800), inSign = (tmin - si * 1800) / 60;
+  const cls = (c) => `f-${AISTRO.FACTOR_CLASS[c] || "neutral"}`;
+  // ดาว 1 ตัว + ป้ายชั้นห้อยท้าย (r / v1 / v2 / t) — รู้ทันทีว่ามาจากดวงชั้นไหน
+  const pl = (c, src) =>
+    `<span class="pl ${cls(c)}">${glyphHTML(c)}<i class="lay">${src}</i></span>`;
+  // แต่ละแถวกดได้ — คำแปลขึ้นเมื่อกด (ไม่แสดงพรืดให้รก)
+  const axis4 = isDeg ? "" : DIALSEL.c;
+  const rowA = (r) =>
+    `<div class="axrow${r.orb <= 0.2 ? " tight" : ""}${axis4 ? " mean" : ""}"` +
+    (axis4 ? ` data-t="A" data-p="${r.p}" data-s="${r.src}"` : "") + `>` +
+    pl(r.p, r.src) + ` ${angLabel(r.ang)} ` +
+    `<span class="orb">(${r.orb.toFixed(2)}<i class="dg">°</i>)</span></div>`;
+  const rowB = (r) =>
+    `<div class="axrow${r.orb <= 0.2 ? " tight" : ""}${axis4 ? " mean" : ""}"` +
+    (axis4 ? ` data-t="AB" data-a="${r.a}" data-b="${r.b}" data-s="${r.src}"` : "") + `>` +
+    pl(r.a, r.src) + `<span class="op">/</span>` + pl(r.b, r.src) + ` ` +
+    `${angLabel(r.ang)} <span class="orb">(${r.orb.toFixed(2)}<i class="dg">°</i>)</span>` +
+    `<span class="axarc">โค้ง ${dmRound(r.half)}</span></div>`;
+  const sum = AISTRO.sumPictures(AXLAY.layers, aL, aS, { layers: SL });
+  const rowC = (r) =>
+    `<div class="axrow${r.orb <= 0.2 ? " tight" : ""}${axis4 ? " mean" : ""}"` +
+    (axis4 ? ` data-t="ABC" data-a="${r.a}" data-b="${r.b}" data-c="${r.c}"` +
+             ` data-s="${r.src}"` : "") + `>` +
+    pl(r.a, r.src) + `<span class="op">+</span>` + pl(r.b, r.src) +
+    `<span class="op">\u2212</span>` + pl(r.c, r.src) + ` ` +
+    `<span class="orb">(${r.orb.toFixed(2)}<i class="dg">°</i>)</span></div>`;
+  const DLnow = DIALSTATE ? DIALSTATE.dial : 90;
+  const folds = [];
+  for (let v = pic.axis % DLnow; v < 360; v += DLnow) folds.push(dmRound(v));
+  const head = isDeg
+    ? `<h4>แกน = องศา ${pic.axis.toFixed(2)}°` +
+      ` <span class="axdeg">${dmRound(pic.axis)} · ${ZODIAC[si]} ` +
+      `${dmRound(inSign)}</span></h4>` +
+      (DLnow < 360 && folds.length > 1
+        ? `<p class="axnote">บนจาน ${DLnow === 22.5 ? "22°30'" : DLnow + "°"}` +
+          ` จุดนี้ทับกับลองจิจูด ${folds.join(" · ")} — [1 ดาว] และ [2 ดาว] ได้ดาว/คู่` +
+          ` และ orb ชุดเดียวกันทุกจุด (ต่างแค่ป้ายมุม เช่น 0↔90 · 22.5↔67.5)` +
+          (AX60 ? ` <b>ยกเว้นแถวมุม 60°</b> ที่เปลี่ยนไปตามจุดพับ เพราะ 60` +
+                  ` ไม่ใช่พหุคูณของ 22.5 — ปิดปุ่ม 60° ถ้าอยากได้ชุดที่คงที่` : "") +
+          ` ส่วน [3 ดาว] เจาะจงองศานี้จุดเดียว</p>`
+        : "")
+    : `<h4>แกน = ${glyphHTML(DIALSEL.c)}<span class="lay">${DIALSEL.src}</span>` +
+      ` ${DIALSEL.c}${DIALSEL.src} · ${FACTOR_TH[DIALSEL.c] || ""}` +
+      ` <span class="axdeg">${dmRound(pic.axis)} · ${ZODIAC[si]} ` +
+      `${dmRound(inSign)}</span></h4>`;
+  box.innerHTML = head +
+    `<div class="axsec">1 ดาว — ดาวเดี่ยวมาทำมุมกับแกน [A] · ชั้น r · v1 · v2 · t` +
+    ` (orb ≤ 1°${AX60 ? " · รวมมุม 60°" : ""})` +
+    ` <span class="axnote">${pic.A.length} ดาว${pic.A.length ?
+      " · " + byAng(pic.A) : ""}</span></div>` +
+    `<div class="axrows">` + (pic.A.length
+      ? pic.A.map(rowA).join("")
+      : '<div class="axrow"><span class="orb">ไม่มีดาวในระยะ</span></div>') + `</div>` +
+    `<div class="axsec">2 ดาว — ศูนย์รังสีคู่ดาวตกแกน [A/B] (orb ≤ 1°) ` +
+    layChips() +
+    ` <span class="axnote">${pic.AB.length} คู่${pic.AB.length ?
+      " (" + bySrc(pic.AB) + ")" : ""}</span>` +
+    (pic.AB.length ? `<div class="angsum">${byAng(pic.AB)}</div>` : "") + `</div>` +
+    `<div class="axrows">` + (pic.AB.length
+      ? groupByAng(pic.AB, rowB)
+      : '<div class="axrow"><span class="orb">ไม่มีคู่ในระยะ</span></div>') + `</div>` +
+    `<div class="axsec">3 ดาว — สูตรสามดาวตกแกน [A+B−C] · กุม 0° (orb ≤ 1°)` +
+    ` <span class="axnote">${sum.length} สูตร${sum.length ?
+      " (" + bySrc(sum) + ")" : ""}</span></div>` +
+    `<div class="axrows">` + (sum.length
+      ? sum.map(rowC).join("")
+      : '<div class="axrow"><span class="orb">ไม่มีสูตรในระยะ</span></div>') + `</div>` +
+    `<p class="axnote">[A] และ [A/B] นับมุมบนพหุคูณ 22.5°` +
+    (AX60 ? " และ 60°" : "") + ` · แสดงป้ายมุมจริง (เว็บพับ 135 ไว้ใน 45 และ` +
+    ` 67.5/112.5/157.5 ไว้ใน 22.5 — จุดมุมชุดเดียวกัน orb เท่ากัน)` +
+    ` · [A/B] เรียงตามความสำคัญของมุมแบบตำรายูเรเนียน` +
+    ` ${AISTRO.ASPECT_ORDER.join(" · ")} แล้วจึง orb แคบสุด` +
+    ` · "โค้ง" = ครึ่งระยะแยกของคู่ (อายุโค้งที่ภาพครบ)` +
+    ` · [A+B−C] คือพระเคราะห์สนธิ 4 ปัจจัย A+B = C+แกน นับเฉพาะกุม เรียงจาก orb แคบสุด` +
+    ` · ป้ายเล็กห้อยท้ายดาวคือชั้นดวง — r ดวงกำเนิด · v1 ดวงเดิน +โค้งสุริยยาตร` +
+    ` · v2 ดวงเดิน −โค้งสุริยยาตร · t จร` +
+    ` · <b>ปุ่ม r/v1/v2</b> คุมหัวข้อ 2 ดาว และ 3 ดาว ·` +
+    ` <b>ปุ่ม 60°</b> คุมทั้ง 3 หัวข้อ (มุม 60 อยู่นอกชุดพหุคูณ 22.5 ของเว็บ)` +
+    ` · แตะดาวบนจานเพื่อเปลี่ยนแกน (แตะซ้ำเพื่อปิด) หรือกรอก "แกนองศา" ` +
+    `เพื่อดูจุดใดก็ได้` +
+    (axis4 ? ` · <b>กดที่สูตรเพื่อดูคำแปล</b>` : "") + `</p>`;
+  box.style.display = "";
+}
+
+// ลาก/คลิกบนจาน = หมุนเข็ม (วิธีใช้จริงของโหรยูเรเนียน)
+// วาดผ่าน requestAnimationFrame ให้ตรงจังหวะรีเฟรชจอ ลากแล้วจึงลื่นไม่สะดุด
+let _dialRaf = 0, _dialPend = null;
+function setHandFromEvent(e) {
+  if (!DIALSTATE) return;
+  const r = $("dlcv").getBoundingClientRect();
+  const dx = e.clientX - r.left - r.width / 2;
+  const dy = e.clientY - r.top - r.height / 2;
+  const a = Math.atan2(dy, dx) + Math.PI / 2;
+  let d = (a / (Math.PI * 2)) * DIALSTATE.dial;
+  d = ((d % DIALSTATE.dial) + DIALSTATE.dial) % DIALSTATE.dial;
+  _dialPend = d;
+  if (_dialRaf) return;
+  _dialRaf = requestAnimationFrame(() => {
+    _dialRaf = 0;
+    $("dlhand").value = _dialPend.toFixed(2);
+    drawDial();
+  });
+}
+{
+  const cv = $("dlcv");
+  let dragging = false;
+  cv.style.touchAction = "none";
+  cv.addEventListener("pointerdown", (e) => {
+    // แตะโดนสัญลักษณ์ดาว = เลือก/ยกเลิกแกน (ไม่เริ่มลากเข็ม)
+    if (DIALSTATE && DIALHITS.length) {
+      const r = cv.getBoundingClientRect();
+      const mx = e.clientX - r.left, my = e.clientY - r.top;
+      let best = null;
+      for (const h of DIALHITS) {
+        const d = Math.hypot(mx - h.x, my - h.y);
+        if (d <= h.rad && (!best || d < best.d)) best = { d, h };
+      }
+      if (best) {
+        const h = best.h;
+        DIALSEL = (DIALSEL && DIALSEL.c === h.c && DIALSEL.src === h.src)
+          ? null : { c: h.c, src: h.src };
+        $("axdeg").value = "";
+        // หมุนเข็มไปที่ดาวที่เลือก (เหมือนโหรหมุนจานหาดาว)
+        if (DIALSEL) handToSel();
+        drawDial(); renderAxisPanel();
+        e.preventDefault(); return;
+      }
+    }
+    dragging = true;
+    // จับพอยน์เตอร์อาจล้มเหลวได้ (พอยน์เตอร์หลุดไปก่อน เช่นปากกา/สัมผัสบางเครื่อง)
+    // ถ้าจับไม่ได้ก็แค่ลากแบบไม่ capture — ห้ามโยน error ทิ้งทั้งการลาก
+    try { cv.setPointerCapture(e.pointerId); } catch (err) { /* ลากต่อได้ */ }
+    setHandFromEvent(e); e.preventDefault();
+  });
+  cv.addEventListener("pointermove", (e) => { if (dragging) setHandFromEvent(e); });
+  const stop = (e) => {
+    if (!dragging) return;
+    dragging = false;
+    try { cv.releasePointerCapture(e.pointerId); } catch (err) { /* ปล่อยไปแล้ว */ }
+  };
+  cv.addEventListener("pointerup", stop);
+  cv.addEventListener("pointercancel", stop);
+  // แตะจานเมื่อไหร่ = หยุดเดินอัตโนมัติ — แปลว่าเจอจุดที่ต้องการแล้ว
+  // ไม่ต้องเอื้อมไปกดหยุดในกล่องอีกที
+  cv.addEventListener("pointerdown", () => autoStop("แตะจานแล้ว"), true);
+}
+
+// ── เดินอัตโนมัติบนจาน ───────────────────────────────────────────────────
+// สองโหมดทำคนละเรื่อง:
+// เลื่อน "วันดวงจร" จริง แล้วเขียนกลับช่องฟอร์ม → คำนวณใหม่ทั้งชุด
+// (วัดจริง ~10.6 ms/ก้าว รวมตาราง 13 เดือน) พอหยุดตรงวันที่ถูกใจ
+// ค่าอยู่ในฟอร์มแล้ว กดคำนวณต่อได้เลย ไม่ต้องพิมพ์ซ้ำ
+//
+// เคยมีโหมด "หมุนเข็ม" คู่กัน แต่ตัดออก (urain-v52) — ผู้ใช้ลากเข็มบนจานเองอยู่แล้ว
+// การมีสองโหมดทำให้กล่องใหญ่และต้องอ่านก่อนใช้
+
+function auSay(msg, warn) {
+  const e = $("austat");
+  if (!e) return;
+  e.textContent = msg;
+  e.className = "austat" + (warn ? " warn" : "");
+}
+
+// สถานะปัจจุบันแบบสั้น ๆ ให้เห็นว่ากำลังอยู่ตรงไหน
+function auState(prefix) {
+  const lock = DIALSEL && DIALSEL.deg === undefined
+    ? ` · เข็มเกาะ ${DIALSEL.c}${DIALSEL.src}` : "";
+  return `${prefix} · ${$("td").value}/${$("tm").value}/${$("ty").value} ` +
+         `${$("tt").value}${lock}`;
+}
+
+function autoStop(why) {
+  if (!AUTO.timer) return;
+  clearInterval(AUTO.timer);
+  AUTO.timer = null;
+  $("augo").textContent = "▶ เริ่ม";
+  $("augo").classList.remove("run");
+  const b = document.querySelector("[data-auto]");
+  if (b) b.classList.remove("on");
+  auSay(auState("หยุด" + (why ? " (" + why + ")" : "")), !!why);
+}
+
+// เดินหนึ่งก้าว — คืน true ถ้าไปต่อได้ · false = ชนขอบ/ผิดพลาด ต้องหยุด
+function autoStep(dir) {
+  const n = parseInt($("austept").value, 10);
+  if (!isFinite(n) || n <= 0) { auSay("จำนวนต่อก้าวต้องเป็นจำนวนเต็มบวก", 1); return false; }
+  const step = n * dir;
+  const y = ceYear($("ty").value), m = parseInt($("tm").value, 10);
+  const d = parseInt($("td").value, 10), t = parseTime($("tt").value);
+  if (!isFinite(y) || !isFinite(m) || !isFinite(d) || t === null) {
+    auSay("วัน-เวลาดวงจรในฟอร์มไม่ถูกต้อง", 1); return false;
+  }
+  // เดินบนปฏิทินด้วย Date แบบ UTC — ไม่แตะ jd เพราะนี่คือ "วันตามนาฬิกา"
+  // ที่ผู้ใช้กรอก ไม่ใช่ชั่วขณะทางดาราศาสตร์ (เขตเวลาไม่เกี่ยว)
+  const ms = Date.UTC(y, m - 1, d, 0, 0, 0)
+           + Math.round(t * 3600) * 1000;
+  const dt = new Date(ms);
+  const u = $("auunit").value;
+  if (u === "mi") dt.setUTCMinutes(dt.getUTCMinutes() + step);
+  else if (u === "h") dt.setUTCHours(dt.getUTCHours() + step);
+  else if (u === "d") dt.setUTCDate(dt.getUTCDate() + step);
+  else if (u === "w") dt.setUTCDate(dt.getUTCDate() + step * 7);
+  else if (u === "y") dt.setUTCFullYear(dt.getUTCFullYear() + step);
+  else {
+    // บวกเดือนแล้ววันอาจล้น (31 ม.ค. + 1 เดือน) — หนีบไว้ที่วันสุดท้ายของเดือน
+    // ไม่ปล่อยให้ Date เลื่อนไป 3 มี.ค. เงียบ ๆ
+    const day = dt.getUTCDate();
+    dt.setUTCDate(1);
+    dt.setUTCMonth(dt.getUTCMonth() + step);
+    const dim = new Date(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth() + 1, 0))
+                  .getUTCDate();
+    dt.setUTCDate(Math.min(day, dim));
+  }
+  const yy = dt.getUTCFullYear();
+  if (yy < 1900 || yy > 2099) {
+    auSay(`ถึงขอบข้อมูลแล้ว (ค.ศ. ${yy}) — รองรับ 1900–2099 เท่านั้น`, 1);
+    return false;
+  }
+  // ปีที่กรอกเป็น พ.ศ. หรือ ค.ศ. ก็ได้ — ต้องเขียนกลับด้วยแบบเดิมที่ผู้ใช้ใช้อยู่
+  const wasBE = parseInt($("ty").value, 10) >= 2300;
+  $("td").value = String(dt.getUTCDate());
+  $("tm").value = String(dt.getUTCMonth() + 1);
+  $("ty").value = String(wasBE ? yy + 543 : yy);
+  $("tt").value = String(dt.getUTCHours()).padStart(2, "0") + ":" +
+                  String(dt.getUTCMinutes()).padStart(2, "0");
+  const err = recalcKeepingSel();
+  if (err) { auSay(err, 1); return false; }
+  auSay(auState(AUTO.timer ? "กำลังเดิน" : "หยุด"));
+  return true;
+}
+
+function autoStart() {
+  const sec = parseFloat($("ausec").value);
+  if (!isFinite(sec) || sec < 0.25) {
+    auSay("ช่วงเวลาต้องไม่ต่ำกว่า 0.25 วินาที", 1); return;
+  }
+  if (!TL) { auSay("ยังไม่มีดวง — กดคำนวณก่อน", 1); return; }
+  const dir = parseInt($("audir").value, 10) || 1;
+  if (!autoStep(dir)) return;           // ก้าวแรกล้ม ก็ไม่ต้องเริ่มจับเวลา
+  AUTO.timer = setInterval(() => { if (!autoStep(dir)) autoStop(); }, sec * 1000);
+  $("augo").textContent = "■ หยุด";
+  $("augo").classList.add("run");
+  const b = document.querySelector("[data-auto]");
+  if (b) b.classList.add("on");
+  auSay(auState("กำลังเดิน"));
+}
+
+function autoOpen() {
+  const d = $("autodlg");
+  if (d.open) { autoStop(); d.close(); return; }
+  // show() ไม่ใช่ showModal() — จานต้องเห็นและลากได้ระหว่างเดิน
+  try { d.show(); } catch (err) { d.setAttribute("open", ""); }
+  auSay(auState("หยุด"));
+}
+
+$("augo").addEventListener("click", () => AUTO.timer ? autoStop() : autoStart());
+$("aufwd").addEventListener("click", () => { autoStop(); autoStep(1); });
+$("auback").addEventListener("click", () => { autoStop(); autoStep(-1); });
+$("auclose").addEventListener("click", () => { autoStop(); $("autodlg").close(); });
+$("autodlg").addEventListener("close", () => autoStop());
+$("auunit").addEventListener("change",
+  () => auSay(auState(AUTO.timer ? "กำลังเดิน" : "หยุด")));
+// Esc ต้องหยุดก่อนเสมอ — กล่องแบบ show() ไม่รับ Esc เองเหมือน showModal()
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  if (AUTO.timer) { autoStop(); e.preventDefault(); }
+  else if ($("autodlg").open) $("autodlg").close();
+});
+// ── ค้นหาวันที่สมการเกิด ─────────────────────────────────────────────────
+// ใช้ AISTRO.formulaSolve() ตัวเดียวกับแท็บ "ตรวจสูตร" — แก้สมการตรง ๆ ด้วย
+// นิวตัน ไม่ไล่ทีละเดือน · **เดินด้วยโค้งสุริยยาตร์เท่านั้น** (FORMULA_K:
+// v1=+1 v2=−1 ที่เหลือ 0) ชั้นอย่าง t/p/tp/l จึงเป็น "ภาพนิ่ง ณ เวลาดวงจร
+// ที่กรอก" — คำตอบคือ "โค้งจะพามาเจอเมื่อไหร่" ไม่ใช่ "ดาวจรจริงเดินมาถึงเมื่อไหร่"
+// ขึ้นหมายเหตุเตือนเมื่อเข้าเคสนั้น
+const FS = { rows: [], i: -1, note: "" };
+
+function fsSideB() {
+  const lay = $("fsbs").value, m = $("fsbm").value;
+  const g = (n) => $("fsb" + n).value + lay;
+  return m === "mid" ? `${g(1)}/${g(2)}` : g(1);
+}
+function fsSyncMode() {
+  $("fsb2").hidden = $("fsbm").value === "one";
+  FS.rows = []; FS.i = -1; FS.note = "";
+}
+// ข้างซ้ายเลือกในกล่องได้เอง — เปิดกล่องแล้วเติมค่าจากดาวที่เลือกบนจานให้ก่อน
+// (ผู้ใช้ขอ: ไม่ต้องบังคับให้ไปคลิกบนจานก่อนทุกครั้ง)
+function fsSideA() { return $("fsa1").value + $("fsas").value; }
+function fsSay(msg, cls) {
+  $("fsstat").innerHTML = msg;
+  $("fsstat").className = "austat" + (cls ? " " + cls : "");
+}
+// เติมข้างซ้ายจากดาวที่เลือกบนจาน ถ้ามี — ไม่มีก็ใช้ค่าที่ค้างอยู่ในกล่อง
+function fsSyncFromDial() {
+  if (DIALSEL && DIALSEL.deg === undefined) {
+    $("fsa1").value = DIALSEL.c;
+    $("fsas").value = DIALSEL.src;
+  }
+  fsShowPick();
+}
+function fsShowPick() {
+  const c = $("fsa1").value;
+  $("fspick").innerHTML =
+    `<b>${AISTRO_RENDER.esc(c + $("fsas").value)}</b> ` +
+    `<span>${AISTRO_RENDER.esc(FACTOR_TH[c] || "")}</span>` +
+    (DIALSEL && DIALSEL.deg === undefined &&
+     (DIALSEL.c !== c || DIALSEL.src !== $("fsas").value)
+       ? ` <span>· บนจานเลือก ${AISTRO_RENDER.esc(DIALSEL.c + DIALSEL.src)} อยู่</span>`
+       : "");
+}
+let FSANG = 0;                      // มุมที่เลือกอยู่ (องศา)
+// สองวิธีหาคำตอบ — คนละกลไกกันคนละเรื่อง:
+//   arc     — โค้งสุริยยาตร์พามาเจอเมื่อไหร่ (formulaSolve · แก้สมการตรง)
+//   transit — ดาวจรจริงเดินมาถึงเมื่อไหร่ (transitAspectDates · สแกนเวลา)
+let FSMODE = "arc";
+const FS_MODES = [["arc", "โค้งสุริยยาตร์"], ["transit", "ดาวจรจริง"]];
+function fsDrawModes() {
+  $("fsmode").innerHTML = FS_MODES.map(([v, t]) =>
+    `<span class="laychip${v === FSMODE ? " on" : ""}" data-mode="${v}">${t}</span>`)
+    .join("");
+  // โหมดดาวจรจริงเดินด้วยเวลาจริง ชั้นของข้างซ้ายจึงเป็น "ดาวจร" เสมอ
+  $("fsas").disabled = (FSMODE === "transit");
+  if (FSMODE === "transit") $("fsas").value = "t";
+}
+function fsDrawAngles() {
+  $("fsang").innerHTML = FX_ANGLES.map((a) =>
+    `<span class="laychip${a === FSANG ? " on" : ""}" data-ang="${a}">` +
+    `${a}°</span>`).join("");
+}
+function fsFill() {
+  if ($("fsb1").options.length) return;
+  const all = AISTRO.CODE_ORDER
+    .map((c) => `<option value="${c}">${c} · ${FACTOR_TH[c]}</option>`).join("");
+  for (const id of ["fsa1", "fsb1", "fsb2"]) $(id).innerHTML = all;
+  $("fsa1").value = "SU"; $("fsb1").value = "MO"; $("fsb2").value = "SA";
+  $("fsbm").innerHTML = `<option value="one">ดาวเดี่ยว</option>` +
+    `<option value="mid">ศูนย์รังสี A/B</option>`;
+  // ปริยายเป็นศูนย์รังสี — เป็นคำถามที่ยูเรเนียนถามบ่อยกว่าดาวเดี่ยว
+  // และคู่ปริยาย SUv1 = MOr/SAr เจอจริงในช่วงชีวิต (SUv1 = MOr ต้องใช้โค้ง 327°
+  // ≈ 331 ปี ผู้ใช้กดครั้งแรกแล้วเจอทางตันทันที)
+  $("fsbm").value = "mid";
+  const lays = CTR_SRCS.map((x) => `<option>${x}</option>`).join("");
+  $("fsas").innerHTML = lays; $("fsbs").innerHTML = lays;
+  $("fsas").value = "v1"; $("fsbs").value = "r";
+  fsDrawAngles();
+  fsDrawModes();
+  fsSyncMode();
+}
+
+function fsSearch() {
+  const a = fsSideA();
+  if (!TL) { fsSay("ยังไม่มีดวง — กดคำนวณก่อน", "warn"); return; }
+  const years = Math.max(1, Math.min(120, parseFloat($("fsyears").value) || 100));
+  const orbMax = Math.max(0.1, Math.min(5, parseFloat($("fsorb").value) || 1));
+  // เขียนค่าที่ถูกบีบแล้วกลับลงช่อง — ไม่งั้นช่องโชว์ 400 แต่ข้อความบอก 120
+  // ผู้ใช้จะไม่รู้ว่าค่าที่ใช้จริงคืออะไร
+  $("fsyears").value = String(years);
+  $("fsorb").value = String(orbMax);
+  const pick = FSANG;
+  // ให้จานเกาะดาวที่ค้นหาด้วย — ไม่งั้นกระโดดไปแล้วเข็มยังชี้ดาวตัวเก่า
+  DIALSEL = { c: $("fsa1").value, src: $("fsas").value };
+  try {
+    const B = AISTRO.parseFormulaSide(fsSideB(), $("fsbs").value);
+    const need = ["r"];
+    for (const f of B.f) if (need.indexOf(f.s) < 0) need.push(f.s);
+    let note = "";
+    if (FSMODE === "transit") {
+      // ข้างขวาคิดครั้งเดียว = "จุดคงที่" · ถ้าเลือกชั้นที่เดินตามโค้ง (v1/v2)
+      // ก็จะถูกตรึงไว้ ณ ดวงที่ตั้งอยู่ ต้องบอกให้รู้ ไม่ใช่เงียบ
+      const L = ctrLayers(need);
+      const bb = AISTRO.evalFormulaSide(B, L);
+      // ข้างขวาชั้น v1/v2 เดินตามโค้งสุริยยาตร์ ~1°/ปี — ถ้าตรึงไว้จะเพี้ยน
+      // ขึ้นเรื่อย ๆ เมื่อสแกนยาว จึงคิดตามจริงที่ทุกจุดเวลา
+      const kb = bb.k || 0;
+      const RES = AISTRO.transitAspectDates({
+        codes: [$("fsa1").value],      // ข้างซ้ายคือดาวจรที่เดินจริง
+        angle: pick,
+        target: bb.deg,
+        targetAt: kb === 0 ? undefined
+          : (jd) => bb.base + kb * AISTRO.solarArc(TL.jd, jd, TZ),
+        jdStart: TL.jdT, jdEnd: TL.jdT + years * 365.2422,
+        lat: TL.lat, lon: TL.lon,
+      });
+      FS.rows = RES.rows; FS.i = -1;
+      note = `<span class="fsnote">นับจากวันดวงจรที่ตั้งอยู่ · ` +
+        `ก้าวสแกน ${RES.step.toFixed(2)} วัน` +
+        (kb ? ` · ข้างขวาเดินตามโค้งจริง (ไม่ตรึง)` : "") +
+        `</span>`;
+    } else {
+      const A = AISTRO.parseFormulaSide(a, "r");
+      for (const f of A.f) if (need.indexOf(f.s) < 0) need.push(f.s);
+      const SOL = AISTRO.formulaSolve({
+        layers: ctrLayers(need), sideA: A, sideB: B, jdBirth: TL.jd,
+        jdStart: TL.jd, jdEnd: TL.jd + years * 365.2422,
+        pick, orbMax, tz: TZ,
+      });
+      FS.rows = SOL.rows; FS.i = -1;
+      if (SOL.snap.length) {
+        // ชั้นภาพนิ่ง (t/p/tp/l) ถูกตรึงไว้ที่ "วันดวงจรที่กรอก" — คำตอบจึงขึ้นกับ
+        // วันที่ผู้ใช้บังเอิญกรอกด้วย · วัดออกมาเป็นตัวเลขจริงดีกว่าเตือนลอย ๆ:
+        // แก้สมการเดิมอีกครั้งโดยเลื่อนวันดวงจรไป 1 วัน แล้วดูว่าคำตอบขยับกี่ปี
+        // (จันทร์จรเดิน 13.2°/วัน ส่วนโค้งเดิน 0.99°/ปี → เลื่อนวันเดียว = 13.4 ปี)
+        let shift = null;
+        try {
+          const far = (lay) => AISTRO.formulaSolve({
+            layers: lay, sideA: AISTRO.parseFormulaSide(a, "r"), sideB: B,
+            jdBirth: TL.jd, jdStart: TL.jd, jdEnd: TL.jd + 400 * 365.2422,
+            pick, orbMax, tz: TZ,
+          }).rows;
+          const lay2 = {};
+          for (const sName of need)
+            lay2[sName] = AISTRO.layerPositions(TL.R, TL.jd, TL.jdT + 1, sName,
+                                                TL.lat, TL.lon, TZ);
+          const r0 = far(ctrLayers(need))[0], r1 = far(lay2)[0];
+          if (r0 && r1) shift = Math.abs(r1.jd - r0.jd) / 365.2422;
+        } catch (e) { /* วัดไม่ได้ก็เตือนแบบเดิม */ }
+        // ของจริง: ดาวที่เดินเร็วผ่านจุดหนึ่ง ๆ ทุก 360/ความเร็ว วัน
+        // จันทร์ 13.2°/วัน → ทุก ~27 วัน ไม่ใช่ "อีก 211 ปี" อย่างที่โหมดโค้งตอบ
+        let often = 0;
+        if (SOL.snap.indexOf("t") >= 0) {
+          let v = 0;
+          for (const f of B.f) if (f.s === "t")
+            v = Math.max(v, AISTRO.TRANSIT_SPEED[f.c] || 0);
+          if (v > 0.5) often = 360 / v;
+        }
+        note = `<span class="fsnote">ชั้น ${SOL.snap.join("/")} ถูกตรึงไว้ที่` +
+          `วันดวงจรที่กรอก` +
+          (often
+            ? ` — <b>ของจริงดาวดวงนี้เดินเร็ว ผ่านจุดนั้นทุก ~${
+                often < 40 ? often.toFixed(0) + " วัน" : (often / 365.25).toFixed(1) + " ปี"
+              }</b> ไม่ใช่ตัวเลขที่เห็นนี้` +
+              ` · เลขนี้คือ “ถ้าตรึงดาวไว้ตรงนั้น โค้งจะพามาเจอเมื่อไหร่”` +
+              (shift !== null && shift > 0.5
+                ? ` (ขยับวันดวงจร 1 วัน เลื่อน ~${shift.toFixed(1)} ปี)` : "") +
+              ` — ถามว่าจะเจอจริงเมื่อไหร่ ให้ใช้โหมด <b>“ดาวจรจริง”</b>`
+            : shift !== null && shift > 0.5
+              ? ` — <b>ขยับวันดวงจร 1 วัน คำตอบเลื่อนราว ${shift.toFixed(1)} ปี</b>` +
+                ` · คำตอบจึงเป็นของวันที่กรอก ไม่ใช่ของดวงเอง`
+              : ` — คำตอบคือ “โค้งพามาเจอเมื่อไหร่”`) +
+          `</span>`;
+      }
+    }
+    if (!FS.rows.length) {
+      // ทางตันแบบไม่บอกอะไรเลยคือ UX ที่แย่ที่สุด — ต้องบอกว่าอีกไกลแค่ไหน
+      // โค้งสุริยยาตร์เดินราว 1°/ปี ครบวงใช้ ~365 ปี · ลองยาวเต็มวงหนึ่งรอบ
+      // แล้วบอกว่าครั้งแรกอยู่ที่อายุเท่าไร (แก้สมการตรง ไม่แพง)
+      let more = "";
+      if (FSMODE === "arc") {
+        const FAR = AISTRO.formulaSolve({
+          layers: ctrLayers(need), sideA: AISTRO.parseFormulaSide(a, "r"), sideB: B,
+          jdBirth: TL.jd, jdStart: TL.jd, jdEnd: TL.jd + 400 * 365.2422,
+          pick, orbMax, tz: TZ,
+        });
+        more = FAR.rows.length
+          ? ` — ครั้งแรกต้องใช้โค้ง <b>${FAR.rows[0].arc.toFixed(1)}°</b> ` +
+            `คือราวอายุ <b>${((FAR.rows[0].jd - TL.jd) / 365.2422).toFixed(0)} ปี</b> ` +
+            `(เกินช่วงที่ตั้งไว้)`
+          : " — คู่นี้โค้งไม่พาให้เกิดเลยแม้ครบวง ลองเปลี่ยนมุมหรือดาว";
+      } else {
+        more = " — ลองเพิ่มจำนวนปี หรือเปลี่ยนมุม" +
+          " (ดาวชั้นนอกใช้เวลาหลายสิบปีต่อรอบ)";
+      }
+      fsSay(`ไม่เจอภายใน ${years} ปี` + more + note, "warn");
+      return;
+    }
+    // เก็บหมายเหตุไว้ด้วย — กดค้นหาแล้วมันกระโดดทันที ข้อความจะถูกทับ
+    // คำเตือนสำคัญ (เช่น "คำตอบเลื่อน 13.9 ปีต่อวัน") จึงหายไปต่อหน้าต่อตา
+    FS.note = note;
+    fsSay(`เจอ <b>${FS.rows.length}</b> ครั้งภายใน ${years} ปี — กด › เพื่อไป` + note);
+  } catch (err) {
+    FS.rows = []; FS.i = -1; FS.note = "";
+    fsSay("อ่านสมการไม่ได้: " + AISTRO_RENDER.esc(err.message || err), "warn");
+  }
+}
+
+function fsJump(step) {
+  if (!FS.rows.length) { fsSearch(); if (!FS.rows.length) return; }
+  const n = FS.rows.length;
+  let i = FS.i + step;
+  if (i < 0) { fsSay(`ถึงครั้งแรกแล้ว (จาก ${n} ครั้ง)`, "warn"); return; }
+  if (i >= n) { fsSay(`ครบทั้ง ${n} ครั้งแล้ว`, "warn"); return; }
+  FS.i = i;
+  const r = FS.rows[i];
+  const err = gotoJd(r.jd);
+  if (err) { fsSay(AISTRO_RENDER.esc(err), "warn"); return; }
+  const d = ctrDate(r.jd);
+  fsSay(`ครั้งที่ <b>${i + 1}/${n}</b> · <b>${AISTRO_RENDER.esc(d.full)}</b><br>` +
+        `อายุ ${((r.jd - TL.jd) / 365.2422).toFixed(1)} ปี · ` +
+        (r.arc !== undefined ? `โค้ง ${r.arc.toFixed(2)}° · ` : "") +
+        `มุม ${r.ang}°` + FS.note);
+}
+
+function fsOpen() {
+  const d = $("fsdlg");
+  if (d.open) { d.close(); return; }
+  fsFill(); fsSyncFromDial();
+  try { d.show(); } catch (err) { d.setAttribute("open", ""); }
+  if (!FS.rows.length) fsSay(fsSideA() ? "กดค้นหาเพื่อเริ่ม" : "");
+}
+
+$("fsgo").addEventListener("click", () => { fsSearch(); if (FS.rows.length) fsJump(1); });
+$("fsnext").addEventListener("click", () => fsJump(1));
+$("fsprev").addEventListener("click", () => fsJump(-1));
+$("fsclose").addEventListener("click", () => $("fsdlg").close());
+for (const id of ["fsbm", "fsb1", "fsb2", "fsbs", "fsa1", "fsas", "fsorb", "fsyears"])
+  $(id).addEventListener("change", () => {
+    if (id === "fsbm") fsSyncMode();
+    if (id === "fsa1" || id === "fsas") fsShowPick();
+    FS.rows = []; FS.i = -1; FS.note = "";
+    fsSay("ตัวเลือกเปลี่ยน — กดค้นหาใหม่");
+  });
+$("fsmode").addEventListener("click", (e) => {
+  const c = e.target.closest("[data-mode]");
+  if (!c) return;
+  FSMODE = c.dataset.mode;
+  fsDrawModes(); fsShowPick();
+  FS.rows = []; FS.i = -1; FS.note = "";
+  fsSay(FSMODE === "transit"
+    ? "โหมดดาวจรจริง — นับจากวันดวงจรที่ตั้งอยู่ · กดค้นหา"
+    : "โหมดโค้งสุริยยาตร์ — นับจากวันเกิด · กดค้นหา");
+});
+// มุมเป็นปุ่มกด ไม่ใช่ดรอปดาวน์ — เห็นตัวเลือกทั้งหมดพร้อมกันและกดทีเดียวถึง
+$("fsang").addEventListener("click", (e) => {
+  const c = e.target.closest("[data-ang]");
+  if (!c) return;
+  FSANG = +c.dataset.ang;
+  fsDrawAngles();
+  FS.rows = []; FS.i = -1; FS.note = "";
+  fsSay("มุมเปลี่ยนเป็น " + FSANG + "° — กดค้นหาใหม่");
+});
+
+// ปุ่มเปิดอยู่ใน #dlBR/#dlBL ที่ drawDial() เขียนทับทุกเฟรม → ผูกแบบ delegation
+document.querySelector(".dialinfo").addEventListener("click", (e) => {
+  if (e.target.closest("[data-auto]")) autoOpen();
+  else if (e.target.closest("[data-find]")) fsOpen();
+});
+// ── คำแปลผสมดาว — โหลดเมื่อกดครั้งแรก แล้วขยายใต้แถวที่กด ────────────────
+// ไม่แสดงพรืดทุกแถว (รก) และไม่แต่งคำแปลเอง — ใช้เฉพาะข้อความจากพจนานุกรมเว็บ
+let DICT_STATE = "idle";   // idle | loading | ready | error
+// โหลดพจนานุกรมครั้งเดียวแล้วแชร์ promise เดิม — เดิมผู้ขอรายที่สองระหว่างโหลด
+// จะ return ทิ้งไปเฉย ๆ แล้วค้าง "กำลังโหลด…" ตลอดกาล เพราะไม่มีใครมาเติมให้
+let DICT_PROMISE = null;
+// พจนานุกรมโหลดไม่สำเร็จ — เดิมขึ้นข้อความแล้วจบ **ไม่มีทางกู้เลย**
+// ต่างจากตารางดาวที่มีปุ่ม "ลองใหม่" ตั้งแต่ urain-v29 · ผู้ใช้เจอจริง 30 ส.ค. 2026
+// ("Failed to fetch") ซึ่งไม่บอกอะไรเลยว่าเพราะอะไรหรือต้องทำยังไงต่อ
+// ข้อความใหม่จึง **วินิจฉัยให้เสร็จ**: ออนไลน์ไหม · ไฟล์อยู่ในแคชไหม · แคชมีกี่ชุด
+async function dictDiag() {
+  const d = { online: navigator.onLine, caches: [], inCache: false, sw: "—" };
+  try {
+    const reg = await navigator.serviceWorker.getRegistration();
+    d.sw = reg && reg.active ? reg.active.state : "ไม่มี";
+  } catch (e) { d.sw = "ตรวจไม่ได้"; }
+  try {
+    if (window.caches) {
+      d.caches = await caches.keys();
+      d.inCache = !!(await caches.match("./dict.json.gz", { ignoreSearch: true }));
+    }
+  } catch (e) { /* บางบริบทเข้าถึง caches ไม่ได้ */ }
+  return d;
+}
+async function dictErrHTML(e) {
+  const msg = (e && e.message) ? e.message : String(e);
+  const d = await dictDiag();
+  const net = /failed to fetch|networkerror|load failed/i.test(msg);
+  let why = "";
+  if (!d.online && !d.inCache)
+    why = "<b>ไม่มีเน็ต และพจนานุกรมยังไม่ได้ถูกเก็บลงแคช</b> — " +
+      "ต่อเน็ตครั้งเดียวแล้วกดลองใหม่ จากนั้นใช้ออฟไลน์ได้ตลอด";
+  else if (d.inCache)
+    why = "<b>ไฟล์อยู่ในแคชแล้วแต่อ่านไม่ออก</b> — น่าจะดาวน์โหลดมาไม่ครบ " +
+      "กดลองใหม่เพื่อทิ้งของเก่าแล้วดึงใหม่";
+  else if (net)
+    why = "<b>ดึงไฟล์ไม่ได้</b> — ถ้าเปิดจาก Dock ให้เช็คว่าเซิร์ฟเวอร์ " +
+      "127.0.0.1:8765 ยังทำงานอยู่ (รัน ./serve.sh)";
+  return `<div class="mnone">โหลดพจนานุกรมไม่สำเร็จ: ` +
+    AISTRO_RENDER.esc(msg) + (why ? "<br>" + why : "") +
+    `<br><small>เน็ต: ${d.online ? "ต่ออยู่" : "ไม่ต่อ"} · ` +
+    `ในแคช: ${d.inCache ? "มี" : "ไม่มี"} · ` +
+    `service worker: ${AISTRO_RENDER.esc(d.sw)} · ` +
+    `แคช: ${d.caches.length ? AISTRO_RENDER.esc(d.caches.join(", ")) : "ไม่มี"}</small>` +
+    ` <button type="button" class="clearf dictretry">ลองใหม่</button></div>`;
+}
+// ปุ่มลองใหม่ใช้ได้กับทุกจุดที่แสดง error (มี 3 จุด) จึงดักที่ document ทีเดียว
+document.addEventListener("click", async (ev) => {
+  const b = ev.target.closest(".dictretry");
+  if (!b) return;
+  const box = b.closest(".mbox") || b.parentElement;
+  b.disabled = true;
+  box.innerHTML = '<div class="mnone">กำลังลองใหม่ …</div>';
+  try {
+    // ต้องล้างออกจากแคชก่อน — service worker จับคู่แบบ ignoreSearch
+    // ใส่ ?retry= เฉย ๆ จึงยังได้ของเก่าในแคชกลับมาเหมือนเดิม
+    if (window.caches) for (const k of await caches.keys())
+      await (await caches.open(k)).delete("./dict.json.gz", { ignoreSearch: true });
+    DICT_STATE = "idle"; DICT_PROMISE = null;
+    await AISTRO.loadDict("dict.json.gz?retry=" + Date.now());
+    DICT_STATE = "ready";
+    box.innerHTML = '<div class="mnone">✅ โหลดพจนานุกรมสำเร็จ — ' +
+      'กดแถวที่ต้องการอีกครั้งเพื่อดูคำแปล</div>';
+  } catch (e2) { box.innerHTML = await dictErrHTML(e2); }
+});
+
+function dictReady() {
+  if (DICT_STATE === "ready") return Promise.resolve();
+  if (!DICT_PROMISE) {
+    DICT_STATE = "loading";
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz")
+      .then(() => { DICT_STATE = "ready"; })
+      .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
+  }
+  return DICT_PROMISE;
+}
+// โทเคนคำขอคำแปล — เพิ่มทุกครั้งที่กดแถวใหม่ "และทุกครั้งที่คำนวณดวงใหม่"
+// เช็ค classList อย่างเดียวไม่พอ เพราะ element เก่าที่ถูกถอดจาก DOM ยังมีคลาส on
+let MEANSEQ = 0;
+// ค่าใน <select id="ctype"> เป็นภาษาไทย ต้องแมปเป็นรหัสบริบทของพจนานุกรม
+const CTYPE_MAP = { "บุคคล": "person", "ประเทศ/เมือง": "country",
+                    "บริษัท/องค์กร": "company", "หุ้น/ตลาดหลักทรัพย์": "stock" };
+function ctxNow() {
+  return CTYPE_MAP[$("ctype") ? $("ctype").value : ""] || "person";
+}
+function meanHTML(row) {
+  const m = AISTRO.lookupMeaning(row, ctxNow());
+  const esc = AISTRO_RENDER.esc;
+  const body = (t) => `<div class="mtext">${esc(t)}</div>`;
+  const witte = (t) => t ? `<div class="mwitte"><b>ตำราวิทเทอ:</b> ${esc(t)}</div>` : "";
+  // คำอธิบายยาวของเว็บกับตำราวิทเทอเป็นคนละชุด ขาดได้อิสระจากกัน
+  // เดิม return ออกตั้งแต่ไม่มีคำอธิบายยาว จึงกลืนตำราวิทเทอที่มีอยู่จริงทิ้งไปด้วย
+  // เจอกับคู่ AR.MC และ AS.SU (สองคู่เดียวที่เว็บมีวิทเทอแต่ไม่มีคำอธิบายยาว)
+  if (m.kind === "two" || m.kind === "three") {
+    const w = m.kind === "two" ? witte(m.witte) : "";
+    if (!m.text) {
+      return w
+        ? `<div class="mnote">พจนานุกรมของเว็บไม่มีคำอธิบายยาวของสูตรนี้ ` +
+          `(${esc(m.key)}) — แสดงตำราวิทเทอแทน</div>` + w
+        : `<div class="mnone">พจนานุกรมของเว็บไม่มีคำแปลสูตรนี้ (${esc(m.key)})</div>`;
+    }
+    return body(m.text) + w;
+  }
+  if (m.kind === "parts") {
+    const has = m.parts.filter((p) => p.text || p.witte);
+    if (!has.length) return `<div class="mnone">ไม่มีคำแปลของส่วนประกอบสูตรนี้</div>`;
+    return `<div class="mnote">พจนานุกรมมีคำแปลถึง 3 ดาว สูตรนี้เป็น 4 ปัจจัย ` +
+      `(A+B = C+แกน) จึงแสดงคำแปลของ<b>คู่ที่ประกอบกัน</b> ไม่ใช่คำแปลสูตรเต็ม</div>` +
+      has.map((p) => `<div class="mpart"><b>${esc(p.label)}</b>` +
+        (p.text ? body(p.text) : "") + witte(p.witte) + `</div>`).join("");
+  }
+  return `<div class="mnone">ไม่มีข้อมูล</div>`;
+}
+function rowSpec(el) {
+  const t = el.dataset.t;
+  const axis = DIALSEL && DIALSEL.deg === undefined ? DIALSEL.c : null;
+  if (!axis) return null;
+  if (t === "A") return { type: "A", p: el.dataset.p, axis };
+  if (t === "AB") return { type: "AB", a: el.dataset.a, b: el.dataset.b, axis };
+  if (t === "ABC") return { type: "ABC", a: el.dataset.a, b: el.dataset.b,
+                            c: el.dataset.c, axis };
+  return null;
+}
+async function toggleMeaning(el) {
+  const open = el.nextElementSibling &&
+               el.nextElementSibling.classList.contains("mbox");
+  // เปิดได้ทีละแถว — กันแผงยาวจนหาไม่เจอ
+  for (const b of $("axbox").querySelectorAll(".mbox")) b.remove();
+  for (const r of $("axbox").querySelectorAll(".axrow.on")) r.classList.remove("on");
+  if (open) return;
+  const spec = rowSpec(el);
+  if (!spec) return;
+  el.classList.add("on");
+  const box = document.createElement("div");
+  box.className = "mbox";
+  el.after(box);
+  const seq = ++MEANSEQ;
+  if (DICT_STATE !== "ready") {
+    box.innerHTML = '<div class="mnone">กำลังโหลดพจนานุกรม 0.3 MB …</div>';
+    try { await dictReady(); }
+    catch (e) {
+      if (seq !== MEANSEQ || !box.isConnected) return;
+      box.innerHTML = await dictErrHTML(e);
+      return;
+    }
+    // ต้องเช็คทั้งโทเคนและ "ยังอยู่ใน DOM" — คลาส on ติดมากับ element เก่าด้วย
+    if (seq !== MEANSEQ || !box.isConnected || !el.classList.contains("on")) return;
+  }
+  box.innerHTML = meanHTML(spec);
+}
+$("axbox").addEventListener("click", (e) => {
+  const chip = e.target.closest(".laychip");
+  if (chip && chip.dataset.a60) { AX60 = !AX60; renderAxisPanel(); return; }
+  if (chip) {                       // สลับชั้นดวงของหัวข้อ [A/B] และ [A+B−C]
+    const s = chip.dataset.lay;
+    const on = SUMLAYS_ALL.filter((k) => AXLAYON[k]);
+    if (AXLAYON[s] && on.length === 1) return;   // ต้องเหลืออย่างน้อยหนึ่งชั้น
+    AXLAYON[s] = !AXLAYON[s];
+    renderAxisPanel();
+    return;
+  }
+  const row = e.target.closest(".axrow.mean");
+  if (row && $("axbox").contains(row)) toggleMeaning(row);
+});
+// ── คำแปลของแถวในตารางดูดวงจร ────────────────────────────────────────────
+// แถวหนึ่งบอกว่า "จุดนำ" ไปตกร่วมกับดาวอะไรบ้าง · พจนานุกรมมีถึง 3 ดาว
+// จึงแตกเป็นส่วนที่แปลได้จริง: คู่นำ (2 ดาว) + คู่นำตกดาวแต่ละตัว (3 ดาว)
+// ไม่แต่งคำแปลรวมขึ้นเอง — กติกาเดียวกับแผงแกน
+function tmeanSpecs(row) {
+  const out = [];
+  const chain = row.natal.map((c) => [c, "r"])
+    .concat(row.transit.map((c) => [c, "t"]));
+  if (row.kind === 4) {
+    for (const [c] of chain)
+      out.push({ label: `${row.lead[0]}/${c}`,
+                 spec: { type: "A", p: row.lead[0], axis: c } });
+    return out;
+  }
+  const [a, b] = row.lead;
+  out.push({ label: `${a}/${b}`, spec: { type: "A", p: a, axis: b } });
+  for (const [c] of chain)
+    out.push({ label: `${a}/${b} = ${c}`,
+               spec: { type: "AB", a, b, axis: c } });
+  return out;
+}
+function tmeanHTML(row) {
+  const esc = AISTRO_RENDER.esc;
+  const specs = tmeanSpecs(row);
+  const parts = specs.map((x) => {
+    const m = AISTRO.lookupMeaning(x.spec, ctxNow());
+    const txt = m.text
+      ? `<div class="mtext">${esc(m.text)}</div>` +
+        (m.kind === "two" && m.witte
+          ? `<div class="mwitte"><b>ตำราวิทเทอ:</b> ${esc(m.witte)}</div>` : "")
+      : `<div class="mnone">พจนานุกรมของเว็บไม่มีคำแปลชุดนี้ (${esc(m.key || "")})</div>`;
+    return `<div class="mpart"><b>${esc(x.label)}</b>${txt}</div>`;
+  }).join("");
+  return `<div class="mnote">${esc(AISTRO.rowText(row))}</div>` + parts;
+}
+async function showRowMeaning(el) {
+  const box = $("tmean");
+  const col = el.closest(".mcol");
+  const mi = col && col.dataset.m, ri = el.dataset.i;
+  if (!TL || mi === undefined || ri === undefined) return;
+  const row = (TL.tables[+mi] || [])[+ri];
+  if (!row) return;
+  for (const r of $("out").querySelectorAll(".frow.on")) r.classList.remove("on");
+  el.classList.add("on");
+  box.hidden = false;
+  const seq = ++MEANSEQ;
+  if (DICT_STATE !== "ready") {
+    box.innerHTML = '<div class="mnone">กำลังโหลดพจนานุกรม 0.3 MB …</div>';
+    try { await dictReady(); }
+    catch (e) {
+      if (seq !== MEANSEQ) return;
+      box.innerHTML = await dictErrHTML(e);
+      return;
+    }
+    // `el.isConnected` กันผลของดวงเก่ามาเขียนทับกล่องของดวงใหม่
+    if (seq !== MEANSEQ || !el.isConnected || !el.classList.contains("on")) return;
+  }
+  box.innerHTML = tmeanHTML(row);
+}
+$("out").addEventListener("click", (e) => {
+  const r = e.target.closest(".frow");
+  if (!r) return;
+  if (r.classList.contains("on")) {          // กดซ้ำ = ปิด
+    r.classList.remove("on");
+    $("tmean").hidden = true; $("tmean").innerHTML = "";
+    return;
+  }
+  showRowMeaning(r);
+});
+
+// เปลี่ยนบริบทดวง (บุคคล/บริษัท/…) แล้วคำแปลที่เปิดอยู่ต้องตามไปด้วย
+$("ctype").addEventListener("change", () => {
+  const fr = $("out").querySelector(".frow.on");
+  if (fr && DICT_STATE === "ready") showRowMeaning(fr);
+  const row = $("axbox").querySelector(".axrow.on");
+  if (row && DICT_STATE === "ready") {
+    const box = row.nextElementSibling;
+    const spec = rowSpec(row);
+    if (box && box.classList.contains("mbox") && spec) box.innerHTML = meanHTML(spec);
+  }
+});
+
+// แกนองศา — จุดใดก็ได้บนวง ไม่ต้องมีดาวอยู่ตรงนั้น (เหมือนโหมด Deg ของเว็บ)
+function applyAxisDeg() {
+  const v = parseFloat($("axdeg").value);
+  if (!isFinite(v)) { DIALSEL = null; renderAxisPanel(); drawDial(); return; }
+  DIALSEL = { deg: ((v % 360) + 360) % 360 };
+  const DLv = DIALSTATE ? DIALSTATE.dial : +$("dldial").value;
+  $("dlhand").value = ((DIALSEL.deg % DLv) + DLv) % DLv > 0
+    ? (((DIALSEL.deg % DLv) + DLv) % DLv).toFixed(2) : "0";
+  renderAxisPanel(); drawDial();
+}
+$("axdeg").addEventListener("input", applyAxisDeg);
+$("axhand").addEventListener("click", () => {
+  $("axdeg").value = (parseFloat($("dlhand").value) || 0).toFixed(2);
+  applyAxisDeg();
+});
+$("axclear").addEventListener("click", () => {
+  $("axdeg").value = ""; DIALSEL = null; renderAxisPanel(); drawDial();
+});
+$("dlhand").addEventListener("input", drawDial);
+$("dlreset").addEventListener("click", () => { $("dlhand").value = "0"; drawDial(); });
+for (const id of ["dlr1", "dlr2", "dlr3"]) $(id).addEventListener("change", drawDial);
+
+// แถบสัญลักษณ์ — เป็นคำอธิบายและเป็นตัวตรวจว่า glyph ทุกตัววาดออกจริง
+const FACTOR_TH = {
+  AR: "จุดเมษ", MC: "มัธยลัคน์", AS: "ลัคนา", SU: "อาทิตย์", MO: "จันทร์",
+  NO: "ราหู", ME: "พุธ", VE: "ศุกร์", MA: "อังคาร", JU: "พฤหัส", SA: "เสาร์",
+  UR: "มฤตยู", NE: "เนปจูน", PL: "พลูโต", CU: "คิวปิโด", HA: "เฮดีส",
+  ZE: "ซุส", KR: "โครโนส", AP: "อพอลลอน", AD: "แอดเมตอส",
+  VU: "วัลคานุส", PO: "โพไซดอน",
+};
+function drawGlyphKey() {
+  const cv = $("dlkey"), ctx = cv.getContext("2d");
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.parentElement.clientWidth - 2;
+  const cols = w < 460 ? 6 : w < 700 ? 8 : 11;
+  const codes = AISTRO.CODE_ORDER;
+  const rows = Math.ceil(codes.length / cols);
+  const cw = w / cols, ch = 46;
+  const h = rows * ch;
+  cv.style.width = w + "px"; cv.style.height = h + "px";
+  cv.width = w * dpr; cv.height = h * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  const cs = getComputedStyle(document.body);
+  const col = (n, fb) => (cs.getPropertyValue(n) || "").trim() || fb;
+  const CLS = { personal: col("--f-personal", "#6aa9e9"), good: col("--f-good", "#5cb87a"),
+                bad: col("--f-bad", "#e06c6c"), booster: col("--f-booster", "#e0a94f"),
+                neutral: col("--f-neutral", "#9aa4ae") };
+  codes.forEach((c, i) => {
+    const x = (i % cols) * cw + cw / 2, y = Math.floor(i / cols) * ch;
+    const color = CLS[AISTRO.FACTOR_CLASS[c]] || col("--ink", "#e6e9ee");
+    if (!drawGlyph(ctx, c, x, y + 15, 17, color)) {
+      ctx.fillStyle = color;
+      ctx.font = '600 15px "IBM Plex Mono",monospace';
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(c, x, y + 15);
+    }
+    ctx.fillStyle = col("--faint", "#6b737d");
+    ctx.font = '10px "IBM Plex Mono",monospace';
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(c, x, y + 30);
+    ctx.font = "9.5px system-ui";
+    ctx.fillText(FACTOR_TH[c] || "", x, y + 41);
+  });
+}
+
+$("dlorb").addEventListener("change", drawDial);
+$("dldial").addEventListener("change", drawDial);
+window.addEventListener("resize", () => { if (CUR_PANEL === "pdial") drawDial(); });
+PANEL_DRAW.pdial = drawDial;
+
+// ── ป๊อปอัพแก้ข้อมูลดวงจากสี่มุมของจานหมุน ────────────────────────────────
+// **ไม่คำนวณเอง ไม่ตรวจค่าเอง** — เขียนค่ากลับเข้าช่องในฟอร์มหลักแล้วเรียก run()
+// ตรรกะตรวจสอบจึงอยู่ที่เดียว ถ้าเพิ่มกฎใหม่ในฟอร์มหลัก ป๊อปอัพได้ตามอัตโนมัติ
+// (เคยพลาดมาแล้วเรื่อง lat/lon ว่างกลายเป็น 0 — ไม่อยากมีตรรกะซ้ำสองที่อีก)
+const ED_FIELDS = {
+  radix: { title: "ข้อมูลดวงกำเนิด",
+           ids: ["cname", "bd", "bm", "by", "bt", "tz", "pcountry", "place", "ll"] },
+  transit: { title: "วันเวลาดวงจร", ids: ["td", "tm", "ty", "tt"] },
+};
+let EDMODE = null;
+function edOpen(mode) {
+  if (!TL) return;
+  EDMODE = mode;
+  const cfg = ED_FIELDS[mode];
+  $("edtitle").textContent = cfg.title;
+  $("ederr").hidden = true;
+  const num = (id, lab, w) =>
+    `<label class="edrow"><span>${lab}</span>` +
+    `<input id="ed_${id}" value="${AISTRO_RENDER.esc($(id).value)}" ` +
+    `inputmode="numeric" style="width:${w || 70}px"></label>`;
+  let h = "";
+  if (mode === "radix") {
+    h += `<label class="edrow"><span>ชื่อดวง</span>` +
+      `<input id="ed_cname" value="${AISTRO_RENDER.esc($("cname").value)}" style="width:190px"></label>`;
+    h += `<div class="edrow"><span>วันเกิด</span><span class="edtrio">` +
+      `<input id="ed_bd" value="${AISTRO_RENDER.esc($("bd").value)}" inputmode="numeric">` +
+      `<input id="ed_bm" value="${AISTRO_RENDER.esc($("bm").value)}" inputmode="numeric">` +
+      `<input id="ed_by" value="${AISTRO_RENDER.esc($("by").value)}" inputmode="numeric" style="width:82px">` +
+      `</span></div>`;
+    h += num("bt", "เวลาเกิด", 84) + num("tz", "เขตเวลา", 64);
+    h += `<label class="edrow"><span>ประเทศ</span>` +
+      `<select id="ed_pcountry">${$("pcountry").innerHTML}</select></label>`;
+    h += `<label class="edrow"><span>สถานที่</span>` +
+      `<select id="ed_place">${placesHTML($("pcountry").value)}</select></label>`;
+    h += `<label class="edrow" id="ed_llrow"><span>lat, lon</span>` +
+      `<input id="ed_ll" value="${AISTRO_RENDER.esc($("ll").value)}" style="width:170px"></label>`;
+  } else {
+    h += `<div class="edrow"><span>วันดวงจร</span><span class="edtrio">` +
+      `<input id="ed_td" value="${AISTRO_RENDER.esc($("td").value)}" inputmode="numeric">` +
+      `<input id="ed_tm" value="${AISTRO_RENDER.esc($("tm").value)}" inputmode="numeric">` +
+      `<input id="ed_ty" value="${AISTRO_RENDER.esc($("ty").value)}" inputmode="numeric" style="width:82px">` +
+      `</span></div>`;
+    h += num("tt", "เวลา", 84);
+  }
+  $("edbody").innerHTML = h;
+  if (mode === "radix") {
+    $("ed_pcountry").value = $("pcountry").value;
+    $("ed_place").value = $("place").value;
+    // เปลี่ยนประเทศในป๊อปอัพ → สร้างรายการใหม่จากข้อมูลตรง ๆ **ไม่แตะฟอร์มหลัก**
+    $("ed_pcountry").addEventListener("change", () => {
+      $("ed_place").innerHTML = placesHTML($("ed_pcountry").value);
+      if ($("ed_pcountry").value === "th") $("ed_place").value = "13.7563,100.5018";
+      if (!$("ed_place").value) $("ed_place").selectedIndex = 0;
+      sync();
+    });
+    const sync = () => {
+      $("ed_llrow").style.display = $("ed_place").value === "custom" ? "" : "none";
+      // เมืองต่างประเทศพกเขตเวลามาด้วย เติมให้ในกล่องเลย
+      const q = $("ed_place").value.split(",");
+      if (q.length >= 3) $("ed_tz").value = String(Number(q[2]));
+      else if ($("ed_place").value !== "custom") $("ed_tz").value = "7";
+    };
+    $("ed_place").addEventListener("change", sync);
+    sync();
+  }
+  const d = $("edlg");
+  // showModal() โยน InvalidStateError ถ้ากล่องเปิดค้างอยู่ — ปิดก่อนเสมอ
+  // และห่อ try/catch ไว้ ไม่งั้นกดมุมรัว ๆ แล้วป๊อปอัพจะเงียบไปเฉย ๆ
+  if (d.open) { try { d.close(); } catch (err) { d.removeAttribute("open"); } }
+  try { if (d.showModal) d.showModal(); else d.setAttribute("open", ""); }
+  catch (err) { d.setAttribute("open", ""); }
+  const first = $("edbody").querySelector("input, select");
+  if (first) first.focus();
+}
+function edClose() {
+  const d = $("edlg");
+  if (d.close) d.close(); else d.removeAttribute("open");
+}
+function edSave() {
+  const ids = ED_FIELDS[EDMODE].ids;
+  const before = {};
+  for (const id of ids) if ($(id)) before[id] = $(id).value;
+  const val = {};
+  for (const id of ids) { const e = $("ed_" + id); if (e) val[id] = e.value; }
+
+  // **ลำดับสำคัญ**: ประเทศ → เติมรายการสถานที่ → สถานที่ → ที่เหลือ
+  // ถ้าตั้ง place ก่อนเติมรายการ ค่าที่เลือกจะยังไม่มีใน <select> (ยังเป็นรายการ
+  // ของประเทศเดิม) แล้วหล่นไปตัวแรกเงียบ ๆ — เลือกโตเกียวได้พนมเปญ (เจอจริง)
+  const apply = (v) => {
+    if ("pcountry" in v) { $("pcountry").value = v.pcountry; fillPlaces(); }
+    if ("place" in v) { $("place").value = v.place; onPlaceChange(); }
+    for (const id of ids) {
+      if (id === "pcountry" || id === "place") continue;
+      // tz ต้องทับ *หลัง* onPlaceChange เพื่อให้ค่าที่ผู้ใช้แก้เอง (เช่น +1 ช่วง DST)
+      // ไม่ถูกเขียนทับด้วยเวลามาตรฐานของเมือง
+      if ($(id) && id in v) $(id).value = v[id];
+    }
+  };
+  apply(val);
+  run();
+  // run() รายงานปัญหาไว้ที่ #status อยู่แล้ว — ถ้าพัง อย่าปิดกล่อง
+  // คืนค่าเดิมอย่างเดียวไม่พอ run() ที่ล้มไปได้ล้างผลทิ้งแล้ว ต้องคำนวณกลับด้วย
+  if ($("status").className === "err") {
+    $("ederr").hidden = false;
+    $("ederr").textContent = $("status").textContent;
+    apply(before);
+    run();
+    return;
+  }
+  edClose();
+}
+$("edcancel").addEventListener("click", edClose);
+$("edsave").addEventListener("click", edSave);
+$("edlg").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && e.target.tagName === "INPUT") { e.preventDefault(); edSave(); }
+});
+for (const [id, mode] of [["dlTL", "radix"], ["dlTR", "transit"]]) {
+  $(id).addEventListener("click", () => edOpen(mode));
+  $(id).addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); edOpen(mode); }
+  });
+}
+
+// ── ตารางศูนย์รังสี 360° ───────────────────────────────────────────────────
+// เลียนแบบตารางกระดาษ "ศูนย์รังสี 360 องศา เรียงตามองศา (เริ่ม 0 จาก <ดาว>)"
+// แต่ละแถว = จุดไวจุดหนึ่ง (ดาวเดี่ยว หรือศูนย์รังสีของคู่ดาว) พร้อม
+//   • องศา = ระยะที่โค้งสุริยยาตร์ต้องเดินจาก "ดาวหลัก" ไปถึงจุดนั้น
+//   • วันที่ = วันที่โค้งเดินถึงจริง (solveArcDate คาบ 360°)
+// ดาวหลักถูกทดไปข้างหน้าด้วยโค้ง ดังนั้น "ดาวหลัก + โค้ง = จุดนั้น"
+// ครบ 9 ชั้นเท่ากับแท็บ "ตำแหน่งดาว" — เดิมขาด p/tp1/tp2 ทั้งที่เอนจินคิดให้อยู่แล้ว
+// (ตั้งค่าชั้นที่ไม่มีในลิสต์แล้ว <select> จะเงียบ ๆ ตกกลับเป็น r โดยไม่เตือน)
+const CTR_SRCS = ["r", "p", "tp1", "tp2", "v1", "v2", "l1", "l2", "t"];
+let CTRLAY = null, CTRROWS = [];
+let CTR = { p: "SU", src: "r", pts: { t: true }, single: true, mid: true,
+            zeroMain: true, minAge: 0, maxAge: 120, aspOnly: false, step: 360,
+            angOn: null };   // null = เอาทุกมุม · {} = ติ๊กบางมุม
+// จานกระตุ้น: โค้งแตะจุดหนึ่งซ้ำทุก ๆ กี่องศา — 360 = เฉพาะตอนทับจริง (กุม)
+// จานเล็กลง = จุดเดียวถูกกระตุ้นหลายครั้งในชีวิต (กติกาจานหมุนยูเรเนียน)
+// ชุดเดียวกับเว็บเป๊ะ (radio `dialSolarArcSetting`) — เพิ่ม 11.25 ใน urain-v38
+const CTR_STEPS = [360, 90, 45, 22.5, 11.25];
+// มุมที่จานกระตุ้นนั้นสร้างได้ พับให้อยู่ใน 0–180 แล้วไม่ซ้ำ
+function ctrAngles() {
+  const out = [];
+  for (let t = 0; t < 360 - 1e-9; t += CTR.step) {
+    const a = t > 180 ? 360 - t : t;
+    if (out.indexOf(a) < 0) out.push(a);
+  }
+  return out.sort((x, y) => x - y);
+}
+const ctrAngOK = (a) => !CTR.angOn || CTR.angOn[a];
+
+function ctrLayers(need) {
+  const key = [TL.jd, TL.jdT, TL.lat, TL.lon].join("|");
+  if (!CTRLAY || CTRLAY.key !== key) CTRLAY = { key, layers: {} };
+  for (const s of need)
+    if (!CTRLAY.layers[s])
+      CTRLAY.layers[s] = AISTRO.layerPositions(TL.R, TL.jd, TL.jdT, s, TL.lat, TL.lon, TZ);
+  return CTRLAY.layers;
+}
+
+// เดือน/ปี พ.ศ. แบบตารางกระดาษ (04/2514)
+function ctrDate(jd) {
+  const [y, m, d] = AISTRO.revjul(jd + TZ / 24);
+  return { txt: String(m).padStart(2, "0") + "/" + (y + 543),
+           full: `${d} ${AISTRO_RENDER.MONTH_TH[m - 1]} ${y + 543}`, y, m, d };
+}
+
+function ctrChips() {
+  const cls = (c) => `f-${AISTRO.FACTOR_CLASS[c] || "neutral"}`;
+  const plch = AISTRO.CODE_ORDER.map((c) =>
+    `<button type="button" class="plchip ${cls(c)}${c === CTR.p ? " on" : ""}"` +
+    ` data-cp="${c}">${glyphHTML(c)}</button>`).join("");
+  const lay = (k, cur, on) => CTR_SRCS.map((s) =>
+    `<span class="laychip${on(s) ? " on" : ""}" data-${k}="${s}">${s}</span>`).join("");
+  return `<div class="ctrrow"><span class="lbl">ดาวหลัก</span>` +
+    `<span class="plchips">${plch}</span>` +
+    `<span class="laychips">${lay("cs", CTR.src, (s) => s === CTR.src)}</span></div>` +
+    `<div class="ctrrow"><span class="lbl">ชั้นของจุด</span>` +
+    `<span class="laychips">${lay("cl", null, (s) => !!CTR.pts[s])}</span>` +
+    `<span class="sep"></span>` +
+    `<span class="laychip${CTR.single ? " on" : ""}" data-ck="single">ดาวเดี่ยว</span>` +
+    `<span class="laychip${CTR.mid ? " on" : ""}" data-ck="mid">ศูนย์รังสี</span>` +
+    `</div>` +
+    `<div class="ctrrow"><span class="lbl">คอลัมน์องศา</span>` +
+    `<span class="laychip${CTR.zeroMain ? " on" : ""}" data-ck="zeroMain">โค้งจากดาวหลัก</span>` +
+    `<span class="laychip${CTR.zeroMain ? "" : " on"}" data-ck="zeroAri">ตำแหน่งในจักรราศี</span>` +
+    `<span class="sep"></span><span class="lbl" style="flex:0 0 auto;min-width:0">กรอง</span>` +
+    `<span class="laychip${CTR.aspOnly ? " on" : ""}" data-ck="aspOnly">เฉพาะแถวที่ทำมุม</span>` +
+    `</div>` +
+    `<div class="ctrrow"><span class="lbl">จานกระตุ้น</span>` +
+    CTR_STEPS.map((v) =>
+      `<span class="laychip${v === CTR.step ? " on" : ""}" data-cd="${v}">` +
+      `${v === 360 ? "กุมอย่างเดียว" : v + "°"}</span>`).join("") +
+    `</div>` +
+    (CTR.step < 360
+      ? `<div class="ctrrow"><span class="lbl">กรองมุม</span>` +
+        ctrAngles().map((a) =>
+          `<span class="laychip${ctrAngOK(a) ? " on" : ""}" data-cg="${a}">${a}°</span>`).join("") +
+        `<span class="laychip${CTR.angOn ? "" : " on"}" data-cg="all">ทุกมุม</span></div>`
+      : "") +
+    `<div class="ctrrow"><span class="lbl" style="flex:0 0 auto;min-width:0">อายุ</span>` +
+    `<input type="number" id="ctrage0" min="0" max="359" value="${CTR.minAge}">` +
+    `<span class="ctrdash">–</span>` +
+    `<input type="number" id="ctrage" min="1" max="360" value="${CTR.maxAge}">` +
+    `<span class="lbl" style="flex:0 0 auto;min-width:0">ปี</span>` +
+    `</div>`;
+}
+
+// แถว "ดิบ" ของตารางศูนย์รังสี — ส่วนที่แพงจริง (แก้สมการหาวันที่ทีละจุด)
+// สิ่งที่เปลี่ยนแล้วต้องคิดใหม่มีแค่ 6 อย่างตามคีย์ข้างล่าง · ส่วน
+// zeroMain (คอลัมน์องศา) · aspOnly · กรองมุม · อายุขั้นต่ำ เป็นแค่การ
+// กรอง/เรียงของเดิม เดิมกดทีไรก็ solve ใหม่หมด 1,607 ครั้ง ทั้งที่ผลเท่าเดิม
+let CTRRAW = null;
+function ctrRawRows() {
+  const srcs = CTR_SRCS.filter((s) => CTR.pts[s]);
+  const key = [CTR.p, CTR.src, srcs.join(""), CTR.single, CTR.mid,
+               CTR.step, CTR.maxAge, AX60].join("|");
+  if (CTRRAW && CTRRAW.key === key) return CTRRAW.rows;
+  const L = ctrLayers(srcs.concat([CTR.src]));
+  const rows = AISTRO.radiationRows({
+    layers: L, srcs, main: L[CTR.src][CTR.p],
+    single: CTR.single, mid: CTR.mid, step: CTR.step,
+    jdBirth: TL.jd, jdEnd: TL.jd + CTR.maxAge * 365.2422,
+    tz: TZ, sixty: AX60,
+  });
+  CTRRAW = { key, rows };
+  return rows;
+}
+
+// ตารางนี้ตั้งอยู่บนกติกาเดียว: **ดาวหลักชั้นกำเนิดถูกโค้งพาไปทับจุดที่อยู่นิ่ง**
+// ถ้าชั้นที่เลือกทำให้กติกานี้ไม่จริง วันที่ในคอลัมน์ก็ไม่ได้แปลว่าอย่างที่เขียนไว้
+// เดิมตารางเงียบสนิท ทั้งที่แท็บ "ตรวจสูตร" จับเคสเดียวกันได้และขึ้นหมายเหตุอยู่แล้ว
+//   (fxRun ใช้ FX_K แก้สมการ (baseA + kA·arc) − (baseB + kB·arc) ≡ เป้าหมาย)
+// พิสูจน์: คำนวณทั้งสองฝั่ง**ใหม่ ณ วันที่ตารางบอก** แล้ววัดว่าทับกันจริงไหม
+//   หลัก r → จุด r  : ห่าง 0.000°  ✅ ทับจริง
+//   หลัก r → จุด v1 : ห่าง 7.573°  ❌ (v1 เดินตามโค้งเท่าดาวหลัก ไม่มีวันไล่ทัน)
+//   หลัก r → จุด v2 : ห่าง 1.725°  ❌ (v2 สวนทาง เข้าหากันเร็วเป็นสองเท่า)
+//   หลัก v1/v2/p/t → จุด r : ห่าง 38.470° = โค้ง ณ วันดวงจรพอดี (องศาเลื่อนทั้งคอลัมน์)
+function ctrWarn() {
+  const out = [];                                   // ปัญหาจริง — กรอบเหลือง
+  const pts = CTR_SRCS.filter((s) => CTR.pts[s]);
+  const arcLay = pts.filter((s) => FX_K[s] !== 0);       // v1/v2 = เดินตามโค้ง
+  const snapLay = pts.filter((s) => FX_SNAP.indexOf(s) >= 0);
+  if (arcLay.length) {
+    out.push(`<b>ชั้น ${arcLay.join("/")} เดินตามโค้งอยู่แล้ว</b> — ` +
+      `ตารางนี้ตรึงจุดไว้ที่ค่า ณ เวลาดวงจร แล้วรอให้โค้งเดินมาถึง ` +
+      `แต่จุดชั้นนี้ขยับตามโค้งไปด้วย ` +
+      (arcLay.indexOf("v1") >= 0
+        ? "(v1 ขยับเท่าดาวหลัก ระยะห่างจึงไม่เปลี่ยนเอง) "
+        : "(v2 สวนทาง เข้าหากันเร็วเป็นสองเท่า) ") +
+      `<b>วันที่ในคอลัมน์จึงไม่ใช่วันที่เกิดเหตุจริง</b> — ` +
+      `ใช้แท็บ “ตรวจสูตร” แทน มันคิดสัมประสิทธิ์โค้งให้ถูกต้อง`);
+  }
+  if (CTR.src !== "r") {
+    out.push(`<b>ดาวหลักอยู่ชั้น ${CTR.src} ไม่ใช่ชั้นกำเนิด</b> — ` +
+      `องศาวัดจากตำแหน่งของชั้นนั้น ไม่ใช่ตำแหน่งกำเนิด ` +
+      `คอลัมน์องศาและวันที่จึงเลื่อนไปทั้งคอลัมน์`);
+  }
+  const notes = [];
+  if (snapLay.length) {
+    notes.push(`ชั้น ${snapLay.join("/")} เป็นภาพนิ่ง ณ เวลาดวงจรที่กรอก ` +
+      `(ไม่เดินตามโค้ง) — ตั้งใจให้เป็นแบบนี้ เปลี่ยนวันดวงจรแล้วตารางจะเปลี่ยนตาม`);
+  }
+  return { warn: out, note: notes };
+}
+
+function ctrRows() {
+  const step = CTR.step;
+  // อายุขั้นต่ำเป็นแค่ตัวกรอง ไม่ใช่จุดหยุดลูป — ครั้งถัด ๆ ไปยังอยู่ในช่วงได้
+  const jdStart = TL.jd + CTR.minAge * 365.2422;
+  // เรียงตามคอลัมน์องศาที่แสดงจริง ไม่งั้นโหมด "0° เมษ" จะเรียงมั่ว
+  const k = CTR.zeroMain ? (p) => p.arc : (p) => p.deg;
+  return ctrRawRows()
+    .filter((p) => p.jd >= jdStart &&
+                   (!CTR.aspOnly || p.ang !== undefined) &&
+                   (step >= 360 || ctrAngOK(p.hit)))
+    .sort((x, y) => k(x) - k(y) ||
+          (x.n < y.n ? -1 : x.n > y.n ? 1 : 0));
+}
+
+function renderCtrPanel() {
+  const box = $("ctrbox"), out = $("ctrout");
+  if (!TL) { box.style.display = "none"; $("fxbox").style.display = "none";
+             out.innerHTML = ""; return; }
+  box.style.display = "";
+  $("fxbox").style.display = "";
+  fxFillPickers();
+  $("ctrctl").innerHTML = ctrChips();
+  const t0 = performance.now();
+  const rows = ctrRows();
+  const cls = (c) => `f-${AISTRO.FACTOR_CLASS[c] || "neutral"}`;
+  const gl = (p) => p.one
+    ? `<span class="pl ${cls(p.n)}">${glyphHTML(p.n)}</span>`
+    : `<span class="pl ${cls(p.a)}">${glyphHTML(p.a)}</span>` +
+      `<span class="mslash">/</span>` +
+      `<span class="pl ${cls(p.b)}">${glyphHTML(p.b)}</span>`;
+  const dm = (v) => {
+    const d = Math.floor(v), m = Math.round((v - d) * 60);
+    return (m === 60 ? d + 1 : d) + ":" + String(m === 60 ? 0 : m).padStart(2, "0");
+  };
+  CTRROWS = rows;
+  const html = rows.map((p, ri) => {
+    const dt = ctrDate(p.jd);
+    return `<div class="ctrrw${p.ang !== undefined ? " asp" : ""}" data-r="${ri}"` +
+      ` title="${p.n} ${p.s} · ${p.deg.toFixed(4)}° · ${dt.full} · อายุ ${p.age.toFixed(1)} ปี` +
+      ` · โค้ง ${p.arc.toFixed(3)}°` +
+      (CTR.step < 360 ? ` · กระตุ้นมุม ${p.hit}°` : "") +
+      (p.ang !== undefined ? ` · ทำมุมกับดาวหลักอยู่แล้ว ${p.ang}° orb ${p.orb.toFixed(2)}` : "") +
+      `">` +
+      `<span class="cpt">${gl(p)}<i class="lay">${p.s}</i></span>` +
+      `<span class="cdg">${CTR.zeroMain ? dm(p.arc) : dm(p.deg)}</span>` +
+      `<span class="cdt">${dt.txt}</span>` +
+      `<span class="cag">${p.age < 0 ? "" : Math.floor(p.age)}</span>` +
+      `<span class="cas">${CTR.step < 360 ? (p.hit || "☌")
+        : (p.ang !== undefined ? p.ang : "")}</span>` +
+      `</div>`;
+  }).join("");
+  const nAsp = rows.filter((p) => p.ang !== undefined).length;
+  const nPt = new Set(rows.map((p) => p.n + p.s)).size;
+  // หัวคอลัมน์: กริดไหลซ้าย→ขวา ถ้าวางหัวไว้ n ชิ้นแรก (n = จำนวนคอลัมน์จริง)
+  // หัวจะเต็มแถวบนสุดพอดีและตรงกับทุกคอลัมน์ ไม่ใช่ลอยอยู่ข้างบนอันเดียว
+  const hd = `<div class="ctrrw ctrhd"><span>จุด</span><span class="cdg">องศา</span>` +
+    `<span class="cdt">เดือน/ปี</span><span class="cag">อายุ</span>` +
+    `<span class="cas">มุม</span></div>`;
+  out.innerHTML =
+    `<h4 class="ctrtitle">ตารางศูนย์รังสี — ทุกจุดที่โค้งเดินไปถึง ` +
+    `เทียบจาก ${glyphHTML(CTR.p)}<i class="lay">${CTR.src}</i></h4>` +
+    `<div class="ctrhead"><span>${CTR.step < 360
+        ? `${rows.length} ครั้ง จาก ${nPt} จุด`
+        : `${rows.length} จุด`} · ` +
+    `ทำมุมกับ ${glyphHTML(CTR.p)}${CTR.src} อยู่แล้ว ${nAsp} แถว (แถบน้ำเงิน) · ` +
+    `อายุ ${CTR.minAge}–${CTR.maxAge} ปี · ${(performance.now() - t0).toFixed(0)} ms</span>` +
+    `<span class="ctrleg">` +
+    (CTR.angOn ? `กรองมุม ${ctrAngles().filter(ctrAngOK).join("/")}° · ` : "") +
+    `${CTR.zeroMain ? "องศา = โค้งที่เดินไปแล้ว" : "องศา = ตำแหน่งในจักรราศี"}` +
+    ` · มุม = ${CTR.step < 360 ? "มุมที่กระตุ้นครั้งนั้น" : "มุมที่ทำกับดาวหลักอยู่แล้ว"}</span></div>` +
+    (() => { const q = ctrWarn();
+      return q.warn.map((w) => `<p class="ctrwarn">${w}</p>`).join("") +
+             q.note.map((w) => `<p class="ctrnote">${w}</p>`).join(""); })() +
+    `<div class="ctrgrid">${hd.repeat(_ctrCols = ctrCols())}${html}</div>`;
+  $("ctrsel").innerHTML = "";     // เช่นเดียวกัน ตารางวาดใหม่แล้วแถวเดิมหาย
+  // คำนวณสูตรทันทีที่เปิดแท็บ ไม่งั้นช่องผลลัพธ์ว่างจนกว่าจะไปขยับ dropdown
+  // (และผลของสูตรขึ้นกับ "จานกระตุ้น" กับ "ถึงอายุ" ด้วย จึงต้องคิดใหม่ทุกครั้งที่ตารางเปลี่ยน)
+  fxRun();
+}
+// ── ตรวจสูตร: พิมพ์สมการแล้วดูว่าเกิดไหม/เมื่อไหร่ ────────────────────────
+// รับ 3 รูปแบบต่อข้าง: ดาวเดี่ยว "SU" · ศูนย์รังสี "SU/MO" · สูตร 4 ปัจจัย "SU+MO-AR"
+// ใส่ชั้นท้ายดาวได้ (SUv1) ไม่ใส่ = ใช้ชั้นปริยายที่เลือกไว้
+// ค่าสัมประสิทธิ์โค้ง k — ใช้แก้สมการหาว่าโค้งต้องเดินเท่าไร
+// v1 = กำเนิด+โค้ง (k=+1) · v2 = กำเนิด−โค้ง (k=−1)
+// ที่เหลือเป็น "ภาพนิ่ง ณ เวลาดวงจรที่กรอก" จึงไม่ขยับตามโค้ง (k=0) เหมือนชั้น r
+// (เดิมตั้ง p/tp/l/t เป็น "ไม่รู้" แล้วยอมแพ้ ทั้งที่ตารางศูนย์รังสีคิดเคสนี้ได้อยู่แล้ว)
+// ตัวอ่านสูตร ตัวประเมินข้าง และตัวแก้สมการ ย้ายไป engine.js แล้ว (urain-v37)
+// ที่นี่เหลือแต่การอ่านค่าจากฟอร์มกับการวาดผล — ดู test_formula.js
+const FX_K = AISTRO.FORMULA_K;
+const FX_SNAP = AISTRO.FORMULA_SNAP;
+const fxParseSide = AISTRO.parseFormulaSide;
+// มุมที่เลือกได้ — "" = ทุกมุมตามจานกระตุ้นที่ตั้งไว้ในตารางด้านล่าง
+const FX_ANGLES = [0, 22.5, 30, 45, 60, 67.5, 90, 112.5, 120, 135, 157.5, 180];
+// โหมดของแต่ละข้าง — ตัดสินว่าจะใช้ช่องดาวกี่ช่อง
+const FX_MODES = [["one", "ดาวเดี่ยว"], ["mid", "A/B ศูนย์รังสี"],
+                  ["abc", "A+B−C สูตร"]];
+function fxFillPickers() {
+  if ($("fxa1").options.length) return;
+  const opt = (c) => `<option value="${c}">${c} · ${FACTOR_TH[c]}</option>`;
+  const all = AISTRO.CODE_ORDER.map(opt).join("");
+  for (const id of ["fxa1", "fxa2", "fxa3", "fxb1", "fxb2", "fxb3"])
+    $(id).innerHTML = all;
+  $("fxa1").value = "SU"; $("fxa2").value = "MO"; $("fxa3").value = "AR";
+  $("fxb1").value = "MC"; $("fxb2").value = "VE"; $("fxb3").value = "AR";
+  const modes = FX_MODES.map(([v, t]) => `<option value="${v}">${t}</option>`).join("");
+  $("fxam").innerHTML = modes; $("fxbm").innerHTML = modes;
+  const lays = CTR_SRCS.map((x) =>
+    `<option${x === "r" ? " selected" : ""}>${x}</option>`).join("");
+  $("fxas").innerHTML = lays; $("fxbs").innerHTML = lays;
+  $("fxang").innerHTML =
+    `<option value="">ทุกมุม (ตามจานกระตุ้น)</option>` +
+    FX_ANGLES.map((a) => `<option value="${a}"${a === 0 ? " selected" : ""}>` +
+      `${a}°${a === 0 ? " กุม" : ""}</option>`).join("");
+  fxSyncMode();
+}
+// ซ่อน/แสดงช่องดาวตามโหมด — ดาวเดี่ยวใช้ 1 ช่อง · ศูนย์รังสี 2 · สูตร 3
+function fxSyncMode() {
+  for (const p of ["a", "b"]) {
+    const m = $("fx" + p + "m").value;
+    $("fx" + p + "2").hidden = (m === "one");
+    $("fx" + p + "3").hidden = (m !== "abc");
+  }
+  fxEcho();
+}
+// ประกอบสูตรจากช่องที่เลือก — ชั้นของข้างนั้นห้อยท้ายทุกดาวในข้างเดียวกัน
+function fxFormula() {
+  const side = (p) => {
+    const s = $("fx" + p + "s").value, m = $("fx" + p + "m").value;
+    const g = (n) => $("fx" + p + n).value + s;
+    if (m === "mid") return `${g(1)}/${g(2)}`;
+    if (m === "abc") return `${g(1)}+${g(2)}-${g(3)}`;
+    return g(1);
+  };
+  return side("a") + "=" + side("b");
+}
+function fxEcho() { $("fxeq").textContent = fxFormula(); }
+// วาดข้างหนึ่งของสมการเป็นสัญลักษณ์ดาว พร้อมป้ายชั้นห้อยท้าย (เหมือนแผงแกน)
+function fxSideHTML(side) {
+  const cls = (c) => `f-${AISTRO.FACTOR_CLASS[c] || "neutral"}`;
+  const one = (x) =>
+    `<span class="pl ${cls(x.c)}">${glyphHTML(x.c)}<i class="lay">${x.s}</i></span>`;
+  const op = (t) => `<span class="op">${t}</span>`;
+  if (side.kind === "mid")
+    return one(side.f[0]) + op("/") + one(side.f[1]);
+  if (side.kind === "abc")
+    return one(side.f[0]) + op("+") + one(side.f[1]) + op("−") + one(side.f[2]);
+  return one(side.f[0]);
+}
+// คำไทยของข้างหนึ่ง — "ศูนย์รังสี ก/ข" หรือ "สูตร ก+ข−ค"
+function fxSideTH(side) {
+  const n = side.f.map((x) => FACTOR_TH[x.c] || x.c);
+  const lay = side.f[0].s;
+  if (side.kind === "mid") return `ศูนย์รังสี ${n[0]}/${n[1]} (ชั้น ${lay})`;
+  if (side.kind === "abc") return `สูตร ${n[0]}+${n[1]}−${n[2]} (ชั้น ${lay})`;
+  return `${n[0]} (ชั้น ${lay})`;
+}
+
+function fxRun() {
+  const box = $("fxout");
+  if (!TL) { box.innerHTML = ""; return; }
+  const q = fxFormula();
+  fxEcho();
+  // parseFloat ตรง ๆ — `|| 1` เดิมทำให้พิมพ์ 0 กลายเป็น 1 แทนที่จะถูกบีบเป็น 0.1
+  const rawOrb = parseFloat($("fxorb").value);
+  const orbMax = Math.max(0.1, Math.min(5, isNaN(rawOrb) ? 1 : rawOrb));
+  const defLay = $("fxas").value;
+  const pick = $("fxang").value === "" ? null : +$("fxang").value;
+  let out = "";
+  try {
+    const p = q.split("=");
+    if (p.length !== 2) throw new Error('ต้องมีเครื่องหมาย "=" หนึ่งตัว');
+    const A = fxParseSide(p[0], defLay), B = fxParseSide(p[1], defLay);
+    const need = [];
+    for (const sd of [A, B]) for (const f of sd.f)
+      if (need.indexOf(f.s) < 0) need.push(f.s);
+    // ชั้น r ต้องมีเสมอ — evalFormulaSide ใช้เป็น "ฐานตอนโค้ง = 0" ของชั้น v1/v2
+    // เดิมพึ่งความบังเอิญว่าตารางศูนย์รังสีโหลด r ไว้ให้แล้ว ถ้าไม่โหลดจะพังเงียบ ๆ
+    if (need.indexOf("r") < 0) need.push("r");
+    const L = ctrLayers(need);
+    const SOL = AISTRO.formulaSolve({
+      layers: L, sideA: A, sideB: B,
+      jdBirth: TL.jd,
+      jdStart: TL.jd + CTR.minAge * 365.2422,
+      jdEnd: TL.jd + CTR.maxAge * 365.2422,
+      step: CTR.step, pick, angOn: CTR.angOn, orbMax, sixty: AX60, tz: TZ,
+    });
+    const a = SOL.a, b = SOL.b, sep = SOL.sep;
+    const f = { ang: SOL.ang, orb: SOL.orb };
+    const hit = SOL.hit;
+    const dmf = (v) => { const d = Math.floor(v), m = (v - d) * 60;
+      return `${String(d).padStart(3, "0")}°${String(Math.floor(m)).padStart(2, "0")}′`; };
+    // สรุปว่าสูตรที่เลือกคืออะไร — เป็นสัญลักษณ์ + คำไทย ให้อ่านรู้เรื่องโดยไม่ต้องแปลรหัสเอง
+    out += `<div class="fxsum"><div class="fxsym">${fxSideHTML(A)}` +
+      `<span class="fxang">${f.ang}°</span>${fxSideHTML(B)}</div>` +
+      `<div class="fxth">${AISTRO_RENDER.esc(fxSideTH(A))} ` +
+      `<b>ทำมุม ${f.ang}°</b> กับ ${AISTRO_RENDER.esc(fxSideTH(B))}</div></div>`;
+    // เก็บรายละเอียด "ณ เวลาดวงจร" ไว้ก่อน ค่อยวางหลังคำตอบหลัก
+    // (เดิมขึ้น "✘ ไม่เกิด" ตัวใหญ่ก่อน คนอ่านหยุดตรงนั้นแล้วนึกว่าไม่มีคำตอบ
+    //  ทั้งที่คำตอบจริงอยู่บรรทัดท้ายสุด — ผู้ใช้ทักมาแล้ว)
+    const nowHTML = `<p class="fxnow ${hit ? "yes" : "no"}">` +
+      `${hit ? "✔ เข้าเกณฑ์แล้ว" : "ยังไม่เข้าเกณฑ์"} ณ เวลาดวงจรที่กรอก — ` +
+      `${dmf(a.deg)} กับ ${dmf(b.deg)} · ห่าง ${sep.toFixed(3)}° · ` +
+      `${pick === null ? "มุมใกล้สุด" : "มุมที่เลือก"} ${f.ang}° · ` +
+      `${pick === null ? "orb" : "ห่างจากมุมนั้น"} <b>${f.orb.toFixed(3)}°</b> ` +
+      `(เกณฑ์ ${orbMax}°)</p>`;
+    // เมื่อไหร่: ถ้าสองข้างขยับเท่ากัน (รวมกรณีนิ่งทั้งคู่) ระยะห่างไม่เปลี่ยนเอง
+    // → เดินโค้งที่ "ฝั่งซ้าย" แทน เหมือนที่ตารางศูนย์รังสีเดินโค้งที่ดาวหลัก
+    const same = SOL.same, snap = SOL.snap;
+    {
+      // หมายเหตุเก็บไว้ก่อน — คำตอบหลักต้องขึ้นก่อนหมายเหตุ ไม่ใช่ตามหลัง
+      let notes = "";
+      if (snap.length)
+        notes += `<p class="fxnote">ชั้น ${snap.join("/")} ` +
+          `เป็นภาพนิ่ง ณ เวลาดวงจรที่กรอก (ไม่เดินตามโค้ง)</p>`;
+      if (same)
+        notes += `<p class="fxnote">สองข้างขยับเท่ากัน ระยะห่างจึงไม่เปลี่ยนเอง — ` +
+          `จึง<b>เดินโค้งที่ฝั่งซ้าย</b> เหมือนที่ตารางศูนย์รังสีเดินโค้งที่ดาวหลัก</p>`;
+      const rows = SOL.rows;
+      const step = CTR.step;
+      // คำตอบหลักขึ้นก่อน — ถ้าโค้งพาให้เกิด บอกวันครั้งแรกตรงนี้เลย
+      const first = rows[0] && ctrDate(rows[0].jd);
+      out += `<p class="fxlead ${hit ? "yes" : (rows.length ? "soon" : "no")}">` +
+        (hit
+          ? `<b>✔ เกิดแล้ว</b> ณ เวลาดวงจรที่กรอก` +
+            (rows.length ? ` · โค้งพาให้เกิดอีก ${rows.length} ครั้ง` : "")
+          : rows.length
+            ? `<b>✔ เกิด — แต่ยังไม่ถึงเวลา</b> · โค้งพาให้เกิด ${rows.length} ครั้ง · ` +
+              `ครั้งแรก <b>${AISTRO_RENDER.esc(first.full)}</b> ` +
+              `(อายุ ${((rows[0].jd - TL.jd) / 365.2422).toFixed(1)} ปี)`
+            : `<b>✘ ไม่เกิด</b> ทั้งตอนนี้และตลอดช่วงอายุ ${CTR.minAge}–${CTR.maxAge} ปี`) +
+        `</p>` + nowHTML + notes;
+      out += rows.length
+        ? `<p class="fxnote">โค้งพาให้เกิด ${rows.length} ครั้ง ` +
+          `(${pick !== null ? "เฉพาะมุม " + pick + "°"
+             : "จานกระตุ้น " + (step === 360 ? "กุมอย่างเดียว" : step + "°")}` +
+          ` · อายุ ${CTR.minAge}–${CTR.maxAge} ปี)</p>` +
+          `<div class="fxrows"><div class="fxrw fxhd"><span class="cas">มุม</span>` +
+          `<span class="cdg">องศา</span><span class="cdt">วันที่</span>` +
+          `<span class="cag">อายุ</span></div>` + rows.map((r) => {
+            const dt = ctrDate(r.jd);
+            return `<div class="fxrw"><span class="cas">${r.ang}°</span>` +
+              `<span class="cdg">${r.arc.toFixed(2)}°</span>` +
+              `<span class="cdt">${dt.full}</span>` +
+              `<span class="cag">${((r.jd - TL.jd) / 365.2422).toFixed(1)}</span></div>`;
+          }).join("") + `</div>`
+        : `<p class="fxnote">โค้งไม่พาให้เกิดเลยในช่วงอายุ ${CTR.minAge}–${CTR.maxAge} ปี</p>`;
+    }
+  } catch (e) {
+    out = `<p class="fxnow no">อ่านสูตรไม่ออก: ${AISTRO_RENDER.esc(e.message)}</p>`;
+  }
+  box.innerHTML = out;
+}
+$("fxgo").addEventListener("click", fxRun);
+// เปลี่ยนช่องไหนก็คำนวณใหม่ทันที — ไม่ต้องกดปุ่มทุกครั้ง
+for (const id of ["fxa1", "fxa2", "fxa3", "fxas", "fxang",
+                  "fxb1", "fxb2", "fxb3", "fxbs", "fxorb"])
+  $(id).addEventListener("change", fxRun);
+for (const id of ["fxam", "fxbm"])
+  $(id).addEventListener("change", () => { fxSyncMode(); fxRun(); });
+
+// จำนวนคอลัมน์ที่กริดจะจัดได้จริง — ต้องตรงกับ minmax() ใน .ctrgrid
+function ctrCols() {
+  const w = $("ctrout").clientWidth || 900, GAP = 14, MIN = 232;
+  return Math.max(1, Math.floor((w + GAP) / (MIN + GAP)));
+}
+// จำนวนคอลัมน์เปลี่ยน = ต้องมีหัวตารางเท่าจำนวนคอลัมน์ (กริดไหลซ้าย→ขวา)
+// แต่ "แถว" ไม่เปลี่ยนสักแถว — เดิมเรียก renderCtrPanel() เต็มชุดตอนลากขอบหน้าต่าง
+// จึง solve ใหม่ 1,607 ครั้งและเขียน DOM ทั้งชุด (วัดได้ 110 ms ต่อครั้ง)
+function ctrSyncHead() {
+  const g = $("ctrout").querySelector(".ctrgrid");
+  if (!g) return;
+  const want = ctrCols();
+  let have = 0;
+  while (g.children[have] && g.children[have].classList.contains("ctrhd")) have++;
+  for (; have > want; have--) g.children[have - 1].remove();
+  if (have < want) {
+    const first = g.children[have] || null;
+    const tpl = g.querySelector(".ctrhd");
+    if (!tpl) return;
+    for (; have < want; have++) g.insertBefore(tpl.cloneNode(true), first);
+  }
+}
+let _ctrCols = 0;
+window.addEventListener("resize", () => {
+  if (CUR_PANEL !== "pctr" || !TL) return;
+  const n = ctrCols();
+  if (n !== _ctrCols) { _ctrCols = n; ctrSyncHead(); }
+});
+PANEL_DRAW.pctr = renderCtrPanel;
+
+// สรุปแถวที่กดเป็น "สมการเต็ม" — ดาวหลัก ทำมุมเท่าไร กับจุดอะไร แล้วเมื่อไหร่
+function ctrRowHTML(p) {
+  const cls = (c) => `f-${AISTRO.FACTOR_CLASS[c] || "neutral"}`;
+  const gl = (c, s) =>
+    `<span class="pl ${cls(c)}">${glyphHTML(c)}<i class="lay">${s}</i></span>`;
+  const pt = p.one ? gl(p.n, p.s)
+    : gl(p.a, p.s) + `<span class="op">/</span>` + gl(p.b, p.s);
+  const ptTH = p.one ? (FACTOR_TH[p.n] || p.n)
+    : `ศูนย์รังสี ${FACTOR_TH[p.a] || p.a}/${FACTOR_TH[p.b] || p.b}`;
+  const ang = CTR.step < 360 ? p.hit : 0;
+  const dt = ctrDate(p.jd);
+  const esc = AISTRO_RENDER.esc;
+  return `<div class="fxsum"><div class="fxsym">` +
+    gl(CTR.p, CTR.src) + `<span class="fxang">${ang}°</span>` + pt + `</div>` +
+    `<div class="fxth">เทียบจาก ${esc(FACTOR_TH[CTR.p] || CTR.p)} (ชั้น ${CTR.src}) ` +
+    `<b>ทำมุม ${ang}°</b> กับ ${esc(ptTH)} (ชั้น ${p.s})</div>` +
+    `<div class="fxth">โค้งเดินไป <b>${p.arc.toFixed(3)}°</b> · ` +
+    `<b>${esc(dt.full)}</b> · อายุ ${p.age.toFixed(1)} ปี` +
+    (p.ang !== undefined
+      ? ` · <span class="ctrnat">จุดนี้ทำมุม ${p.ang}° กับดาวหลักอยู่แล้ว (orb ${p.orb.toFixed(2)})</span>`
+      : "") + `</div><div class="ctrmean"></div></div>`;
+}
+// คำแปลของแถวที่กด — จุดเดี่ยว+ดาวหลัก = คู่ 2 ดาว · ศูนย์รังสี+ดาวหลัก = 3 ดาว
+// ใช้พจนานุกรมชุดเดียวกับแผงแกน โหลดครั้งแรกที่กด (0.3 MB)
+let CTRSEQ = 0;
+async function ctrMeaning(p, seq) {
+  const box = $("ctrsel").querySelector(".ctrmean");
+  if (!box) return;
+  const spec = p.one ? { type: "A", p: p.n, axis: CTR.p }
+                     : { type: "AB", a: p.a, b: p.b, axis: CTR.p };
+  if (DICT_STATE !== "ready") {
+    box.innerHTML = '<div class="mnone">กำลังโหลดพจนานุกรม 0.3 MB …</div>';
+    try { await dictReady(); }
+    catch (e) {
+      if (seq !== CTRSEQ) return;
+      const bx = $("ctrsel").querySelector(".ctrmean");
+      if (bx) bx.innerHTML = await dictErrHTML(e);
+      return;
+    }
+    if (seq !== CTRSEQ) return;            // กดแถวอื่นไปแล้วระหว่างโหลด
+    const b2 = $("ctrsel").querySelector(".ctrmean");
+    if (!b2) return;
+    b2.innerHTML = meanHTML(spec);
+    return;
+  }
+  box.innerHTML = meanHTML(spec);
+}
+$("ctrout").addEventListener("click", (e) => {
+  const r = e.target.closest(".ctrrw");
+  const prev = $("ctrout").querySelector(".ctrrw.on");
+  if (prev) prev.classList.remove("on");
+  if (!r || r.classList.contains("ctrhd")) { $("ctrsel").innerHTML = ""; return; }
+  r.classList.add("on");
+  const p = CTRROWS[+r.dataset.r];
+  $("ctrsel").innerHTML = p ? ctrRowHTML(p) : "";
+  if (p) ctrMeaning(p, ++CTRSEQ);
+});
+$("ctrctl").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-cp],[data-cs],[data-cl],[data-ck],[data-cd],[data-cg]");
+  if (!b) return;
+  const d = b.dataset;
+  if (d.cp) CTR.p = d.cp;
+  else if (d.cs) CTR.src = d.cs;
+  else if (d.cl) {
+    CTR.pts[d.cl] = !CTR.pts[d.cl];
+    if (!CTR_SRCS.some((s) => CTR.pts[s])) CTR.pts[d.cl] = true;   // ต้องเหลือชั้นหนึ่ง
+  } else if (d.ck === "zeroMain") CTR.zeroMain = true;
+  else if (d.ck === "zeroAri") CTR.zeroMain = false;
+  else if (d.ck === "single") { if (CTR.mid) CTR.single = !CTR.single; }
+  else if (d.ck === "mid") { if (CTR.single) CTR.mid = !CTR.mid; }
+  else if (d.ck === "aspOnly") CTR.aspOnly = !CTR.aspOnly;
+  else if (d.cd) { CTR.step = +d.cd; CTR.angOn = null; }   // เปลี่ยนจาน = คืนค่าทุกมุม
+  else if (d.cg === "all") CTR.angOn = null;
+  else if (d.cg) {
+    if (!CTR.angOn) { CTR.angOn = {}; for (const a of ctrAngles()) CTR.angOn[a] = true; }
+    const a = +d.cg;
+    CTR.angOn[a] = !CTR.angOn[a];
+    if (!ctrAngles().some((x) => CTR.angOn[x])) CTR.angOn[a] = true;   // ต้องเหลือมุมหนึ่ง
+  }
+  renderCtrPanel();
+});
+$("ctrctl").addEventListener("change", (e) => {
+  if (e.target.id !== "ctrage" && e.target.id !== "ctrage0") return;
+  // parseFloat ตรง ๆ — `|| 120` เดิมทำให้พิมพ์ 0 แล้วเด้งเป็น 120 เพราะ 0 เป็น falsy
+  const rawHi = parseFloat($("ctrage").value), rawLo = parseFloat($("ctrage0").value);
+  const hi = Math.max(1, Math.min(360, isNaN(rawHi) ? 120 : rawHi));
+  let lo = Math.max(0, Math.min(359, isNaN(rawLo) ? 0 : rawLo));
+  if (lo >= hi) lo = Math.max(0, hi - 1);   // ช่วงต้องไม่กลับหัว
+  CTR.minAge = lo; CTR.maxAge = hi;
+  renderCtrPanel();
+});
+
+function applyFilters() {
+  const on = {};
+  document.querySelectorAll(".tools input").forEach((b) => {
+    on[b.dataset.k] = b.checked;
+  });
+  document.querySelectorAll(".mcol").forEach((col) => {
+    let shown = 0;
+    col.querySelectorAll(".tsec").forEach((sec) => {
+      let vis = 0;
+      sec.querySelectorAll(".frow").forEach((r) => {
+        let ok = on[sec.dataset.t];
+        if (ok && on.onlyPer && !r.classList.contains("has-per")) ok = false;
+        if (ok && on.onlyGood && !r.classList.contains("has-good")) ok = false;
+        if (ok && on.onlyBad && !r.classList.contains("has-bad")) ok = false;
+        r.classList.toggle("hide", !ok);
+        if (ok) vis++;
+      });
+      sec.classList.toggle("hide", vis === 0);
+      shown += vis;
+    });
+    col.classList.toggle("empty", shown === 0);
+  });
+  // เตือนให้เห็นชัดว่ากำลังซ่อนแถวอยู่ — ไม่งั้นเทียบกับเว็บแล้วเข้าใจผิดว่าสูตรหาย
+  const total = document.querySelectorAll(".frow").length;
+  const shown = document.querySelectorAll(".frow:not(.hide)").length;
+  const w = $("fwarn"), c = $("clearf");
+  const active = total > 0 && shown < total;
+  w.hidden = !active;
+  c.hidden = !active;
+  if (active) w.textContent = `⚠️ กำลังกรอง — ซ่อน ${total - shown} จาก ${total} แถว`;
+  document.querySelectorAll(".tools label").forEach((l) => {
+    l.classList.toggle("on", l.querySelector("input").checked);
+  });
+}
+$("clearf").addEventListener("click", () => {
+  document.querySelectorAll(".tools input").forEach((b) => {
+    b.checked = /^t[1-4]$/.test(b.dataset.k);
+  });
+  applyFilters();
+});
+// ── เครื่องมือเทียบกับเว็บ ────────────────────────────────────────────────
+let LAST = null;   // {months:[[y,m]], rowsByMonth:[[ข้อความแถว]]}
+
+function normRow(s) {
+  return s.replace(/\s+/g, "").replace(/[|｜]/g, "|").trim();
+}
+
+const li = (a, cls) => a.map(
+  (s) => `<div class="cmpitem ${cls}">${AISTRO_RENDER.esc(s)}</div>`).join("");
+function runCompare() {
+  const box = $("cmpout");
+  if (!LAST) { box.textContent = "กดคำนวณก่อน"; return; }
+  const idx = +$("cmpmonth").value;
+  const mine = LAST.rowsByMonth[idx].map(normRow);
+  // แถวสูตรต้องมีรูปเป็นรหัสดาว+ชั้น คั่นด้วย = หรือ / เท่านั้น
+  // เดิมรับทุกบรรทัดที่ไม่ว่าง ข้อความมั่วจึงถูกนับเป็น "แถวที่แอปขาด" ทั้งที่อ่านไม่ออก
+  const ROW_RE = /^[A-Z]{2}(r|p|tp1|tp2|v1|v2|l1|l2|t)?([=/|][A-Z]{2}(r|p|tp1|tp2|v1|v2|l1|l2|t)?)+$/;
+  const lines = $("cmptext").value.split(/\r?\n/).map(normRow)
+    .filter((s) => s && !/^=+TYPE/i.test(s) && !/^=+$/.test(s));
+  const theirs = lines.filter((s) => ROW_RE.test(s));
+  const junk = lines.filter((s) => !ROW_RE.test(s));
+  if (!lines.length) { box.textContent = "ยังไม่ได้วางข้อความจากเว็บ"; return; }
+  if (!theirs.length) {
+    box.innerHTML = `<div class="cmpsum"><b class="bad">อ่านไม่ออกสักแถว</b> — ` +
+      `ต้องเป็นสูตรแบบ <code>SUv1=MOv2</code> หรือ <code>ARr/MOr=MCr</code> ` +
+      `(ปุ่ม "รหัส" บนเว็บ) · ได้มา ${junk.length} บรรทัดที่ไม่ใช่สูตร</div>` +
+      `<div class="cmpgrp">${li(junk.slice(0, 20), "extra")}</div>`;
+    return;
+  }
+  const bagMine = new Map(), bagTheirs = new Map();
+  for (const s of mine) bagMine.set(s, (bagMine.get(s) || 0) + 1);
+  for (const s of theirs) bagTheirs.set(s, (bagTheirs.get(s) || 0) + 1);
+  const onlyWeb = [], onlyApp = [];
+  for (const [s, n] of bagTheirs) {
+    const d = n - (bagMine.get(s) || 0);
+    for (let i = 0; i < d; i++) onlyWeb.push(s);
+  }
+  for (const [s, n] of bagMine) {
+    const d = n - (bagTheirs.get(s) || 0);
+    for (let i = 0; i < d; i++) onlyApp.push(s);
+  }
+
+  // ตัวเลขที่สำคัญคือ "แอปขาดของเว็บกี่แถว" — ส่วนที่แอปมีเกินมักเกิดจาก
+  // วางมาไม่ครบ (คอลัมน์บนเว็บเลื่อนดูได้ ภาพ/การคัดลอกมักได้แค่ท่อนบน)
+  const verdict = onlyWeb.length === 0
+    ? `<b class="ok">✓ ไม่มีแถวของเว็บที่แอปขาด</b>`
+    : `<b class="bad">✗ แอปขาด ${onlyWeb.length} แถวที่เว็บมี</b>`;
+  const extra = (onlyApp.length === 0 ? ""
+    : ` · แอปมีเพิ่ม ${onlyApp.length} แถว` +
+      (theirs.length < mine.length ? " (น่าจะวางมาไม่ครบ)" : "")) +
+    (junk.length ? ` · ข้ามบรรทัดที่ไม่ใช่สูตร ${junk.length} บรรทัด` : "");
+  box.innerHTML =
+    `<div class="cmpsum">แอป ${mine.length} แถว · วางจากเว็บ ${theirs.length} แถว — ` +
+    verdict + extra + `</div>` +
+    (onlyWeb.length ? `<div class="cmpgrp"><b>เว็บมี แต่แอปไม่มี — ต้องแก้ (${onlyWeb.length})</b>${li(onlyWeb, "miss")}</div>` : "") +
+    (onlyApp.length ? `<div class="cmpgrp"><b>แอปมี แต่ไม่ได้วางมา (${onlyApp.length})</b>${li(onlyApp, "extra")}</div>` : "");
+}
+$("cmpgo").addEventListener("click", runCompare);
+$("cmpclear").addEventListener("click", () => {
+  $("cmptext").value = ""; $("cmpout").innerHTML = "";
+});
+
+document.querySelectorAll(".tools input").forEach((b) =>
+  b.addEventListener("change", applyFilters));
+$("go").addEventListener("click", run);
+// เปลี่ยนช่วงตารางแล้วคำนวณใหม่เลย — ไม่ต้องกดคำนวณซ้ำ
+// เงื่อนไขต้องเป็น "ตารางดาวโหลดเสร็จแล้ว" ไม่ใช่ "มีผลลัพธ์อยู่" (TL)
+// เพราะ error จะล้าง TL ทิ้ง แล้วผู้ใช้จะแก้ช่วงเพื่อกู้สถานการณ์ไม่ได้เลย
+for (const id of ["mback", "mfwd"])
+  $(id).addEventListener("change", () => {
+    mrSum();                                  // สรุปต้องเปลี่ยนแม้ยังคำนวณไม่ได้
+    if (!$("go").disabled) run();
+  });
+// ── โหลดตารางดาวแล้วค่อยเริ่ม ─────────────────────────────────────────────
+// ก่อนโหลดเสร็จห้ามให้กดคำนวณ ไม่งั้นจะได้ RangeError ที่อธิบายไม่ได้
+(async () => {
+  const st = $("status");
+  $("go").disabled = true;
+  st.textContent = "กำลังโหลดตารางดาว (10 MB) …";
+  const t0 = performance.now();
+  try {
+    const info = await AISTRO.loadEphem("ephem.bin.gz");
+    $("go").disabled = false;
+    st.textContent = `พร้อมคำนวณ · ตารางดาว ${info.bodies} ชุด ` +
+      `(${(performance.now() - t0).toFixed(0)} ms)`;
+    run();
+  } catch (e) {
+    st.className = "err";
+    // เดิมจบแค่นี้ ปุ่มคำนวณค้าง disabled ตลอด ต้องรีโหลดเองถึงจะได้ลองใหม่
+    // และถ้าไฟล์เสียถูก cache-first เก็บไว้ รีโหลดก็พังซ้ำ — จึงต้องมีปุ่มที่
+    // ล้างแคชของไฟล์นั้นแล้วดึงใหม่จากเครือข่าย
+    st.innerHTML = "โหลดตารางดาวไม่สำเร็จ: " +
+      AISTRO_RENDER.esc(e.message || String(e)) +
+      ' <button type="button" id="ephretry" class="clearf">ลองใหม่</button>';
+    const btn = $("ephretry");
+    if (btn) btn.addEventListener("click", async () => {
+      btn.disabled = true;
+      st.className = "";
+      st.textContent = "กำลังโหลดตารางดาวอีกครั้ง …";
+      try {
+        if (window.caches) {
+          for (const k of await caches.keys()) {
+            const c = await caches.open(k);
+            await c.delete("./ephem.bin.gz"); await c.delete("ephem.bin.gz");
+          }
+        }
+      } catch (err) { /* ล้างแคชไม่ได้ก็ยังลองดึงใหม่ได้ */ }
+      try {
+        const info = await AISTRO.loadEphem("ephem.bin.gz?retry=" + Date.now());
+        $("go").disabled = false;
+        st.textContent = `พร้อมคำนวณ · ตารางดาว ${info.bodies} ชุด`;
+        run();
+      } catch (err2) {
+        st.className = "err";
+        st.textContent = "ยังโหลดไม่สำเร็จ: " + (err2.message || err2) +
+          " — ลองตรวจการเชื่อมต่อแล้วรีโหลดหน้า";
+      }
+    });
+  }
+})();
+
+// ── service worker: ใช้งานออฟไลน์ + ติดตั้งลงหน้าจอโฮมได้ ─────────────────
+// สถานะออฟไลน์ — ต้องบอกผลจริง ไม่กลืน error เงียบ ไม่งั้นทดสอบไม่ได้ว่าติดตั้งสำเร็จไหม
+function swStat(txt, cls) {
+  const e = $("swstat");
+  if (e) { e.textContent = " · " + txt; e.className = cls || ""; }
+}
+if (location.protocol === "file:") {
+  swStat("เปิดจากไฟล์ (file://) — ใช้งานได้ แต่ติดตั้งลงจอโฮมไม่ได้");
+} else if (!("serviceWorker" in navigator)) {
+  swStat("เบราว์เซอร์นี้ไม่รองรับ service worker", "warn");
+} else {
+  window.addEventListener("load", async () => {
+    try {
+      // updateViaCache:"none" — บังคับให้เบราว์เซอร์ถาม sw.js กับเซิร์ฟเวอร์เสมอ
+      // ไม่งั้น sw.js เองอาจถูกแคช HTTP ไว้แล้วรุ่นใหม่ไม่มีวันถูกเห็น
+      const reg = await navigator.serviceWorker.register("sw.js",
+        { updateViaCache: "none" });
+      const ready = () => swStat("พร้อมใช้ออฟไลน์ (แคช " + SW_CACHE + ")", "ok");
+      // เฝ้าการติดตั้งรุ่นใหม่เสมอ แม้มี controller เก่าอยู่แล้ว
+      // เดิมถ้ามี controller จะรายงาน "พร้อมใช้" ทันที การติดตั้งรุ่นใหม่ล้มเหลว
+      // จึงเงียบสนิท ผู้ใช้ค้างรุ่นเก่าโดยไม่รู้ตัว
+      reg.addEventListener("updatefound", () => {
+        const nw = reg.installing;
+        if (!nw) return;
+        swStat("กำลังอัปเดตรุ่นใหม่ …");
+        nw.addEventListener("statechange", () => {
+          if (nw.state === "activated") ready();
+          if (nw.state === "redundant")
+            swStat("อัปเดตรุ่นใหม่ไม่สำเร็จ — ยังใช้รุ่นเดิมอยู่", "warn");
+        });
+      });
+      if (navigator.serviceWorker.controller) ready();
+      else {
+        swStat("กำลังดาวน์โหลดตารางดาว ~11 MB …");
+        const sw = reg.installing || reg.waiting;
+        if (sw) sw.addEventListener("statechange", () => {
+          if (sw.state === "activated") ready();
+          if (sw.state === "redundant") swStat("ติดตั้งออฟไลน์ไม่สำเร็จ", "warn");
+        });
+        else ready();
+      }
+    } catch (e) {
+      swStat("ติดตั้งออฟไลน์ไม่สำเร็จ: " + (e && e.message ? e.message : e), "warn");
+    }
+  });
+}
+
+// ── ตะขอเทสต์ชั้นหน้าเว็บ ────────────────────────────────────────────────
+// เปิด index.html?uitest=1 แล้ว uitest.js จะรันในหน้าจริง
+// เคยลองทำเป็นหน้าแยกที่โหลด index.html ใส่ iframe แต่เบราว์เซอร์บางตัว
+// (รวมตัวที่ฝังใน Claude Code) กัน iframe เป็นคนละ origin แม้พาธเดียวกัน
+// จึงเข้าไปอ่าน DOM ไม่ได้เลย · วิธีนี้ทดสอบ "หน้าจริง" ตรง ๆ ไม่ต้องพึ่ง iframe
+// ไม่โหลดตอนใช้งานปกติ และไม่อยู่ในรายการแคชของ service worker
+if (/[?&]uitest\b/.test(location.search)) {
+  const s = document.createElement("script");
+  s.src = "uitest.js";
+  document.body.appendChild(s);
+}
+
+</script>
+</body>
+</html>
