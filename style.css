@@ -640,15 +640,13 @@ p.hint:empty{display:none}
   .tlbar .num{width:52px!important}
 }
 @media (max-width:640px){
-  /* 4 มุมรอบจานเดิม "ซ่อนทิ้ง" บนมือถือ — ข้อมูลดวงกำเนิด/ดวงจร/อายุ/โค้ง
-   * และค่าตั้งจานหายไปทั้งชุด · ย้ายลงมาเป็นบล็อกใต้จานแทนการซ่อน */
-  .dialwrap{flex-direction:column;align-items:stretch}
-  .dialinfo{position:static;display:grid;grid-template-columns:1fr 1fr;
-    gap:var(--s2) var(--s4);margin-top:var(--s3);padding-top:var(--s3);
-    border-top:1px solid var(--rule-soft)}
-  .dialinfo>div{position:static;max-width:none;text-align:left!important}
-  .dialinfo b{font-size:var(--t-sm)}
-  .dialinfo span{font-size:10px}
+  /* คงข้อมูล 4 มุมรอบจานเหมือนเดสก์ท็อป (ผู้ใช้ขอ — เดิมย้ายลงใต้จานแล้ว
+   * อ่านไม่สะดวก) · มุมของกรอบสี่เหลี่ยมอยู่นอกวงกลมจานพอดี เป็นที่ว่างจริง
+   * แค่ย่อฟอนต์กับจำกัดความกว้างไม่ให้ทับขอบจาน */
+  .dialinfo b{font-size:var(--t-xs)}
+  .dialinfo span{font-size:9px;line-height:1.5}
+  .dialinfo>div{max-width:31%}
+  .dialinfo .dl-auto{font-size:10px;padding:2px 6px}
 }
 @media (max-width:480px){
   .wrap{padding:var(--s4) var(--s3) 40px}
@@ -668,6 +666,42 @@ p.hint:empty{display:none}
 .mrange select { min-width: 3.6em; }
 .mrlab { font-size: var(--t-xs); color: var(--dim); white-space: nowrap; }
 .mrsum { color: var(--accent); font-weight: 600; white-space: nowrap; }
+
+/* คำแปลสูตรในตารางดูดวงจร — ลอยใกล้แถวที่กด ไม่ใช่กองท้ายหน้า
+   ตำแหน่ง top/left ตั้งจาก JS · กดที่ไหนก็ได้เพื่อปิด */
+#tmean{position:fixed;z-index:45;margin:0;
+  width:min(480px,calc(100vw - 24px));max-height:46vh;overflow:auto;
+  border:1px solid var(--rule);border-left:3px solid var(--f-personal);
+  border-radius:var(--r-md);box-shadow:0 10px 30px rgba(0,0,0,.4)}
+
+/* บรรทัด "สูตรนี้เกิดเมื่อไหร่" บนหัวป๊อปอัพคำแปล */
+.mwhen{margin:0 0 var(--s2);padding-bottom:var(--s2);border-bottom:1px solid var(--rule-soft)}
+.mwrow{display:flex;align-items:center;gap:var(--s2);font-size:var(--t-xs);color:var(--dim)}
+.mwrow+.mwrow{margin-top:2px}
+.mwrow span{flex:1 1 auto}
+.mwrow b{color:var(--ink);font-weight:600}
+.mwrow button{font-size:var(--t-xs);padding:2px 8px;white-space:nowrap}
+
+/* หัวรายละเอียดดวง 3 บรรทัด: ชื่อ+ประเภท / กำเนิด+ที่+เขตเวลา / ดวงจร+ช่วง */
+.band h2.chead { display: flex; flex-direction: column; gap: 2px; }
+.chead .ch1 { font-size: var(--t-base); font-weight: 700; }
+.chead .ch2 { font-size: var(--t-md); font-weight: 400; color: var(--dim); }
+.chead .ch3 { font-size: var(--t-md); font-weight: 400; color: var(--faint); }
+
+/* กล่องดวงที่บันทึกไว้ — โผล่มุมซ้ายบนใกล้ปุ่มที่กด (autodlg เดิมอยู่ขวาล่าง) */
+.savedlg { inset: var(--s4) auto auto var(--s4); width: 308px; max-width: calc(100vw - 2 * var(--s4)); }
+.svbody { max-height: 46vh; overflow: auto; padding: var(--s2) 0; }
+.svrow { display: flex; align-items: center; gap: var(--s2); padding: 5px var(--s3); }
+.svrow:hover { background: var(--raise); }
+.svmeta { flex: 1 1 auto; min-width: 0; }
+.svmeta b { display: block; font-size: var(--t-md); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.svmeta span { display: block; font-size: var(--t-xs); color: var(--dim); font-variant-numeric: tabular-nums; }
+.svrow [data-load] { font-size: var(--t-sm); padding: 3px 10px; }
+.svempty { margin: 0; padding: var(--s3); font-size: var(--t-sm); color: var(--faint); }
+.svfoot { display: flex; gap: var(--s2); padding: var(--s2) var(--s3); border-top: 1px solid var(--rule); }
+.svfoot button { flex: 1 1 0; font-size: var(--t-sm); padding: 5px 0; }
+.svnote { margin: 0; padding: var(--s2) var(--s3) var(--s3); font-size: var(--t-xs); color: var(--accent); }
+.svnote.warn { color: var(--warn, #e0a94f); }
 
 /* คำเตือนของตารางศูนย์รังสี — ชั้นที่เลือกทำให้ "วันที่" ไม่ได้แปลอย่างที่เขียนไว้ */
 /* --warn-soft ปรับมาเพื่อ "ชิป" เล็ก ๆ (a60) พอเอามาระบายเป็นบล็อกยาว

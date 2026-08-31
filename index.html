@@ -13,7 +13,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v63">
+<link rel="stylesheet" href="style.css?v=urain-v69">
 </head>
 <body>
 <div class="wrap">
@@ -64,17 +64,11 @@
     </div></div>
   <div class="fg"><label>เวลาดวงจร</label>
     <input id="tt" style="width:84px"></div>
-  <div class="fg"><label>ช่วงตาราง (เดือน)</label>
-    <div class="mrange">
-      <span class="mrlab">ย้อนหลัง</span>
-      <select id="mback" title="ย้อนหลังกี่เดือน"></select>
-      <span class="mrlab">ล่วงหน้า</span>
-      <select id="mfwd" title="ล่วงหน้ากี่เดือน"></select>
-    </div></div>
   <div class="fg"><button id="go">คำนวณ</button></div>
+  <div class="fg"><button type="button" id="csave" title="บันทึกดวงกำเนิดในฟอร์มเก็บไว้ในเครื่องนี้">💾 บันทึกดวง</button></div>
+  <div class="fg"><button type="button" id="copen" title="เปิดรายการดวงที่บันทึกไว้">📂 ดวงที่บันทึกไว้</button></div>
   <div class="note">ปีใส่ได้ทั้ง พ.ศ. (เช่น 2530) และ ค.ศ. (เช่น 1987) ·
-    ช่วงตารางเลือกได้ตั้งแต่ย้อนหลัง 6 เดือน ถึงล่วงหน้า 12 เดือน (นับรอบเดือนดวงจร)
-    <b id="mrsum" class="mrsum"></b></div>
+    เลือกช่วงเดือนของตารางได้ในแท็บ "ตารางดูดวงจร"</div>
 </form>
 
 <p class="ctnote" id="ctnote"></p>
@@ -82,19 +76,30 @@
 <p id="status">พร้อมคำนวณ</p>
 
 <nav class="tabs" id="tabs" style="display:none">
+  <!-- ลำดับตามที่ผู้ใช้ขอ (31 ส.ค. 2026): สี่แท็บที่ใช้บ่อยขึ้นก่อน -->
   <button type="button" class="tab on" data-p="pdial">จานหมุน</button>
   <button type="button" class="tab" data-p="ptable">ตารางดูดวงจร</button>
-  <button type="button" class="tab" data-p="ptl">ไทม์ไลน์</button>
-  <button type="button" class="tab" data-p="plife">แผนที่ชีวิต</button>
   <button type="button" class="tab" data-p="pctr">ศูนย์รังสี 360°</button>
   <button type="button" class="tab" data-p="ppos">ตำแหน่งดาว</button>
-  <button type="button" class="tab" data-p="pcmp">เทียบกับเว็บ</button>
+  <button type="button" class="tab" data-p="ptl">ไทม์ไลน์</button>
+  <button type="button" class="tab" data-p="plife">แผนที่ชีวิต</button>
+  <!-- แท็บ "เทียบกับเว็บ" ถูกถอดตามที่ผู้ใช้ขอ (31 ส.ค. 2026) — แผง pcmp
+       และโค้ดยังอยู่ เผื่ออยากคืน · การสอบเทียบจริงอยู่ในเทสต์ JXA ทั้งหมด -->
 </nav>
 
 <div class="panel" id="ptable">
 <div class="tools" id="tools" style="display:none">
   <span class="lbl">จานหมุน</span>
   <span class="dialchips" id="mdial"></span>
+  <span class="sep"></span>
+  <span class="lbl">ช่วงตาราง</span>
+  <span class="mrange">
+    <span class="mrlab">ย้อนหลัง</span>
+    <select id="mback" title="ย้อนหลังกี่เดือน (เปลี่ยนแล้วคำนวณใหม่ทันที)"></select>
+    <span class="mrlab">ล่วงหน้า</span>
+    <select id="mfwd" title="ล่วงหน้ากี่เดือน (เปลี่ยนแล้วคำนวณใหม่ทันที)"></select>
+    <b id="mrsum" class="mrsum"></b>
+  </span>
   <span class="sep"></span>
   <span class="lbl">ตัวกรอง</span>
   <label><input type="checkbox" data-k="t1" checked> TYPE 1</label>
@@ -221,6 +226,18 @@
   </dialog>
   <!-- เดินอัตโนมัติ — **ไม่ใช่ modal** (`show()` ไม่ใช่ `showModal()`)
        ทั้งหมดของฟีเจอร์นี้คือดูดาวขยับ ถ้าหรี่จานไว้ข้างหลังก็หมดประโยชน์ -->
+  <dialog id="savedlg" class="autodlg savedlg" aria-label="ดวงที่บันทึกไว้">
+    <div class="auhead"><b>📂 ดวงที่บันทึกไว้</b>
+      <button type="button" class="aux" id="svclose" title="ปิด">✕</button></div>
+    <div class="svbody" id="svlist"></div>
+    <div class="svfoot">
+      <button type="button" id="svexport" title="สำรองดวงทั้งหมดเป็นไฟล์ .json">⬇ ส่งออกไฟล์</button>
+      <button type="button" id="svimport" title="อ่านไฟล์ .json ที่เคยส่งออก มารวมกับของในเครื่อง">⬆ นำเข้าไฟล์</button>
+      <input type="file" id="svfile" accept=".json,application/json" hidden>
+    </div>
+    <p class="svnote" id="svnote" hidden></p>
+  </dialog>
+
   <dialog id="autodlg" class="autodlg">
     <div class="auhead">
       <b>▶ เดินอัตโนมัติ</b>
@@ -382,14 +399,14 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v63"></script>
-<script src="places.js?v=urain-v63"></script>
-<script src="engine.js?v=urain-v63"></script>
-<script src="render.js?v=urain-v63"></script>
+<script src="glyphs.js?v=urain-v69"></script>
+<script src="places.js?v=urain-v69"></script>
+<script src="engine.js?v=urain-v69"></script>
+<script src="render.js?v=urain-v69"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const SW_CACHE = "urain-v63";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v69";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 // ตัวจับเวลาของ "เดินอัตโนมัติ" — ประกาศไว้บนสุดเพราะ drawDial() อ่านค่านี้
@@ -549,11 +566,22 @@ function run() {
       `<option value="${i}">${AISTRO_RENDER.MONTH_TH[mm - 1]} ${yy + 543}` +
       ` (${tables[i].length} แถว)</option>`).join("");
     $("tmean").hidden = true; $("tmean").innerHTML = "";
+    // หัว 3 บรรทัดตามที่ผู้ใช้ขอ (31 ส.ค. 2026): ชื่อ+ประเภท / กำเนิด / ดวงจร
+    const placeTxt0 = $("place").selectedOptions[0]
+      ? $("place").selectedOptions[0].text.trim() : "";
+    const locTxt = (placeTxt0 === "กำหนดเอง…" || !placeTxt0)
+      ? $("ll").value : placeTxt0;
+    const tzTxt = "UTC" + (TZ >= 0 ? "+" : "") +
+      (TZ === Math.floor(TZ) ? TZ : TZ.toFixed(1));
     $("out").innerHTML =
-      `<h2>${$("ctype").value !== "บุคคล" ? $("ctype").value + " " : "ดวง "}` +
-      `${bd}/${bm}/${by + 543} ${$("bt").value}` +
-      `<span class="ce">ดวงจร ${td}/${tm}/${ty + 543} ${$("tt").value}` +
-      ` · ${months.length} เดือน (ย้อนหลัง ${mb} · ล่วงหน้า ${mf})</span></h2>` +
+      `<h2 class="chead">` +
+      `<span class="ch1">${$("cname").value.trim() || "ไม่ระบุ"}` +
+      ` · ${$("ctype").value}</span>` +
+      `<span class="ch2">${bd}/${bm}/${by + 543} ${$("bt").value}` +
+      ` · ${locTxt} · ${tzTxt}</span>` +
+      `<span class="ch3">ดวงจร ${td}/${tm}/${ty + 543} ${$("tt").value}` +
+      ` · ${months.length} เดือน (ย้อนหลัง ${mb} · ล่วงหน้า ${mf})</span>` +
+      `</h2>` +
       `<div class="strip">${cols.join("")}</div>`;
     // ตำแหน่งดาวกำเนิด
     const fmt = (v) => {
@@ -564,10 +592,8 @@ function run() {
     };
     renderLayers(R, jd, jdT, lat, lon, fmt);
     $("radixbox").style.display = "";
-    const placeTxt = $("place").selectedOptions[0]
-      ? $("place").selectedOptions[0].text.trim() : "";
     TL = { R, jd, jdT, months, tables, lat, lon,
-           place: placeTxt === "กำหนดเอง…" ? "" : placeTxt };
+           place: placeTxt0 === "กำหนดเอง…" ? "" : placeTxt0 };
     $("tlmonth").innerHTML = $("cmpmonth").innerHTML;
     $("tlmonth").value = String(mb);   // ดัชนีของเดือนดวงจร = จำนวนเดือนที่ย้อนหลัง
     $("tlbox").style.display = "";
@@ -678,6 +704,161 @@ $("pcountry").addEventListener("change", () => {
 });
 fillPlaces("13.7563,100.5018");
 
+// ── บันทึก/โหลดดวงกำเนิด (localStorage — อยู่ในเครื่อง ออฟไลน์ได้ ไม่ออกนอกเครื่อง) ──
+const CH_KEY = "urain.charts.v1";
+function chAll() {
+  try {
+    const o = JSON.parse(localStorage.getItem(CH_KEY) || "{}");
+    return o && typeof o === "object" && !Array.isArray(o) ? o : {};
+  } catch (e) { return {}; }   // ค่าเสีย/โหมดส่วนตัว — เริ่มว่างดีกว่าพัง
+}
+function chWrite(all) {
+  try { localStorage.setItem(CH_KEY, JSON.stringify(all)); return null; }
+  catch (e) { return "เก็บลงเครื่องไม่ได้ (" + (e && e.message || e) + ")"; }
+}
+function chNote(msg, warn) {
+  const n = $("svnote");
+  n.hidden = !msg; n.textContent = msg || "";
+  n.classList.toggle("warn", !!warn);
+}
+// ตรวจว่าเรคคอร์ดหน้าตาเป็นดวงจริง — ใช้ทั้งตอนโหลดและตอนนำเข้าไฟล์
+function chValid(c) {
+  return c && typeof c === "object" &&
+    [c.bd, c.bm, c.by].every((v) => v !== undefined && v !== "") &&
+    typeof (c.bt || "") === "string";
+}
+function chSave() {
+  const name = $("cname").value.trim();
+  if (!name) {
+    chNote("ตั้งชื่อดวงในช่อง \u201cชื่อดวง\u201d ก่อนบันทึก", true);
+    $("savedlg").show(); $("cname").focus();
+    return;
+  }
+  const all = chAll();
+  if (all[name] && !confirm(`มีดวงชื่อ \u201c${name}\u201d อยู่แล้ว — บันทึกทับของเดิม?`)) return;
+  const replaced = !!all[name];
+  all[name] = { name, ctype: $("ctype").value,
+                bd: $("bd").value, bm: $("bm").value, by: $("by").value,
+                bt: $("bt").value, tz: $("tz").value,
+                pcountry: $("pcountry").value, place: $("place").value,
+                ll: $("ll").value, savedAt: new Date().toISOString() };
+  const err = chWrite(all);
+  chRenderList();
+  $("savedlg").show();
+  chNote(err || `${replaced ? "บันทึกทับ" : "บันทึก"} \u201c${name}\u201d แล้ว (ทั้งหมด ${Object.keys(all).length} ดวง)`, !!err);
+}
+function chApply(c) {
+  $("cname").value = c.name || "";
+  $("ctype").value = ["บุคคล", "ประเทศ/เมือง", "บริษัท/องค์กร", "หุ้น/ตลาดหลักทรัพย์"]
+    .includes(c.ctype) ? c.ctype : "บุคคล";
+  $("bd").value = c.bd; $("bm").value = c.bm; $("by").value = c.by;
+  $("bt").value = c.bt || "12:00";
+  // ลำดับสำคัญ (บทเรียนบั๊กโตเกียว→พนมเปญ): ประเทศ → เติมรายการ → สถานที่
+  // → onPlaceChange (ซึ่งตั้ง tz ตามเมือง) → ค่อยทับ tz ด้วยค่าที่บันทึกไว้
+  $("pcountry").value = c.pcountry === "intl" ? "intl" : "th";
+  fillPlaces(c.place);
+  if ($("place").value !== c.place) {
+    // เมืองที่บันทึกไว้หายจากรายการ (places.js เปลี่ยนรุ่น) — ตกลงพิกัดกำหนดเอง
+    // ดีกว่าเงียบ ๆ ไปใช้เมืองแรกในรายการซึ่งเป็นคนละดวง
+    $("place").value = "custom";
+    const p = String(c.place || "").split(",");
+    $("ll").value = c.ll || (p.length >= 2 ? p[0] + ", " + p[1] : $("ll").value);
+  } else if (c.place === "custom") {
+    $("ll").value = c.ll || $("ll").value;
+  }
+  onPlaceChange();
+  if (c.tz !== undefined && c.tz !== "") $("tz").value = c.tz;
+  if (!$("go").disabled) run();
+}
+function chRenderList() {
+  const esc = AISTRO_RENDER.esc;
+  const all = chAll();
+  const names = Object.keys(all).sort((a, b) => a.localeCompare(b, "th"));
+  $("svlist").innerHTML = names.length ? names.map((n) => {
+    const c = all[n];
+    return `<div class="svrow" data-n="${esc(n)}">` +
+      `<span class="svmeta"><b>${esc(n)}</b>` +
+      `<span>${esc(String(c.bd))}/${esc(String(c.bm))}/${esc(String(c.by))}` +
+      ` ${esc(c.bt || "")} · ${esc(c.ctype || "บุคคล")}</span></span>` +
+      `<button type="button" data-load>โหลด</button>` +
+      `<button type="button" class="aux" data-del title="ลบ">🗑</button></div>`;
+  }).join("") :
+    `<p class="svempty">ยังไม่มีดวงที่บันทึกไว้ — กรอกฟอร์มแล้วกด \u201c💾 บันทึกดวง\u201d</p>`;
+}
+$("csave").addEventListener("click", chSave);
+$("copen").addEventListener("click", () => {
+  const d = $("savedlg");
+  if (d.open) { d.close(); return; }
+  chRenderList(); chNote("");
+  d.show();
+});
+$("svclose").addEventListener("click", () => $("savedlg").close());
+$("svlist").addEventListener("click", (e) => {
+  const row = e.target.closest(".svrow");
+  if (!row) return;
+  const name = row.dataset.n, all = chAll();
+  if (e.target.closest("[data-load]")) {
+    if (!chValid(all[name])) { chNote(`ข้อมูล \u201c${name}\u201d เสียหาย โหลดไม่ได้`, true); return; }
+    chApply(all[name]);
+    chNote(`โหลด \u201c${name}\u201d แล้ว`);
+  } else if (e.target.closest("[data-del]")) {
+    if (!confirm(`ลบดวง \u201c${name}\u201d ออกจากเครื่อง?`)) return;
+    delete all[name];
+    const err = chWrite(all);
+    chRenderList();
+    chNote(err || `ลบ \u201c${name}\u201d แล้ว`, !!err);
+  }
+});
+// ส่งออก: แยกตัวสร้างข้อความออกจากตัวดาวน์โหลด — เทสต์ตรวจเนื้อได้ตรง ๆ
+function chExportText() {
+  return JSON.stringify({ app: "urain", kind: "charts",
+    exportedAt: new Date().toISOString(), charts: chAll() }, null, 1);
+}
+$("svexport").addEventListener("click", () => {
+  const all = chAll();
+  if (!Object.keys(all).length) { chNote("ยังไม่มีดวงให้ส่งออก", true); return; }
+  const d = new Date(), pad = (n) => String(n).padStart(2, "0");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([chExportText()], { type: "application/json" }));
+  a.download = `urain-charts-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  chNote(`ส่งออก ${Object.keys(all).length} ดวงเป็นไฟล์ ${a.download} แล้ว`);
+});
+// นำเข้า: รวมกับของเดิม ชื่อซ้ำ = ของในไฟล์ทับ (บอกจำนวนให้เห็น)
+function chImportText(text) {
+  let o;
+  try { o = JSON.parse(text); }
+  catch (e) { throw new Error("ไฟล์ไม่ใช่ JSON ที่อ่านได้"); }
+  const charts = o && o.kind === "charts" ? o.charts : o;
+  if (!charts || typeof charts !== "object" || Array.isArray(charts))
+    throw new Error("ไฟล์นี้ไม่ใช่ไฟล์ดวงของแอปนี้");
+  const all = chAll();
+  let added = 0, replaced = 0, skipped = 0;
+  for (const [n, c] of Object.entries(charts)) {
+    if (!chValid(c)) { skipped++; continue; }
+    if (all[n]) replaced++; else added++;
+    all[n] = { ...c, name: n };
+  }
+  if (!added && !replaced)
+    throw new Error("ในไฟล์ไม่มีดวงที่อ่านได้เลย" + (skipped ? ` (ข้าม ${skipped} รายการที่เสียหาย)` : ""));
+  const err = chWrite(all);
+  if (err) throw new Error(err);
+  return { added, replaced, skipped };
+}
+$("svimport").addEventListener("click", () => $("svfile").click());
+$("svfile").addEventListener("change", async () => {
+  const f = $("svfile").files[0];
+  $("svfile").value = "";                       // เลือกไฟล์เดิมซ้ำก็ต้องยิง change อีก
+  if (!f) return;
+  try {
+    const r = chImportText(await f.text());
+    chRenderList();
+    chNote(`นำเข้าแล้ว: ใหม่ ${r.added} · ทับของเดิม ${r.replaced}` +
+           (r.skipped ? ` · ข้ามที่เสียหาย ${r.skipped}` : ""));
+  } catch (e) { chNote("นำเข้าไม่สำเร็จ: " + e.message, true); }
+});
+
 // ── สลับแท็บ ──────────────────────────────────────────────────────────────
 // แผงหนักอย่างแผนที่ชีวิต/จาน วาดตอนเปิดครั้งแรกเท่านั้น ไม่วาดตอนกดคำนวณ
 // ช่วงตารางดูดวงจร — ย้อนหลังได้ถึง 6 เดือน ล่วงหน้าได้ถึง 12 เดือน
@@ -735,11 +916,11 @@ function placeTzNote(show, city, tz) {
 const MDIALS = [[360, "360°"], [90, "90°"], [45, "45°"],
                 [22.5, "22°30′"], [11.25, "11°15′"]];
 let MDIAL = AISTRO.DIAL_DEFAULT;            // 22.5
-const MB_MAX = 12, MF_MAX = 12;
+const MB_MAX = 24, MF_MAX = 24;
 function fillMonthRange() {
   const opt = (n, sel) => `<option value="${n}"${n === sel ? " selected" : ""}>${n}</option>`;
   let a = "", b = "";
-  for (let i = 0; i <= MB_MAX; i++) a += opt(i, 6);
+  for (let i = 0; i <= MB_MAX; i++) a += opt(i, 0);
   for (let i = 0; i <= MF_MAX; i++) b += opt(i, 6);
   $("mback").innerHTML = a; $("mfwd").innerHTML = b;
 }
@@ -1560,11 +1741,12 @@ function angLabel(a) { return (a === 22.5 ? "22.5" : String(a)) + "°"; }
 //   r  = ดวงกำเนิด · v1 = ดวงเดิน +โค้งสุริยยาตร · v2 = ดวงเดิน −โค้งสุริยยาตร
 // v1/v2 ระยะห่างระหว่างดาวเท่าดวงกำเนิด สูตรจึงชุดเดียวกันแต่เลื่อนไปตามโค้ง
 // ที่ตกแกน "ตอนนี้" จึงคนละชุดกับชั้น r — เป็นวิธีดูจังหวะแบบยูเรเนียน
-const SUMLAYS_ALL = ["r", "v1", "v2"];
+const SUMLAYS_ALL = ["r", "v1", "v2", "t"];
 // เปิดมุม 60° เพิ่มจากชุดพหุคูณ 22.5 (เว็บมีให้ติ๊กเหมือนกัน) — เพิ่มแถวล้วน
 let AX60 = true;
-let AXLAYON = { r: true, v1: true, v2: true };
-const SUMLAYS_TH = { r: "ดวงกำเนิด", v1: "ดวงเดิน +โค้ง", v2: "ดวงเดิน −โค้ง" };
+let AXLAYON = { r: true, v1: true, v2: true, t: true };
+const SUMLAYS_TH = { r: "ดวงกำเนิด", v1: "ดวงเดิน +โค้ง", v2: "ดวงเดิน −โค้ง",
+                     t: "ดาวจร" };
 function sumLays() {
   const on = SUMLAYS_ALL.filter((s) => AXLAYON[s]);
   return on.length ? on : ["r"];
@@ -2379,17 +2561,87 @@ async function showRowMeaning(el) {
     // `el.isConnected` กันผลของดวงเก่ามาเขียนทับกล่องของดวงใหม่
     if (seq !== MEANSEQ || !el.isConnected || !el.classList.contains("on")) return;
   }
-  box.innerHTML = tmeanHTML(row);
+  box.innerHTML = tmeanWhenHTML(row, +mi) + tmeanHTML(row);
+}
+// สูตรนี้เกิดเมื่อไหร่ — ใช้เครื่องเดียวกับแท็บไทม์ไลน์ (activationDates
+// สอบเทียบกับเว็บแล้วใน test_timeline_site) ไม่มีคณิตใหม่ในนี้
+function tmeanWhenHTML(row, mi) {
+  if (!TL || !TL.months[mi]) return "";
+  const [ky, km] = TL.months[mi];
+  // ชั่วโมงอ้างอิงเดียวกับไทม์ไลน์ = เวลาตามนาฬิกาของดวงจรที่กรอก
+  const hourUt = ((((TL.jdT + 0.5) % 1.0) + 1.0) % 1.0) * 24.0;
+  const jdRef = AISTRO.julday(ky, km, 15, hourUt);
+  const jd0 = AISTRO.julday(ky, km, 1, -TZ);
+  const jd1 = AISTRO.julday(km === 12 ? ky + 1 : ky, km === 12 ? 1 : km + 1, 1, -TZ);
+  let win;
+  try { win = AISTRO.activationDates(TL.R, TL.jd, row, jdRef, { tz: TZ, dial: MDIAL }); }
+  catch (e) { return ""; }
+  // เอาเฉพาะช่วงที่แตะเดือนที่กำลังดู — แถวนี้โผล่ในคอลัมน์เดือนนี้ด้วยเหตุนั้น
+  const hit = win.filter(([, a, , b]) => !(b < jd0 || a > jd1));
+  if (!hit.length) return "";
+  const fd = (jd) => {
+    const c = AISTRO.revjul(jd + TZ / 24);
+    return `${c[2]}/${c[1]}/${c[0] + 543}`;
+  };
+  const ft = (jd) => {
+    const h = ((((jd + TZ / 24 + 0.5) % 1.0) + 1.0) % 1.0) * 24.0;
+    return String(Math.floor(h)).padStart(2, "0") + ":" +
+           String(Math.floor((h % 1) * 60)).padStart(2, "0");
+  };
+  return `<div class="mwhen">` + hit.map(([who, a, peak, b]) => {
+    const arc = who === "โค้ง";
+    // โค้งแก้สมการได้เวลาจริง · ดาวจรมาจากสแกนก้าวครึ่งวัน — ไม่โชว์นาฬิกาให้หลงเชื่อ
+    const lab = arc ? "โค้งแม่นสุด" : `${who}จร แม่นสุด`;
+    return `<div class="mwrow"><span>⏱ <b>${lab} ${fd(peak)}${arc ? " " + ft(peak) : ""}</b>` +
+      ` · เข้า orb ${fd(a)} – คลาย ${fd(b)}</span>` +
+      `<button type="button" data-go="${peak}"` +
+      ` title="หมุนตาราง/จานไปวันนั้น${arc ? "" : " (ความละเอียดสแกน ±ครึ่งวัน)"}">` +
+      `ไปวันนั้น</button></div>`;
+  }).join("") + `</div>`;
+}
+$("tmean").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-go]");
+  if (!b) return;
+  const err = gotoJd(+b.dataset.go);   // run() จะปิดป๊อปอัพให้เอง
+  if (err) { $("status").className = "err"; $("status").textContent = err; }
+});
+function tmeanClose() {
+  for (const r of $("out").querySelectorAll(".frow.on")) r.classList.remove("on");
+  $("tmean").hidden = true; $("tmean").innerHTML = "";
+}
+function tmeanPlace(rowEl) {
+  const box = $("tmean"), r = rowEl.getBoundingClientRect();
+  // ต้องโชว์ก่อนถึงวัดขนาดได้ — hidden แล้ว offsetHeight เป็นศูนย์
+  const bw = Math.min(480, innerWidth - 24);
+  let left = Math.max(12, Math.min(r.left, innerWidth - bw - 12));
+  box.style.left = left + "px";
+  box.style.top = "0px";                       // วัดความสูงจริงก่อนค่อยวางจุด
+  const bh = box.offsetHeight;
+  const below = r.bottom + 6, above = r.top - 6 - bh;
+  box.style.top = (below + bh <= innerHeight - 8 || above < 8 ? below
+                   : above) + "px";
 }
 $("out").addEventListener("click", (e) => {
   const r = e.target.closest(".frow");
   if (!r) return;
   if (r.classList.contains("on")) {          // กดซ้ำ = ปิด
-    r.classList.remove("on");
-    $("tmean").hidden = true; $("tmean").innerHTML = "";
+    tmeanClose();
     return;
   }
-  showRowMeaning(r);
+  showRowMeaning(r).then(() => {
+    // จัดตำแหน่งหลังเนื้อหามาแล้ว (ความสูงจริง) — ถ้าโหลดพจนานุกรมช้า
+    // กล่องจะโผล่ที่ตำแหน่งแถวพร้อมข้อความ "กำลังโหลด" ก่อน แล้วคงที่เดิม
+    if (!$("tmean").hidden && r.isConnected) tmeanPlace(r);
+  });
+  requestAnimationFrame(() => {
+    if (!$("tmean").hidden && r.isConnected) tmeanPlace(r);
+  });
+});
+// กดที่ใดก็ได้นอกแถวสูตร = ปิดคำแปล (ผู้ใช้ขอ — รวมถึงกดบนตัวป๊อปอัพเอง)
+document.addEventListener("click", (e) => {
+  if ($("tmean").hidden) return;
+  if (e.target.closest(".frow")) return;     // กดแถวอื่น = เปิดอันใหม่แทน
+  tmeanClose();
 });
 
 // เปลี่ยนบริบทดวง (บุคคล/บริษัท/…) แล้วคำแปลที่เปิดอยู่ต้องตามไปด้วย
@@ -3339,7 +3591,10 @@ if (location.protocol === "file:") {
 // ไม่โหลดตอนใช้งานปกติ และไม่อยู่ในรายการแคชของ service worker
 if (/[?&]uitest\b/.test(location.search)) {
   const s = document.createElement("script");
-  s.src = "uitest.js";
+  // ต้องพ่วงเวลากันแคช HTTP — service worker ไม่แคชไฟล์นี้ก็จริง (NEVER_CACHE)
+  // แต่ตอนรันเทสต์ SW เพิ่งถูกถอน เบราว์เซอร์เสิร์ฟจากแคช HTTP เองตาม heuristic
+  // เคยได้เทสต์ฉบับเก่า: แก้เทสต์แล้วผลไม่เปลี่ยน + จำนวนข้อไม่ขยับ (เจอจริง)
+  s.src = "uitest.js?ts=" + Date.now();
   document.body.appendChild(s);
 }
 

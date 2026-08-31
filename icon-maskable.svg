@@ -1,17 +1,43 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#0e1116"/>
-  <circle cx="256" cy="256" r="132" fill="none" stroke="#2a3038" stroke-width="10"/>
-  <circle cx="256" cy="256" r="104" fill="none" stroke="#2a3038" stroke-width="6"/>
-  <g stroke="#98a2ae" stroke-width="7" stroke-linecap="round">
-    <path d="M256 88v34M424 256h-34M256 424v-34M88 256h34"/>
+  <!-- สัญลักษณ์ยูเรนัส ♅ เวอร์ชัน maskable (safe zone 80%) (ผู้ใช้ขอสไตล์สีน้ำจักรวาล 31 ส.ค. 2026
+       — ภาพอ้างอิงเป็นสต็อกติดลิขสิทธิ์ จึงวาดเอง ตัวสัญลักษณ์เป็นของสากล) -->
+  <defs>
+    <linearGradient id="cos" gradientUnits="userSpaceOnUse" x1="200" y1="80" x2="300" y2="440">
+      <stop offset="0" stop-color="#c05a9e"/>
+      <stop offset="0.28" stop-color="#7b5ee6"/>
+      <stop offset="0.62" stop-color="#4b7fe0"/>
+      <stop offset="1" stop-color="#2fc4c9"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.55" r="0.65">
+      <stop offset="0" stop-color="#4b7fe0" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#4b7fe0" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="#0e1116"/>
+  <g transform="translate(56.32,56.32) scale(0.78)">
+  <circle cx="256" cy="256" r="230" fill="url(#glow)"/>
+  <!-- ดาวพื้นหลังจาง ๆ -->
+  <g fill="#e6e9ee">
+    <circle cx="118" cy="118" r="4" opacity="0.55"/>
+    <circle cx="398" cy="96" r="3" opacity="0.4"/>
+    <circle cx="428" cy="300" r="3.5" opacity="0.45"/>
+    <circle cx="84" cy="330" r="2.5" opacity="0.35"/>
+    <circle cx="356" cy="428" r="3" opacity="0.4"/>
+    <circle cx="150" cy="432" r="2.5" opacity="0.3"/>
+    <circle cx="452" cy="180" r="2.5" opacity="0.3"/>
   </g>
-  <g stroke="#3b444f" stroke-width="4" stroke-linecap="round">
-    <path d="M375 137l-24 24M375 375l-24-24M137 375l24-24M137 137l24 24"/>
+  <g stroke="url(#cos)" stroke-width="30" fill="none" stroke-linecap="round">
+    <!-- แขนโค้งซ้าย-ขวา ปลายบานออก กลางแนบเข้าหากางเขน -->
+    <path d="M160 108 C 199 156, 199 224, 160 272"/>
+    <path d="M352 108 C 313 156, 313 224, 352 272"/>
+    <!-- ก้านตั้ง: ยอดบนลงมาจรดวงแหวน -->
+    <path d="M256 96 V 302"/>
+    <!-- คานขวาง -->
+    <path d="M186 190 H 326"/>
+    <!-- วงแหวนล่าง -->
+    <circle cx="256" cy="368" r="66"/>
   </g>
-  <circle cx="256" cy="124" r="15" fill="#6aa9e9"/>
-  <circle cx="366" cy="205" r="13" fill="#5cb87a"/>
-  <circle cx="324" cy="336" r="13" fill="#e06c6c"/>
-  <circle cx="188" cy="336" r="13" fill="#e0a94f"/>
-  <circle cx="146" cy="205" r="13" fill="#9aa4ae"/>
-  <circle cx="256" cy="256" r="20" fill="#e6e9ee"/>
+  <!-- จุดแกนกลางวงแหวน แบบภาพต้นฉบับไม่มี แต่ช่วยผูกกับธีมจานหมุนของแอป -->
+  <circle cx="256" cy="368" r="14" fill="#e6e9ee"/>
+  </g>
 </svg>
