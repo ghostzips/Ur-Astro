@@ -13,7 +13,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v74">
+<link rel="stylesheet" href="style.css?v=urain-v75">
 </head>
 <body>
 <div class="wrap">
@@ -432,14 +432,14 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v74"></script>
-<script src="places.js?v=urain-v74"></script>
-<script src="engine.js?v=urain-v74"></script>
-<script src="render.js?v=urain-v74"></script>
+<script src="glyphs.js?v=urain-v75"></script>
+<script src="places.js?v=urain-v75"></script>
+<script src="engine.js?v=urain-v75"></script>
+<script src="render.js?v=urain-v75"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const SW_CACHE = "urain-v74";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v75";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 // ตัวจับเวลาของ "เดินอัตโนมัติ" — ประกาศไว้บนสุดเพราะ drawDial() อ่านค่านี้
@@ -1422,7 +1422,10 @@ function drawDial() {
   cv.width = size * dpr; cv.height = size * dpr;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  const FACE = "#fdfdfa", BAND_Y = "#fdf6d5", BAND_B = "#dde8f7";
+  // BAND_G: วงนอกสุดเดิมโปร่งใส ดาวสีเข้มวางบนพื้นหน้าเว็บสีเข้ม จมหาย
+  // (ผู้ใช้ขอ 31 ส.ค. 2026) — เติมแถบเขียวอ่อนรองรับ อ่านชัดทุกสีดาว
+  const FACE = "#fdfdfa", BAND_Y = "#fdf6d5", BAND_B = "#dde8f7",
+        BAND_G = "#e7f3e3";
   const LINE = "#8b9099", LINE2 = "#cbced4", TXT = "#23262b", PINK = "#e0157a";
   const RED = "#e01010", GREEN = "#0f9c4a", FAINT = "#e9e9e4";
   const CLS = { personal: "#1558c0", good: "#12803f", bad: "#c0261b",
@@ -1446,9 +1449,9 @@ function drawDial() {
     ctx.fillStyle = fill; ctx.fill("evenodd");
   };
   ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fillStyle = FACE; ctx.fill();
-  ring(R, rY, BAND_Y); ring(rY, rB, BAND_B);
+  ring(RG, R, BAND_G); ring(R, rY, BAND_Y); ring(rY, rB, BAND_B);
   ctx.strokeStyle = LINE; ctx.lineWidth = 1;
-  for (const r of [R, rY, rB, rS]) {
+  for (const r of [RG, R, rY, rB, rS]) {
     ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
   }
 
