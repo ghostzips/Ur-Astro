@@ -1232,6 +1232,28 @@ function lookupMeaning(row, ctx) {
   return { kind: "none" };
 }
 
+// ค้นพจนานุกรมด้วยคีย์เวิร์ด — คืนทุกสมการที่คำแปลมีคำนั้น
+// (ฟีเจอร์ UI ล้วน ไม่แตะการคำนวณ · ผู้ใช้ขอ 31 ส.ค. 2026)
+function dictSearch(q, ctx) {
+  if (!_DICT) return { ready: false, two: [], three: [] };
+  ctx = ctx || "person";
+  q = String(q || "").trim();
+  const out = { ready: true, two: [], three: [] };
+  if (!q) return out;
+  for (const k in _DICT.two) {
+    const o = _DICT.two[k];
+    const t = (o && (o[ctx] || o.person)) || "";
+    const w = _DICT.witte[k] || "";
+    if (t.indexOf(q) >= 0 || w.indexOf(q) >= 0)
+      out.two.push({ key: k, text: t || null, witte: w || null });
+  }
+  for (const k in _DICT.three) {
+    const t = _DICT.three[k];
+    if (t && t.indexOf(q) >= 0) out.three.push({ key: k, text: t });
+  }
+  return out;
+}
+
 const AISTRO = {
   calc, calcRaw, obliquity, julday, revjul, anglesAt, mod360, assertRange,
   get JD_MIN() { return _JD0; }, get JD_MAX() { return _JD1; },
@@ -1239,7 +1261,7 @@ const AISTRO = {
   tertiary1Jd, minorJd, solarArc, lunarArc, leapBirthExtraDays, arcExtraDays,
   monthTable, monthSummary, rowText, rowFactors,
   transitAspectDates, transitFactorAt, TRANSIT_SPEED,
-  activationDates, transitWindows, solveArcDate, radiationRows,
+  activationDates, transitWindows, solveArcDate, radiationRows, dictSearch,
   FORMULA_K, FORMULA_SNAP, parseFormulaSide, evalFormulaSide, formulaSolve,
   loadEphem, initEphemBinary, initEphemJs,
   lifetimeEvents, clusterOnDial, pairsOnDial,

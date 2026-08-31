@@ -13,17 +13,12 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v69">
+<link rel="stylesheet" href="style.css?v=urain-v74">
 </head>
 <body>
 <div class="wrap">
 <header class="top">
   <h1>ยูเรเนียนออฟไลน์ <span class="tag">OFFLINE</span></h1>
-  <div class="meta">
-    <span>คำนวณในเครื่องทั้งหมด ไม่ใช้อินเทอร์เน็ต · ตารางดูดวงจรเลือกช่วงได้ ·
-      ไทม์ไลน์ช่วงวัน · แผนที่ชีวิต · จาน 90° · ตำแหน่งดาว 9 ชั้น ·
-      สอบเทียบกับ uraniansystem.com แล้ว</span>
-  </div>
 </header>
 
 <form class="form" id="f" onsubmit="return false">
@@ -63,7 +58,11 @@
       <input class="num" id="ty" inputmode="numeric" style="width:88px">
     </div></div>
   <div class="fg"><label>เวลาดวงจร</label>
-    <input id="tt" style="width:84px"></div>
+    <div style="display:flex;gap:5px;align-items:center">
+      <input id="tt" style="width:84px">
+      <button type="button" id="tnow" class="tnow"
+        title="เซตวัน-เวลาดวงจรเป็นปัจจุบัน แล้วคำนวณใหม่">ตอนนี้</button>
+    </div></div>
   <div class="fg"><button id="go">คำนวณ</button></div>
   <div class="fg"><button type="button" id="csave" title="บันทึกดวงกำเนิดในฟอร์มเก็บไว้ในเครื่องนี้">💾 บันทึกดวง</button></div>
   <div class="fg"><button type="button" id="copen" title="เปิดรายการดวงที่บันทึกไว้">📂 ดวงที่บันทึกไว้</button></div>
@@ -83,6 +82,7 @@
   <button type="button" class="tab" data-p="ppos">ตำแหน่งดาว</button>
   <button type="button" class="tab" data-p="ptl">ไทม์ไลน์</button>
   <button type="button" class="tab" data-p="plife">แผนที่ชีวิต</button>
+  <button type="button" class="tab" data-p="pdict">พจนานุกรม</button>
   <!-- แท็บ "เทียบกับเว็บ" ถูกถอดตามที่ผู้ใช้ขอ (31 ส.ค. 2026) — แผง pcmp
        และโค้ดยังอยู่ เผื่ออยากคืน · การสอบเทียบจริงอยู่ในเทสต์ JXA ทั้งหมด -->
 </nav>
@@ -118,6 +118,34 @@
 <section class="band" id="out"></section>
 <div class="mbox" id="tmean" hidden></div>
 </div><!-- /ptable -->
+
+<div class="panel" id="pdict">
+<section class="legend" id="dictbox">
+  <h3>พจนานุกรมสูตร</h3>
+  <p class="dialnote">คำแปลจากเว็บชุดเดียวกับที่ใช้ทั้งแอป · ตำราให้ความหมายตาม
+    "คู่ปัจจัย" ไม่แยกตามมุม — มุม 0/45/90/… ของคู่เดียวกันได้คำแปลชุดเดียวกัน
+    (มุมบอกความแรง/จังหวะ ไม่เปลี่ยนความหมาย)</p>
+  <div class="dictlook">
+    <select id="dqa"></select>
+    <select id="dqmode">
+      <option value="two">ทำมุมกับดาว</option>
+      <option value="three">ตกศูนย์รังสี ดาว/ดาว</option>
+      <option value="abc">สมการ 3 ดาว (A+B−C)</option>
+    </select>
+    <select id="dqb"></select>
+    <span id="dqcw" hidden><span class="op" id="dqcop">/</span><select id="dqc"></select></span>
+    <span id="dqdw" hidden><span class="op">−</span><select id="dqd"></select></span>
+    <button type="button" id="dqgo">แสดงคำแปล</button>
+  </div>
+  <div class="mbox" id="dqout" hidden></div>
+  <h4 class="dicth4">ค้นด้วยคีย์เวิร์ด</h4>
+  <div class="dictlook">
+    <input id="dqkw" placeholder="เช่น โชคลาภ · ความรัก · อุบัติเหตุ" style="flex:1 1 200px">
+    <button type="button" id="dqkgo">ค้นหา</button>
+  </div>
+  <div id="dqkout"></div>
+</section>
+</div>
 
 <div class="panel" id="pcmp">
 
@@ -226,6 +254,11 @@
   </dialog>
   <!-- เดินอัตโนมัติ — **ไม่ใช่ modal** (`show()` ไม่ใช่ `showModal()`)
        ทั้งหมดของฟีเจอร์นี้คือดูดาวขยับ ถ้าหรี่จานไว้ข้างหลังก็หมดประโยชน์ -->
+  <div id="daystep" class="daystep" hidden>
+    <button type="button" data-dstep="-1" title="ถอยวันดวงจร 1 วัน">−1 วัน</button>
+    <button type="button" data-dstep="1" title="เดินวันดวงจร 1 วัน">+1 วัน</button>
+  </div>
+
   <dialog id="savedlg" class="autodlg savedlg" aria-label="ดวงที่บันทึกไว้">
     <div class="auhead"><b>📂 ดวงที่บันทึกไว้</b>
       <button type="button" class="aux" id="svclose" title="ปิด">✕</button></div>
@@ -399,14 +432,14 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v69"></script>
-<script src="places.js?v=urain-v69"></script>
-<script src="engine.js?v=urain-v69"></script>
-<script src="render.js?v=urain-v69"></script>
+<script src="glyphs.js?v=urain-v74"></script>
+<script src="places.js?v=urain-v74"></script>
+<script src="engine.js?v=urain-v74"></script>
+<script src="render.js?v=urain-v74"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const SW_CACHE = "urain-v69";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v74";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 // ตัวจับเวลาของ "เดินอัตโนมัติ" — ประกาศไว้บนสุดเพราะ drawDial() อ่านค่านี้
@@ -601,6 +634,7 @@ function run() {
     $("dialbox").style.display = "";
     $("ctrbox").style.display = "";
     $("tabs").style.display = "";
+    $("daystep").hidden = false;
     LIFE = null;                       // ผลเก่าใช้กับดวงใหม่ไม่ได้
     LIFEMEMO = null; CTRRAW = null;    // แคชผูกกับดวงเดิม ต้องทิ้งด้วย
     DIALSTATE = null; CTRLAY = null;
@@ -703,6 +737,37 @@ $("pcountry").addEventListener("change", () => {
   if (!$("go").disabled) run();
 });
 fillPlaces("13.7563,100.5018");
+
+// ปุ่ม "ตอนนี้" — เซตดวงจรเป็นวัน-เวลาปัจจุบันของเครื่อง (ปี พ.ศ. ตามฟอร์ม)
+function setTransitNow(prefix) {
+  const p = prefix || "";
+  const n = new Date(), pad = (v) => String(v).padStart(2, "0");
+  $(p + "td").value = String(n.getDate());
+  $(p + "tm").value = String(n.getMonth() + 1);
+  $(p + "ty").value = String(n.getFullYear() + 543);
+  $(p + "tt").value = pad(n.getHours()) + ":" + pad(n.getMinutes());
+}
+$("tnow").addEventListener("click", () => {
+  setTransitNow();
+  if (!$("go").disabled) run();
+});
+
+// ── ก้าววันดวงจร ±1 (แถบลอยบนมือถือ + เผื่อปุ่มเสียง) ────────────────────
+function stepTransitDay(d) {
+  if (!TL || $("go").disabled) return;
+  const err = gotoJd(TL.jdT + d);
+  if (err) { $("status").className = "err"; $("status").textContent = err; }
+}
+$("daystep").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-dstep]");
+  if (b) stepTransitDay(+b.dataset.dstep);
+});
+// ปุ่มเสียงของมือถือ: OS ยึดไว้ เว็บ **ดักไม่ได้บนเครื่องส่วนใหญ่** (ทั้ง Android/iOS)
+// — ฝังไว้เผื่อเครื่อง/เบราว์เซอร์ส่วนน้อยที่ยอมส่งคีย์นี้เข้าหน้าเว็บ ไม่สัญญาว่าได้ทุกเครื่อง
+addEventListener("keydown", (e) => {
+  if (e.key === "AudioVolumeUp") { e.preventDefault(); stepTransitDay(1); }
+  else if (e.key === "AudioVolumeDown") { e.preventDefault(); stepTransitDay(-1); }
+});
 
 // ── บันทึก/โหลดดวงกำเนิด (localStorage — อยู่ในเครื่อง ออฟไลน์ได้ ไม่ออกนอกเครื่อง) ──
 const CH_KEY = "urain.charts.v1";
@@ -2686,6 +2751,88 @@ const FACTOR_TH = {
   ZE: "ซุส", KR: "โครโนส", AP: "อพอลลอน", AD: "แอดเมตอส",
   VU: "วัลคานุส", PO: "โพไซดอน",
 };
+// ── แท็บพจนานุกรม (ผู้ใช้ขอ 31 ส.ค. 2026) ────────────────────────────────
+function dictFillSelects() {
+  const opts = AISTRO.CODE_ORDER.map((c) =>
+    `<option value="${c}">${c} · ${FACTOR_TH[c] || c}</option>`).join("");
+  $("dqa").innerHTML = opts;
+  $("dqb").innerHTML = opts; $("dqb").value = "MO";
+  $("dqc").innerHTML = opts; $("dqc").value = "VE";
+  $("dqd").innerHTML = opts; $("dqd").value = "SA";
+}
+$("dqmode").addEventListener("change", () => {
+  const m = $("dqmode").value;
+  $("dqcw").hidden = m === "two";
+  $("dqdw").hidden = m !== "abc";
+  $("dqcop").textContent = m === "abc" ? "+" : "/";   // A/B คือศูนย์รังสี · A+B คือผลบวก
+});
+async function dictNeed() {
+  if (DICT_STATE === "ready") return true;
+  try { await dictReady(); return true; }
+  catch (e) { return false; }
+}
+$("dqgo").addEventListener("click", async () => {
+  const out = $("dqout");
+  out.hidden = false;
+  out.innerHTML = '<div class="mnone">กำลังโหลดพจนานุกรม …</div>';
+  if (!await dictNeed()) { out.innerHTML = await dictErrHTML(new Error("โหลดไม่สำเร็จ")); return; }
+  const m = $("dqmode").value;
+  const a = $("dqa").value, b = $("dqb").value, c = $("dqc").value, d = $("dqd").value;
+  const esc = AISTRO_RENDER.esc;
+  let spec, lab, note = "";
+  if (m === "two") {
+    spec = { type: "A", p: a, axis: b };
+    lab = `${a} = ${b} · ${FACTOR_TH[a]} ทำมุมกับ ${FACTOR_TH[b]}`;
+  } else if (m === "three") {
+    spec = { type: "AB", a: b, b: c, axis: a };
+    lab = `${a} = ${b}/${c} · ${FACTOR_TH[a]} ตกศูนย์รังสี ${FACTOR_TH[b]}/${FACTOR_TH[c]}`;
+  } else {
+    // สมการ 3 ดาว A+B−C ตกแกน = 4 ปัจจัย — ตำรามีถึง 3 ปัจจัยเท่านั้น
+    // จึงแสดงคำแปลของส่วนประกอบที่มีจริง (แบบเดียวกับป๊อปอัพในตาราง) ไม่แต่งเอง
+    spec = { type: "ABC", a: b, b: c, c: d, axis: a };
+    lab = `${a} = ${b} + ${c} \u2212 ${d} · ${FACTOR_TH[a]} รับสมการ ` +
+          `${FACTOR_TH[b]} + ${FACTOR_TH[c]} \u2212 ${FACTOR_TH[d]}`;
+    note = `<div class="mnone">ตำรามีคำแปลถึง 3 ปัจจัย — สมการ 4 ปัจจัยนี้จึงแสดง` +
+           `คำแปลของส่วนประกอบ (${esc(b)}/${esc(c)} และ ${esc(d)}/${esc(a)}) ` +
+           `ไม่แต่งคำแปลรวมขึ้นเอง</div>`;
+  }
+  out.innerHTML = `<div class="mnote">${esc(lab)}</div>` + note + meanHTML(spec);
+});
+// คีย์เวิร์ด → ทุกสมการที่คำแปลมีคำนั้น (ดาว=ดาว และ ศูนย์รังสีตกแกน)
+$("dqkgo").addEventListener("click", async () => {
+  const box = $("dqkout"), q = $("dqkw").value.trim();
+  const esc = AISTRO_RENDER.esc;
+  if (!q) { box.innerHTML = '<p class="svempty">พิมพ์คำที่อยากค้นก่อน เช่น โชคลาภ</p>'; return; }
+  box.innerHTML = '<p class="svempty">กำลังค้น …</p>';
+  if (!await dictNeed()) { box.innerHTML = '<p class="svempty">โหลดพจนานุกรมไม่สำเร็จ</p>'; return; }
+  const r = AISTRO.dictSearch(q, ctxNow());
+  const CAP = 120;
+  const item2 = (e) => {
+    const [x, y] = e.key.split(".");
+    return `<div class="dkrow"><b>${x} = ${y}</b> <i>${esc(FACTOR_TH[x] || x)} · ` +
+      `${esc(FACTOR_TH[y] || y)}</i><span>${esc(e.text || e.witte || "")}</span></div>`;
+  };
+  const item3 = (e) => {
+    const [x, y, z] = e.key.split(".");
+    return `<div class="dkrow"><b>${x}/${y} = ${z}</b> <i>ศูนย์รังสี ` +
+      `${esc(FACTOR_TH[x] || x)}/${esc(FACTOR_TH[y] || y)} ตก ${esc(FACTOR_TH[z] || z)}</i>` +
+      `<span>${esc(e.text)}</span></div>`;
+  };
+  const n = r.two.length + r.three.length;
+  if (!n) { box.innerHTML = `<p class="svempty">ไม่พบ “${esc(q)}” ในคำแปลชุดนี้ ` +
+    `(บริบท: ${esc($("ctype").value)}) — ลองคำสั้นลง หรือคำพ้อง</p>`; return; }
+  let h = `<p class="dksum">พบ <b>${n}</b> สมการ — ดาว=ดาว ${r.two.length} · ` +
+    `ศูนย์รังสี ${r.three.length} (บริบท: ${esc($("ctype").value)})</p>`;
+  const cut = (arr) => arr.slice(0, CAP);
+  if (r.two.length) h += `<h5>ดาว = ดาว (${r.two.length})</h5>` + cut(r.two).map(item2).join("");
+  if (r.three.length) h += `<h5>ศูนย์รังสี ตกแกน (${r.three.length})</h5>` + cut(r.three).map(item3).join("");
+  if (r.two.length > CAP || r.three.length > CAP)
+    h += `<p class="svempty">แสดงกลุ่มละไม่เกิน ${CAP} รายการ — พิมพ์คำให้เจาะจงขึ้นเพื่อดูให้หมด</p>`;
+  box.innerHTML = h;
+});
+$("dqkw").addEventListener("keydown", (e) => { if (e.key === "Enter") $("dqkgo").click(); });
+dictFillSelects();
+
 function drawGlyphKey() {
   const cv = $("dlkey"), ctx = cv.getContext("2d");
   const dpr = window.devicePixelRatio || 1;
@@ -2770,8 +2917,14 @@ function edOpen(mode) {
       `<input id="ed_ty" value="${AISTRO_RENDER.esc($("ty").value)}" inputmode="numeric" style="width:82px">` +
       `</span></div>`;
     h += num("tt", "เวลา", 84);
+    h += `<div class="edrow"><span></span>` +
+      `<button type="button" id="ed_tnow" class="tnow"` +
+      ` title="เซตเป็นวัน-เวลาปัจจุบัน">ตอนนี้</button></div>`;
   }
   $("edbody").innerHTML = h;
+  if (mode === "transit") {
+    $("ed_tnow").addEventListener("click", () => setTransitNow("ed_"));
+  }
   if (mode === "radix") {
     $("ed_pcountry").value = $("pcountry").value;
     $("ed_place").value = $("place").value;

@@ -682,6 +682,31 @@ p.hint:empty{display:none}
 .mwrow b{color:var(--ink);font-weight:600}
 .mwrow button{font-size:var(--t-xs);padding:2px 8px;white-space:nowrap}
 
+/* แถบลอย −1/+1 วัน — เฉพาะจอมือถือ (เดสก์ท็อปมีเดินอัตโนมัติ/ปุ่มครบอยู่แล้ว) */
+.daystep{display:none}
+@media (max-width:640px){
+  .daystep:not([hidden]){display:flex;position:fixed;left:50%;bottom:10px;
+    transform:translateX(-50%);gap:8px;z-index:35}
+  .daystep button{font-size:var(--t-sm);padding:7px 16px;border-radius:999px;
+    background:var(--panel);border:1px solid var(--rule);
+    box-shadow:0 4px 14px rgba(0,0,0,.35)}
+}
+
+/* ปุ่มเล็ก "ตอนนี้" ข้างเวลาดวงจร */
+.tnow{font-size:var(--t-xs);padding:4px 9px;white-space:nowrap}
+
+/* แท็บพจนานุกรม */
+.dictlook{display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center;margin:var(--s3) 0}
+.dicth4{margin:var(--s5) 0 0;font-size:var(--t-md)}
+#dqout{margin-top:var(--s3)}
+.dksum{font-size:var(--t-sm);color:var(--dim);margin:var(--s3) 0 var(--s2)}
+#dqkout h5{margin:var(--s4) 0 var(--s2);font-size:var(--t-sm);color:var(--accent)}
+.dkrow{padding:var(--s2) var(--s3);border-left:2px solid var(--rule);margin-bottom:var(--s2);
+  background:var(--sunk);border-radius:0 var(--r-sm) var(--r-sm) 0;font-size:var(--t-sm)}
+.dkrow b{font-family:var(--mono)}
+.dkrow i{color:var(--dim);font-style:normal;font-size:var(--t-xs);margin-left:var(--s2)}
+.dkrow span{display:block;margin-top:2px;line-height:1.6}
+
 /* หัวรายละเอียดดวง 3 บรรทัด: ชื่อ+ประเภท / กำเนิด+ที่+เขตเวลา / ดวงจร+ช่วง */
 .band h2.chead { display: flex; flex-direction: column; gap: 2px; }
 .chead .ch1 { font-size: var(--t-base); font-weight: 700; }
