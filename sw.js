@@ -3,7 +3,7 @@
  * กลยุทธ์: cache-first ทุกไฟล์ในรายการ (แอปนี้ไม่มีข้อมูลที่ต้องสดใหม่เลย
  * ทุกอย่างคำนวณในเครื่อง) เปลี่ยน CACHE เมื่อปล่อยเวอร์ชันใหม่เพื่อล้างของเก่า
  */
-const CACHE = "urain-v76";
+const CACHE = "urain-v77";
 const FILES = [
   "./",
   "./index.html",
@@ -71,7 +71,11 @@ self.addEventListener("fetch", (e) => {
       e.waitUntil((async () => {
         try {
           const res = await fetch(e.request, { cache: "no-cache" });
-          if (res.ok) (await caches.open(CACHE)).put(e.request, res.clone());
+          // เขียนลงคีย์ที่ตัด query ทิ้ง — ตอนเสิร์ฟ match ด้วย ignoreSearch
+          // ถ้าเขียนใต้ URL ที่พ่วง query คีย์มาตรฐานจะไม่ถูกอัปเดตเลย
+          // แล้วหน้าเก่าถูกเสิร์ฟตลอดกาลสำหรับ URL ที่มี query (เจอจริงตอนพัฒนา)
+          const key = new URL(e.request.url); key.search = "";
+          if (res.ok) (await caches.open(CACHE)).put(key.href, res.clone());
         } catch (err) { /* ออฟไลน์ก็ใช้ของเก่าต่อไป */ }
       })());
       return hit;
