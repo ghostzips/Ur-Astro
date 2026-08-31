@@ -641,11 +641,14 @@ p.hint:empty{display:none}
 }
 @media (max-width:640px){
   /* คงข้อมูล 4 มุมรอบจานเหมือนเดสก์ท็อป (ผู้ใช้ขอ — เดิมย้ายลงใต้จานแล้ว
-   * อ่านไม่สะดวก) · มุมของกรอบสี่เหลี่ยมอยู่นอกวงกลมจานพอดี เป็นที่ว่างจริง
-   * แค่ย่อฟอนต์กับจำกัดความกว้างไม่ให้ทับขอบจาน */
+   * อ่านไม่สะดวก) · v76: หดจานลงเล็กน้อย (padding ข้าง) + ปูพื้นเข้มโปร่ง
+   * ใต้ข้อความมุม — แถบเขียววงนอก (v75) กว้างถึงขอบ ข้อความขาวเคยจมบนแถบ */
+  .dialwrap{padding-left:16px;padding-right:16px}
   .dialinfo b{font-size:var(--t-xs)}
   .dialinfo span{font-size:9px;line-height:1.5}
-  .dialinfo>div{max-width:31%}
+  .dialinfo>div{max-width:31%;background:rgba(14,17,22,.74);
+    padding:2px 5px;border-radius:6px;width:fit-content}
+  .dialinfo .dl-tr,.dialinfo .dl-br{margin-left:auto}
   .dialinfo .dl-auto{font-size:10px;padding:2px 6px}
 }
 @media (max-width:480px){
