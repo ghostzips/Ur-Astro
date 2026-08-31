@@ -640,16 +640,22 @@ p.hint:empty{display:none}
   .tlbar .num{width:52px!important}
 }
 @media (max-width:640px){
-  /* คงข้อมูล 4 มุมรอบจานเหมือนเดสก์ท็อป (ผู้ใช้ขอ — เดิมย้ายลงใต้จานแล้ว
-   * อ่านไม่สะดวก) · v76: หดจานลงเล็กน้อย (padding ข้าง) + ปูพื้นเข้มโปร่ง
-   * ใต้ข้อความมุม — แถบเขียววงนอก (v75) กว้างถึงขอบ ข้อความขาวเคยจมบนแถบ */
-  .dialwrap{padding-left:10px;padding-right:10px}
+  /* v78 (ผู้ใช้ขอ): ข้อความ 4 มุมห้ามบังจานเด็ดขาด และไม่เอาแถบพื้นดำ —
+   * ย้ายออกนอกวง: คู่บนอยู่เหนือจาน คู่ล่างอยู่ใต้จาน ด้วย grid
+   * (display:contents ทำให้ 4 มุมใน .dialinfo กลายเป็นลูกของ grid ตรง ๆ) */
+  .dialwrap{display:grid;grid-template-columns:1fr 1fr;
+    grid-template-areas:"tl tr" "cv cv" "bl br";
+    gap:var(--s2) var(--s4);padding:0;align-items:end}
+  .dialwrap canvas{grid-area:cv;justify-self:center}
+  .dialinfo{display:contents}
+  .dialinfo>div{position:static;max-width:none}
+  .dialinfo .dl-tl{grid-area:tl}
+  .dialinfo .dl-tr{grid-area:tr}
+  .dialinfo .dl-bl{grid-area:bl;align-self:start}
+  .dialinfo .dl-br{grid-area:br;align-self:start}
   .dialinfo b{font-size:var(--t-xs)}
-  .dialinfo span{font-size:9px;line-height:1.5}
-  .dialinfo>div{max-width:31%;background:rgba(14,17,22,.74);
-    padding:2px 5px;border-radius:6px;width:fit-content}
-  .dialinfo .dl-tr,.dialinfo .dl-br{margin-left:auto}
-  .dialinfo .dl-auto{font-size:10px;padding:2px 6px}
+  .dialinfo span{font-size:10px;line-height:1.5}
+  .dialinfo .dl-auto{font-size:11px;padding:3px 8px}
 }
 @media (max-width:480px){
   .wrap{padding:var(--s4) var(--s3) 40px}
