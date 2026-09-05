@@ -1219,15 +1219,12 @@ function lookupMeaning(row, ctx) {
     return { kind: "three", key: k, text: _DICT.three[k] || null };
   }
   if (row.type === "ABC") {
-    // 3 ดาว A+B−C=แกน ⟺ A+B = C+แกน — พจนานุกรมมีถึง 3 ดาวเท่านั้น
-    // จึงแสดง "ส่วนประกอบ" ที่มีคำแปลจริง ไม่แต่งคำแปลสูตร 4 ปัจจัยขึ้นเอง
-    const kAB = dictKey2(row.a, row.b), kCX = dictKey2(row.c, row.axis);
-    return { kind: "parts", parts: [
-      { label: row.a + "/" + row.b, key: kAB,
-        text: pick(_DICT.two[kAB]), witte: _DICT.witte[kAB] || null },
-      { label: row.c + "/" + row.axis, key: kCX,
-        text: pick(_DICT.two[kCX]), witte: _DICT.witte[kCX] || null },
-    ] };
+    // หลักการแปลของผู้ใช้ (RULES.md ข้อ 0, 5 ก.ย. 2026):
+    // A+B−C แปลเหมือน A=B=C = คีย์สามปัจจัย "ศูนย์รังสี A/B ตกแกน C"
+    // (คู่ที่บวกกันเป็นฝั่งศูนย์รังสี ตัวที่ลบเป็นฝั่งแกน) — คีย์ชุดเดียว
+    // กับ type "AB" จึงไม่ใช่การแต่งคำแปลใหม่
+    const k = dictKey2(row.a, row.b) + "." + row.c;
+    return { kind: "three", via: "abc", key: k, text: _DICT.three[k] || null };
   }
   return { kind: "none" };
 }

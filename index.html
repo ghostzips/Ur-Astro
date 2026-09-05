@@ -13,7 +13,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v79">
+<link rel="stylesheet" href="style.css?v=urain-v82">
 </head>
 <body>
 <div class="wrap">
@@ -432,16 +432,17 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v79"></script>
-<script src="places.js?v=urain-v79"></script>
-<script src="engine.js?v=urain-v79"></script>
-<script src="render.js?v=urain-v79"></script>
+<script src="glyphs.js?v=urain-v82"></script>
+<script src="places.js?v=urain-v82"></script>
+<script src="engine.js?v=urain-v82"></script>
+<script src="render.js?v=urain-v82"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const SW_CACHE = "urain-v79";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v82";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
+let DIALMARKS = null, _markTimer = 0;   // วงเส้นประกะพริบครอบดาวของสูตร (v80)
 // ตัวจับเวลาของ "เดินอัตโนมัติ" — ประกาศไว้บนสุดเพราะ drawDial() อ่านค่านี้
 // ตั้งแต่การคำนวณครั้งแรก ถ้าประกาศไว้ใต้ฟังก์ชันจะติด TDZ
 const AUTO = { timer: null };
@@ -1563,6 +1564,14 @@ function drawDial() {
         ctx.fillStyle = "rgba(70,130,240,0.16)"; ctx.fill();
         ctx.strokeStyle = "rgba(70,130,240,0.75)"; ctx.lineWidth = 1.4; ctx.stroke();
       }
+      // วงเส้นประกะพริบครอบดาวของสูตรที่กด "ไปวันนั้น" มา (ผู้ใช้ขอ v80)
+      if (DIALMARKS && DIALMARKS.on &&
+          DIALMARKS.list.some((m) => m.c === it.c && m.src === layKey)) {
+        ctx.beginPath(); ctx.arc(gx, gy, fs * 1.12, 0, Math.PI * 2);
+        ctx.setLineDash([5, 4]);
+        ctx.strokeStyle = PINK; ctx.lineWidth = 2; ctx.stroke();
+        ctx.setLineDash([]);
+      }
       if (!drawGlyph(ctx, it.c, gx, gy, fs * 1.1, col)) {
         ctx.fillStyle = col;
         ctx.font = `600 ${fs}px "IBM Plex Mono",monospace`;
@@ -2020,7 +2029,9 @@ function setHandFromEvent(e) {
   cv.addEventListener("pointercancel", stop);
   // แตะจานเมื่อไหร่ = หยุดเดินอัตโนมัติ — แปลว่าเจอจุดที่ต้องการแล้ว
   // ไม่ต้องเอื้อมไปกดหยุดในกล่องอีกที
-  cv.addEventListener("pointerdown", () => autoStop("แตะจานแล้ว"), true);
+  cv.addEventListener("pointerdown", () => {
+    autoStop("แตะจานแล้ว"); dialMarksClear();
+  }, true);
 }
 
 // ── เดินอัตโนมัติบนจาน ───────────────────────────────────────────────────
@@ -2482,7 +2493,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v82")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
@@ -2506,6 +2517,10 @@ function meanHTML(row) {
   // เดิม return ออกตั้งแต่ไม่มีคำอธิบายยาว จึงกลืนตำราวิทเทอที่มีอยู่จริงทิ้งไปด้วย
   // เจอกับคู่ AR.MC และ AS.SU (สองคู่เดียวที่เว็บมีวิทเทอแต่ไม่มีคำอธิบายยาว)
   if (m.kind === "two" || m.kind === "three") {
+    // A+B−C อ่านตามหลักผู้ใช้ (RULES.md ข้อ 0): เท่ากับ A=B=C = ศูนย์รังสี A/B ตก C
+    const nAbc = m.via === "abc"
+      ? `<div class="mnote">อ่านตามหลัก A+B−C ≡ A=B=C · ใช้คำแปล` +
+        `ศูนย์รังสี ${esc(row.a)}/${esc(row.b)} ตก ${esc(row.c)}</div>` : "";
     const w = m.kind === "two" ? witte(m.witte) : "";
     if (!m.text) {
       return w
@@ -2513,7 +2528,7 @@ function meanHTML(row) {
           `(${esc(m.key)}) — แสดงตำราวิทเทอแทน</div>` + w
         : `<div class="mnone">พจนานุกรมของเว็บไม่มีคำแปลสูตรนี้ (${esc(m.key)})</div>`;
     }
-    return body(m.text) + w;
+    return nAbc + body(m.text) + w;
   }
   if (m.kind === "parts") {
     const has = m.parts.filter((p) => p.text || p.witte);
@@ -2665,6 +2680,13 @@ function tmeanWhenHTML(row, mi) {
   const anchorDeg = row.kind === 1
     ? AISTRO.mod360((TL.R[row.lead[0]] + TL.R[row.lead[1]]) / 2)
     : AISTRO.mod360(TL.R[row.lead[0]]);
+  // ดาวของสูตร + ชั้น (แม็ปเดียวกับ LEAD_LAYERS ใน render.js): 1=v1/v2 ·
+  // 2=r/v1 · 3=r/v2 · 4=ดาวนำ r + ดาวจรของหน้าต่างนั้น
+  const marksOf = (who) => {
+    const L = { 1: ["v1", "v2"], 2: ["r", "v1"], 3: ["r", "v2"] }[row.kind];
+    if (L) return `${row.lead[0]}.${L[0]},${row.lead[1]}.${L[1]}`;
+    return `${row.lead[0]}.r` + (who && who !== "โค้ง" ? `,${who}.t` : "");
+  };
   return `<div class="mwhen">` + hit.map(([who, a, peak, b]) => {
     const arc = who === "โค้ง";
     // โค้งแก้สมการได้เวลาจริง · ดาวจรมาจากสแกนก้าวครึ่งวัน — ไม่โชว์นาฬิกาให้หลงเชื่อ
@@ -2672,6 +2694,7 @@ function tmeanWhenHTML(row, mi) {
     return `<div class="mwrow"><span>⏱ <b>${lab} ${fd(peak)}${arc ? " " + ft(peak) : ""}</b>` +
       ` · เข้า orb ${fd(a)} – คลาย ${fd(b)}</span>` +
       `<button type="button" data-go="${peak}" data-deg="${anchorDeg.toFixed(4)}"` +
+      ` data-marks="${marksOf(who)}"` +
       ` title="ปรับวันเป็นวันนั้น เปิดจานหมุน และชี้เข็มไปที่จุดของสูตร` +
       `${arc ? "" : " (ความละเอียดสแกน ±ครึ่งวัน)"}">` +
       `ไปวันนั้น</button></div>`;
@@ -2688,6 +2711,12 @@ $("tmean").addEventListener("click", (e) => {
     showPanel("pdial");
     $("axdeg").value = (+b.dataset.deg).toFixed(2);
     applyAxisDeg();
+    if (b.dataset.marks) {
+      dialMarksSet(b.dataset.marks.split(",").map((t) => {
+        const [c, src] = t.split(".");
+        return { c, src };
+      }));
+    }
     $("dialbox").scrollIntoView({ block: "start" });
   }
 });
@@ -2742,6 +2771,31 @@ $("ctype").addEventListener("change", () => {
   }
 });
 
+// วงเส้นประกะพริบครอบดาวของสูตร (มาจากปุ่ม "ไปวันนั้น")
+function dialMarksClear() {
+  if (_markTimer) { clearInterval(_markTimer); _markTimer = 0; }
+  if (DIALMARKS) { DIALMARKS = null; drawDial(); }
+}
+function dialMarksSet(list) {
+  // ชั้นของสูตรต้องโชว์บนวงแหวนสักวง ไม่งั้นไม่มีดาวให้วง (เช่น v2 ไม่ใช่
+  // ค่าปริยาย) — สลับวงที่ "ไม่ถูกสูตรใช้" ไปเป็นชั้นที่ขาด
+  const rings = ["dlr3", "dlr2", "dlr1"];
+  const need = [...new Set(list.map((m) => m.src))];
+  for (const srcNeed of need) {
+    if (rings.some((id) => $(id).value === srcNeed)) continue;
+    const spare = rings.find((id) => need.indexOf($(id).value) < 0);
+    if (spare) $(spare).value = srcNeed;
+  }
+  if (_markTimer) clearInterval(_markTimer);
+  DIALMARKS = { list, on: true };
+  _markTimer = setInterval(() => {
+    if (!DIALMARKS) return;
+    DIALMARKS.on = !DIALMARKS.on;
+    if (CUR_PANEL === "pdial") drawDial();
+  }, 550);
+  drawDial();
+}
+
 // แกนองศา — จุดใดก็ได้บนวง ไม่ต้องมีดาวอยู่ตรงนั้น (เหมือนโหมด Deg ของเว็บ)
 function applyAxisDeg() {
   const v = parseFloat($("axdeg").value);
@@ -2758,7 +2812,8 @@ $("axhand").addEventListener("click", () => {
   applyAxisDeg();
 });
 $("axclear").addEventListener("click", () => {
-  $("axdeg").value = ""; DIALSEL = null; renderAxisPanel(); drawDial();
+  $("axdeg").value = ""; DIALSEL = null; dialMarksClear();
+  renderAxisPanel(); drawDial();
 });
 $("dlhand").addEventListener("input", drawDial);
 $("dlreset").addEventListener("click", () => { $("dlhand").value = "0"; drawDial(); });
@@ -2783,6 +2838,8 @@ function dictFillSelects() {
 }
 $("dqmode").addEventListener("change", () => {
   const m = $("dqmode").value;
+  // abc = 3 ดาว A+B−C: ช่องแรกคือ A, "+B", "−C" — ซ่อน dqb (ช่องของโหมดคู่)
+  $("dqb").hidden = m === "abc";
   $("dqcw").hidden = m === "two";
   $("dqdw").hidden = m !== "abc";
   $("dqcop").textContent = m === "abc" ? "+" : "/";   // A/B คือศูนย์รังสี · A+B คือผลบวก
@@ -2808,14 +2865,11 @@ $("dqgo").addEventListener("click", async () => {
     spec = { type: "AB", a: b, b: c, axis: a };
     lab = `${a} = ${b}/${c} · ${FACTOR_TH[a]} ตกศูนย์รังสี ${FACTOR_TH[b]}/${FACTOR_TH[c]}`;
   } else {
-    // สมการ 3 ดาว A+B−C ตกแกน = 4 ปัจจัย — ตำรามีถึง 3 ปัจจัยเท่านั้น
-    // จึงแสดงคำแปลของส่วนประกอบที่มีจริง (แบบเดียวกับป๊อปอัพในตาราง) ไม่แต่งเอง
-    spec = { type: "ABC", a: b, b: c, c: d, axis: a };
-    lab = `${a} = ${b} + ${c} \u2212 ${d} · ${FACTOR_TH[a]} รับสมการ ` +
-          `${FACTOR_TH[b]} + ${FACTOR_TH[c]} \u2212 ${FACTOR_TH[d]}`;
-    note = `<div class="mnone">ตำรามีคำแปลถึง 3 ปัจจัย — สมการ 4 ปัจจัยนี้จึงแสดง` +
-           `คำแปลของส่วนประกอบ (${esc(b)}/${esc(c)} และ ${esc(d)}/${esc(a)}) ` +
-           `ไม่แต่งคำแปลรวมขึ้นเอง</div>`;
+    // 3 ดาว A+B−C — หลักผู้ใช้ (RULES.md ข้อ 0): แปลเหมือน A=B=C
+    // = คีย์ศูนย์รังสี A/B ตก C · ช่อง: A(dqa) + B(dqc) − C(dqd)
+    spec = { type: "ABC", a: a, b: c, c: d };
+    lab = `${a} + ${c} \u2212 ${d} · ${FACTOR_TH[a]} + ${FACTOR_TH[c]} ` +
+          `\u2212 ${FACTOR_TH[d]} (≡ ${a}=${c}=${d})`;
   }
   out.innerHTML = `<div class="mnote">${esc(lab)}</div>` + note + meanHTML(spec);
 });
