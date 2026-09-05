@@ -704,6 +704,12 @@ p.hint:empty{display:none}
 /* ปุ่มเล็ก "ตอนนี้" ข้างเวลาดวงจร */
 .tnow{font-size:var(--t-xs);padding:4px 9px;white-space:nowrap}
 
+/* สูตรที่กด "ไปวันนั้น" มา — หัวแผงแกน + มุมซ้ายล่างของจาน */
+.axfrom{font-size:var(--t-sm);font-weight:400;color:var(--dim)}
+.axfrom b{color:var(--f-personal);font-family:var(--mono)}
+.axfrom sub{font-size:9px}
+.dialinfo .dl-from{color:var(--f-personal)!important;font-family:var(--mono)}
+
 /* แท็บพจนานุกรม */
 .dictlook{display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center;margin:var(--s3) 0}
 .dicth4{margin:var(--s5) 0 0;font-size:var(--t-md)}

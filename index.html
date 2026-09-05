@@ -13,7 +13,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v82">
+<link rel="stylesheet" href="style.css?v=urain-v83">
 </head>
 <body>
 <div class="wrap">
@@ -432,17 +432,18 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v82"></script>
-<script src="places.js?v=urain-v82"></script>
-<script src="engine.js?v=urain-v82"></script>
-<script src="render.js?v=urain-v82"></script>
+<script src="glyphs.js?v=urain-v83"></script>
+<script src="places.js?v=urain-v83"></script>
+<script src="engine.js?v=urain-v83"></script>
+<script src="render.js?v=urain-v83"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const SW_CACHE = "urain-v82";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v83";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 let DIALMARKS = null, _markTimer = 0;   // วงเส้นประกะพริบครอบดาวของสูตร (v80)
+let DIALFROM = null;   // สูตรที่กด "ไปวันนั้น" มา เช่น "KR.v1=AR.v2" (v83)
 // ตัวจับเวลาของ "เดินอัตโนมัติ" — ประกาศไว้บนสุดเพราะ drawDial() อ่านค่านี้
 // ตั้งแต่การคำนวณครั้งแรก ถ้าประกาศไว้ใต้ฟังก์ชันจะติด TDZ
 const AUTO = { timer: null };
@@ -1744,6 +1745,7 @@ function drawDial() {
     `<span>SolarArc ${dms(arc, ":")}</span>` +
     (pick ? `<b>${pick.c}<sub>${pick.lay}</sub> ${dms(pick.lon, ":")} ` +
             `${zodStr(pick.lon)}</b>` : "<b>— ยังไม่ได้เลือกจุด</b>") +
+    (DIALFROM ? `<b class="dl-from">สูตร ${fromHTML()}</b>` : "") +
     // ปุ่มค้นหา — เหมือนปุ่มเดินอัตโนมัติ ต้องใส่ pointer-events inline ด้วย
     // (.dialinfo ตั้ง none ไว้ · ดู RULES ข้อ 10)
     `<button type="button" style="pointer-events:auto" class="dl-auto" data-find>` +
@@ -1916,6 +1918,7 @@ function renderAxisPanel() {
   for (let v = pic.axis % DLnow; v < 360; v += DLnow) folds.push(dmRound(v));
   const head = isDeg
     ? `<h4>แกน = องศา ${pic.axis.toFixed(2)}°` +
+      (DIALFROM ? ` <span class="axfrom">· จากสูตร <b>${fromHTML()}</b></span>` : "") +
       ` <span class="axdeg">${dmRound(pic.axis)} · ${ZODIAC[si]} ` +
       `${dmRound(inSign)}</span></h4>` +
       (DLnow < 360 && folds.length > 1
@@ -2493,7 +2496,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v82")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v83")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
@@ -2687,6 +2690,7 @@ function tmeanWhenHTML(row, mi) {
     if (L) return `${row.lead[0]}.${L[0]},${row.lead[1]}.${L[1]}`;
     return `${row.lead[0]}.r` + (who && who !== "โค้ง" ? `,${who}.t` : "");
   };
+  const labelOf = (who) => marksOf(who).replace(",", "=");   // สูตรอ่านง่าย เช่น KR.v1=AR.v2
   return `<div class="mwhen">` + hit.map(([who, a, peak, b]) => {
     const arc = who === "โค้ง";
     // โค้งแก้สมการได้เวลาจริง · ดาวจรมาจากสแกนก้าวครึ่งวัน — ไม่โชว์นาฬิกาให้หลงเชื่อ
@@ -2694,7 +2698,7 @@ function tmeanWhenHTML(row, mi) {
     return `<div class="mwrow"><span>⏱ <b>${lab} ${fd(peak)}${arc ? " " + ft(peak) : ""}</b>` +
       ` · เข้า orb ${fd(a)} – คลาย ${fd(b)}</span>` +
       `<button type="button" data-go="${peak}" data-deg="${anchorDeg.toFixed(4)}"` +
-      ` data-marks="${marksOf(who)}"` +
+      ` data-marks="${marksOf(who)}" data-flabel="${labelOf(who)}"` +
       ` title="ปรับวันเป็นวันนั้น เปิดจานหมุน และชี้เข็มไปที่จุดของสูตร` +
       `${arc ? "" : " (ความละเอียดสแกน ±ครึ่งวัน)"}">` +
       `ไปวันนั้น</button></div>`;
@@ -2709,6 +2713,7 @@ $("tmean").addEventListener("click", (e) => {
     // เปิดหน้าจานพร้อมชี้เข็ม/แกนไปที่จุดของสูตร — ใช้เส้นทางเดียวกับ
     // ปุ่ม "ใช้องศาเข็ม" (applyAxisDeg ตั้ง DIALSEL องศา + เข็ม + แผงแกน)
     showPanel("pdial");
+    DIALFROM = b.dataset.flabel || null;
     $("axdeg").value = (+b.dataset.deg).toFixed(2);
     applyAxisDeg();
     if (b.dataset.marks) {
@@ -2772,22 +2777,38 @@ $("ctype").addEventListener("change", () => {
 });
 
 // วงเส้นประกะพริบครอบดาวของสูตร (มาจากปุ่ม "ไปวันนั้น")
+function fromHTML() {
+  if (!DIALFROM) return "";
+  return DIALFROM.split("=").map((p) => {
+    const [c, src] = p.split(".");
+    return `${c}<sub>${src}</sub>`;
+  }).join("=");
+}
 function dialMarksClear() {
   if (_markTimer) { clearInterval(_markTimer); _markTimer = 0; }
-  if (DIALMARKS) { DIALMARKS = null; drawDial(); }
+  const had = DIALMARKS || DIALFROM;
+  // คืนวงแหวนที่ dialMarksSet สลับไป — ไม่งั้นจานค้างหน้าตาแปลกหลังวงหาย
+  // (ผู้ใช้เจอจริง: วงนอกสุดกลายเป็น v2 ดาวจรหาย เลือกดาวที่คุ้นไม่ได้)
+  if (DIALMARKS && DIALMARKS.prevRings) {
+    for (const [id, v] of Object.entries(DIALMARKS.prevRings)) $(id).value = v;
+  }
+  DIALMARKS = null; DIALFROM = null;
+  if (had) { drawDial(); renderAxisPanel(); }
 }
 function dialMarksSet(list) {
   // ชั้นของสูตรต้องโชว์บนวงแหวนสักวง ไม่งั้นไม่มีดาวให้วง (เช่น v2 ไม่ใช่
   // ค่าปริยาย) — สลับวงที่ "ไม่ถูกสูตรใช้" ไปเป็นชั้นที่ขาด
   const rings = ["dlr3", "dlr2", "dlr1"];
   const need = [...new Set(list.map((m) => m.src))];
+  const prevRings = {};                      // จำค่าเดิมเฉพาะวงที่สลับ ไว้คืนตอนวงหาย
   for (const srcNeed of need) {
     if (rings.some((id) => $(id).value === srcNeed)) continue;
-    const spare = rings.find((id) => need.indexOf($(id).value) < 0);
-    if (spare) $(spare).value = srcNeed;
+    const spare = rings.find((id) => need.indexOf($(id).value) < 0
+                                  && !(id in prevRings));
+    if (spare) { prevRings[spare] = $(spare).value; $(spare).value = srcNeed; }
   }
   if (_markTimer) clearInterval(_markTimer);
-  DIALMARKS = { list, on: true };
+  DIALMARKS = { list, on: true, prevRings };
   _markTimer = setInterval(() => {
     if (!DIALMARKS) return;
     DIALMARKS.on = !DIALMARKS.on;
