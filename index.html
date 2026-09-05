@@ -13,7 +13,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v83">
+<link rel="stylesheet" href="style.css?v=urain-v84">
 </head>
 <body>
 <div class="wrap">
@@ -79,6 +79,7 @@
   <button type="button" class="tab on" data-p="pdial">จานหมุน</button>
   <button type="button" class="tab" data-p="ptable">ตารางดูดวงจร</button>
   <button type="button" class="tab" data-p="pctr">ศูนย์รังสี 360°</button>
+  <button type="button" class="tab" data-p="pcal">ปฏิทินโค้ง</button>
   <button type="button" class="tab" data-p="ppos">ตำแหน่งดาว</button>
   <button type="button" class="tab" data-p="ptl">ไทม์ไลน์</button>
   <button type="button" class="tab" data-p="plife">แผนที่ชีวิต</button>
@@ -406,6 +407,26 @@
 
 </div><!-- /pctr -->
 
+<div class="panel" id="pcal">
+<section class="legend" id="calbox">
+  <h3>ปฏิทินโค้งสุริยยาตร์</h3>
+  <p class="dialnote">ทุกสมการที่โค้งจะพามาแม่นพอดีในช่วงที่เลือก เรียงตามวัน ·
+    สูตรปิด 8 ชนิด (ลดรูปจาก A+B−C ทั้งหมด) · วันที่แก้ด้วยตัวเดียวกับที่สอบเทียบ
+    กับเว็บแล้ว · <b>ลำดับความแรง: ดาวเดียว &gt; ศูนย์รังสี &gt; จุดอิทธิพล</b> —
+    ค่าตั้งต้นจึงเปิดเฉพาะชนิดคู่ดาว เปิดชนิดอื่นเพิ่มได้ (ระวังกองทัพจุด)</p>
+  <div class="dictlook">
+    <span class="lbl">ช่วง</span>
+    <span class="laychips" id="calwin"></span>
+    <span class="sep"></span>
+    <span class="lbl">ชนิดสมการ</span>
+    <span class="laychips" id="calkinds"></span>
+    <button type="button" id="calgo">คำนวณ</button>
+    <b class="mrsum" id="calcount"></b>
+  </div>
+  <div id="callist"><p class="svempty">เลือกชนิดสมการแล้วกดคำนวณ</p></div>
+</section>
+</div>
+
 <div class="panel" id="ppos">
 <section class="legend" id="radixbox" style="display:none">
   <h3>ตำแหน่งดาว 9 ชั้น
@@ -432,14 +453,14 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v83"></script>
-<script src="places.js?v=urain-v83"></script>
-<script src="engine.js?v=urain-v83"></script>
-<script src="render.js?v=urain-v83"></script>
+<script src="glyphs.js?v=urain-v84"></script>
+<script src="places.js?v=urain-v84"></script>
+<script src="engine.js?v=urain-v84"></script>
+<script src="render.js?v=urain-v84"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const SW_CACHE = "urain-v83";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v84";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 let DIALMARKS = null, _markTimer = 0;   // วงเส้นประกะพริบครอบดาวของสูตร (v80)
@@ -1894,21 +1915,23 @@ function renderAxisPanel() {
     `<span class="pl ${cls(c)}">${glyphHTML(c)}<i class="lay">${src}</i></span>`;
   // แต่ละแถวกดได้ — คำแปลขึ้นเมื่อกด (ไม่แสดงพรืดให้รก)
   const axis4 = isDeg ? "" : DIALSEL.c;
+  // แถวคู่/สามดาวกดดูคำแปลได้เสมอ (โหมดองศาใช้คีย์ตามหลัก RULES ข้อ 0)
+  const canMean = true;
   const rowA = (r) =>
     `<div class="axrow${r.orb <= 0.2 ? " tight" : ""}${axis4 ? " mean" : ""}"` +
     (axis4 ? ` data-t="A" data-p="${r.p}" data-s="${r.src}"` : "") + `>` +
     pl(r.p, r.src) + ` ${angLabel(r.ang)} ` +
     `<span class="orb">(${r.orb.toFixed(2)}<i class="dg">°</i>)</span></div>`;
   const rowB = (r) =>
-    `<div class="axrow${r.orb <= 0.2 ? " tight" : ""}${axis4 ? " mean" : ""}"` +
-    (axis4 ? ` data-t="AB" data-a="${r.a}" data-b="${r.b}" data-s="${r.src}"` : "") + `>` +
+    `<div class="axrow${r.orb <= 0.2 ? " tight" : ""}${canMean ? " mean" : ""}"` +
+    (canMean ? ` data-t="AB" data-a="${r.a}" data-b="${r.b}" data-s="${r.src}"` : "") + `>` +
     pl(r.a, r.src) + `<span class="op">/</span>` + pl(r.b, r.src) + ` ` +
     `${angLabel(r.ang)} <span class="orb">(${r.orb.toFixed(2)}<i class="dg">°</i>)</span>` +
     `<span class="axarc">โค้ง ${dmRound(r.half)}</span></div>`;
   const sum = AISTRO.sumPictures(AXLAY.layers, aL, aS, { layers: SL });
   const rowC = (r) =>
-    `<div class="axrow${r.orb <= 0.2 ? " tight" : ""}${axis4 ? " mean" : ""}"` +
-    (axis4 ? ` data-t="ABC" data-a="${r.a}" data-b="${r.b}" data-c="${r.c}"` +
+    `<div class="axrow${r.orb <= 0.2 ? " tight" : ""}${canMean ? " mean" : ""}"` +
+    (canMean ? ` data-t="ABC" data-a="${r.a}" data-b="${r.b}" data-c="${r.c}"` +
              ` data-s="${r.src}"` : "") + `>` +
     pl(r.a, r.src) + `<span class="op">+</span>` + pl(r.b, r.src) +
     `<span class="op">\u2212</span>` + pl(r.c, r.src) + ` ` +
@@ -1935,6 +1958,8 @@ function renderAxisPanel() {
       `${dmRound(inSign)}</span></h4>`;
   box.innerHTML = head +
     `<div class="axsec">1 ดาว — ดาวเดี่ยวมาทำมุมกับแกน [A] · ชั้น r · v1 · v2 · t` +
+    (isDeg ? ` · <i>แกนเป็นองศา แถวดาวเดี่ยวจึงไม่มีคู่ให้แปล — กดได้เฉพาะ` +
+             `แถว [2 ดาว]/[3 ดาว] หรือเลือกดาวบนจานเป็นแกน</i>` : "") +
     ` (orb ≤ 1°${AX60 ? " · รวมมุม 60°" : ""})` +
     ` <span class="axnote">${pic.A.length} ดาว${pic.A.length ?
       " · " + byAng(pic.A) : ""}</span></div>` +
@@ -2496,7 +2521,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v83")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v84")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
@@ -2546,9 +2571,13 @@ function meanHTML(row) {
 function rowSpec(el) {
   const t = el.dataset.t;
   const axis = DIALSEL && DIALSEL.deg === undefined ? DIALSEL.c : null;
-  if (!axis) return null;
-  if (t === "A") return { type: "A", p: el.dataset.p, axis };
-  if (t === "AB") return { type: "AB", a: el.dataset.a, b: el.dataset.b, axis };
+  // โหมดแกนองศา (เช่นมาจากปุ่ม "ไปวันนั้น") ไม่มีดาวแกน — แต่ตามหลัก
+  // RULES ข้อ 0 แถวที่มี 2-3 ปัจจัยในตัวเองยังแปลได้: A/B ≡ A=B (คีย์คู่)
+  // และ A+B−C ≡ คีย์สามปัจจัย · เหลือเฉพาะแถวดาวเดี่ยวที่ไม่มีคู่ให้แปล
+  if (t === "A") return axis ? { type: "A", p: el.dataset.p, axis } : null;
+  if (t === "AB") return axis
+    ? { type: "AB", a: el.dataset.a, b: el.dataset.b, axis }
+    : { type: "A", p: el.dataset.a, axis: el.dataset.b };
   if (t === "ABC") return { type: "ABC", a: el.dataset.a, b: el.dataset.b,
                             c: el.dataset.c, axis };
   return null;
@@ -2760,7 +2789,7 @@ $("out").addEventListener("click", (e) => {
 // กดที่ใดก็ได้นอกแถวสูตร = ปิดคำแปล (ผู้ใช้ขอ — รวมถึงกดบนตัวป๊อปอัพเอง)
 document.addEventListener("click", (e) => {
   if ($("tmean").hidden) return;
-  if (e.target.closest(".frow")) return;     // กดแถวอื่น = เปิดอันใหม่แทน
+  if (e.target.closest(".frow, .calrow")) return;   // กดแถวอื่น = เปิดอันใหม่แทน
   tmeanClose();
 });
 
@@ -2779,6 +2808,7 @@ $("ctype").addEventListener("change", () => {
 // วงเส้นประกะพริบครอบดาวของสูตร (มาจากปุ่ม "ไปวันนั้น")
 function fromHTML() {
   if (!DIALFROM) return "";
+  if (typeof DIALFROM === "object") return DIALFROM.h;   // ป้ายจากปฏิทินโค้ง
   return DIALFROM.split("=").map((p) => {
     const [c, src] = p.split(".");
     return `${c}<sub>${src}</sub>`;
@@ -2928,6 +2958,158 @@ $("dqkgo").addEventListener("click", async () => {
 });
 $("dqkw").addEventListener("keydown", (e) => { if (e.key === "Enter") $("dqkgo").click(); });
 dictFillSelects();
+
+// ── แท็บปฏิทินโค้ง (แบบ ALL=V — ผู้ใช้เคาะ 5 ก.ย. 2026) ─────────────────────
+// เรียงชิปตามลำดับความแรง (ตำราสมการดาว): คู่ดาว → ศูนย์รังสี → จุดอิทธิพล
+const CAL_KIND_TH = [
+  ["Ar=Bv",     "Ar=Bv · ดาวโค้งถึงดาวกำเนิด"],
+  ["Av1=Bv2",   "Av1=Bv2 · สองดาวโค้งวิ่งเข้าหากัน"],
+  ["Ar/Br=Bv",  "Ar/Br=Bv"], ["Ar=Br/Bv", "Ar=Br/Bv"],
+  ["Ar/Br=Cv",  "Ar/Br=Cv"], ["Av/Bv=Cr", "Av/Bv=Cr"],
+  ["A+B-Cr=Cv", "A+B−Cr=Cv"], ["A+B-Cv=Cr", "A+B−Cv=Cr"],
+];
+let CAL = { win: 1, on: { "Ar=Bv": true, "Av1=Bv2": true }, ev: null, key: "" };
+function calChips() {
+  $("calwin").innerHTML = [1, 2].map((w) =>
+    `<button type="button" class="laychip${CAL.win === w ? " on" : ""}"` +
+    ` data-w="${w}">±${w} ปี</button>`).join("");
+  $("calkinds").innerHTML = CAL_KIND_TH.map(([k, th]) =>
+    `<button type="button" class="laychip${CAL.on[k] ? " on" : ""}"` +
+    ` data-k="${k}" title="${th}">${k.replace(/-/g, "−")}</button>`).join("");
+}
+calChips();
+$("calwin").addEventListener("click", (e) => {
+  const c = e.target.closest("[data-w]");
+  if (!c) return;
+  CAL.win = +c.dataset.w; calChips();
+  if (CAL.ev) calRun();
+});
+$("calkinds").addEventListener("click", (e) => {
+  const c = e.target.closest("[data-k]");
+  if (!c) return;
+  CAL.on[c.dataset.k] = !CAL.on[c.dataset.k]; calChips();
+  if (CAL.ev) calRun();
+});
+$("calgo").addEventListener("click", () => calRun());
+
+// ป้าย/จุดยึด/ดาวที่ต้องวงของแต่ละชนิด — ชั้น v ในสัญกรณ์ของแอปคือ v1 ของเรา
+function calFmt(ev) {
+  const sub = (c, l) => `${c}<sub>${l}</sub>`;
+  const { a, b, c } = ev;
+  switch (ev.kind) {
+    case "Ar=Bv":     return sub(a, "r") + "=" + sub(b, "v1");
+    case "Av1=Bv2":   return sub(a, "v1") + "=" + sub(b, "v2");
+    case "Ar/Br=Bv":  return sub(a, "r") + "/" + sub(b, "r") + "=" + sub(b, "v1");
+    case "Ar=Br/Bv":  return sub(a, "r") + "=" + sub(b, "r") + "/" + sub(b, "v1");
+    case "Ar/Br=Cv":  return sub(a, "r") + "/" + sub(b, "r") + "=" + sub(c, "v1");
+    case "Av/Bv=Cr":  return sub(a, "v1") + "/" + sub(b, "v1") + "=" + sub(c, "r");
+    case "A+B-Cr=Cv": return `${a}+${b}\u2212${c}<sub>r</sub>=` + sub(c, "v1");
+    default:          return `${a}+${b}\u2212${c}<sub>v1</sub>=` + sub(c, "r");
+  }
+}
+function calDeg(ev) {
+  const R = TL.R, { a, b, c } = ev;
+  switch (ev.kind) {
+    case "Ar=Bv": case "Ar=Br/Bv": return AISTRO.mod360(R[a]);
+    case "Av1=Bv2": case "Ar/Br=Bv": case "Ar/Br=Cv":
+      return AISTRO.mod360((R[a] + R[b]) / 2);
+    case "A+B-Cr=Cv": return AISTRO.mod360(R[a] + R[b] - R[c]);
+    default: return AISTRO.mod360(R[c]);         // Av/Bv=Cr · A+B-Cv=Cr
+  }
+}
+function calMarks(ev) {
+  const { a, b, c } = ev;
+  switch (ev.kind) {
+    case "Ar=Bv":     return [{ c: a, src: "r" }, { c: b, src: "v1" }];
+    case "Av1=Bv2":   return [{ c: a, src: "v1" }, { c: b, src: "v2" }];
+    case "Ar/Br=Bv":  case "Ar=Br/Bv":
+      return [{ c: a, src: "r" }, { c: b, src: "r" }, { c: b, src: "v1" }];
+    case "Ar/Br=Cv":
+      return [{ c: a, src: "r" }, { c: b, src: "r" }, { c: c, src: "v1" }];
+    case "Av/Bv=Cr":
+      return [{ c: a, src: "v1" }, { c: b, src: "v1" }, { c: c, src: "r" }];
+    case "A+B-Cr=Cv":
+      return [{ c: a, src: "r" }, { c: b, src: "r" }, { c: c, src: "v1" }];
+    default:
+      return [{ c: a, src: "v1" }, { c: b, src: "v1" }, { c: c, src: "r" }];
+  }
+}
+// คำแปลตามหลัก RULES ข้อ 0: 2 ปัจจัย → คีย์คู่ · 3 ปัจจัย → คีย์สามปัจจัย
+function calSpec(ev) {
+  return ev.c ? { type: "AB", a: ev.a, b: ev.b, axis: ev.c }
+              : { type: "A", p: ev.a, axis: ev.b };
+}
+
+function calRun() {
+  if (!TL) { $("callist").innerHTML = '<p class="svempty">กดคำนวณดวงก่อน</p>'; return; }
+  const kinds = CAL_KIND_TH.map(([k]) => k).filter((k) => CAL.on[k]);
+  if (!kinds.length) { $("callist").innerHTML =
+    '<p class="svempty">เปิดชนิดสมการอย่างน้อยหนึ่งชนิด</p>'; $("calcount").textContent = ""; return; }
+  const key = [TL.jd, TL.jdT, CAL.win, kinds.join(",")].join("|");
+  if (CAL.key !== key) {
+    CAL.ev = AISTRO.arcCalendar(TL.R, TL.jd,
+      { tz: TZ, jdRef: TL.jdT, windowYears: CAL.win, kinds });
+    CAL.key = key;
+  }
+  const ev = CAL.ev;
+  const dm = (v) => { const d = Math.floor(v);
+    return d + ":" + String(Math.round((v - d) * 60)).padStart(2, "0"); };
+  const MTH = AISTRO_RENDER.MONTH_TH;
+  let html = "", lastMonth = "", todayDone = false;
+  ev.forEach((e, i) => {
+    const c = AISTRO.revjul(e.jd + TZ / 24);
+    if (!todayDone && e.jd >= TL.jdT) {
+      html += `<div class="caltoday">← วันนี้ (วันดวงจร ${
+        AISTRO.revjul(TL.jdT + TZ / 24)[2]}/${AISTRO.revjul(TL.jdT + TZ / 24)[1]}/${
+        AISTRO.revjul(TL.jdT + TZ / 24)[0] + 543})</div>`;
+      todayDone = true;
+    }
+    const mKey = c[1] + "/" + c[0];
+    if (mKey !== lastMonth) {
+      html += `<div class="calmonth">${MTH[c[1] - 1]} ${c[0] + 543}</div>`;
+      lastMonth = mKey;
+    }
+    html += `<div class="calrow" data-i="${i}">` +
+      `<span class="cald">${c[2]}/${c[1]}</span>` +
+      `<span class="cala">${dm(e.arc)}</span>` +
+      `<b class="calf">${calFmt(e)}</b>` +
+      `<button type="button" data-calgo="${i}">ไปวันนั้น</button></div>`;
+  });
+  if (!todayDone) html += `<div class="caltoday">← วันนี้</div>`;
+  $("callist").innerHTML = html || '<p class="svempty">ไม่มีสมการในช่วงนี้</p>';
+  $("calcount").textContent = `${ev.length} สมการ` +
+    (ev.length > 300 ? " · กองทัพจุด — ลองปิดชนิดที่เบาลง" : "");
+  // เลื่อนไปที่เส้นวันนี้
+  const t = $("callist").querySelector(".caltoday");
+  if (t) t.scrollIntoView({ block: "center" });
+}
+
+$("callist").addEventListener("click", async (e) => {
+  const go = e.target.closest("[data-calgo]");
+  if (go) {
+    const ev = CAL.ev[+go.dataset.calgo];
+    const err = gotoJd(ev.jd);
+    if (err) { $("status").className = "err"; $("status").textContent = err; return; }
+    showPanel("pdial");
+    DIALFROM = { h: calFmt(ev) };
+    $("axdeg").value = calDeg(ev).toFixed(2);
+    applyAxisDeg();
+    dialMarksSet(calMarks(ev));
+    $("dialbox").scrollIntoView({ block: "start" });
+    return;
+  }
+  const row = e.target.closest(".calrow");
+  if (!row || !CAL.ev) return;
+  const ev = CAL.ev[+row.dataset.i];
+  const box = $("tmean");
+  box.hidden = false;
+  box.innerHTML = '<div class="mnone">กำลังโหลดพจนานุกรม …</div>';
+  tmeanPlace(row);
+  if (!await dictNeed()) { box.innerHTML = await dictErrHTML(new Error("โหลดไม่สำเร็จ")); return; }
+  box.innerHTML = `<div class="mnote">${calFmt(ev)} · โค้ง ${ev.arc.toFixed(2)}°</div>` +
+    meanHTML(calSpec(ev));
+  tmeanPlace(row);
+});
 
 function drawGlyphKey() {
   const cv = $("dlkey"), ctx = cv.getContext("2d");

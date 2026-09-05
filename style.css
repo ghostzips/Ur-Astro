@@ -710,6 +710,22 @@ p.hint:empty{display:none}
 .axfrom sub{font-size:9px}
 .dialinfo .dl-from{color:var(--f-personal)!important;font-family:var(--mono)}
 
+/* แท็บปฏิทินโค้ง */
+#callist{margin-top:var(--s3);max-height:70vh;overflow:auto}
+.calmonth{position:sticky;top:0;background:var(--panel);padding:var(--s2) var(--s2);
+  font-size:var(--t-sm);font-weight:700;color:var(--accent);
+  border-bottom:1px solid var(--rule-soft);z-index:2}
+.calrow{display:flex;align-items:center;gap:var(--s3);padding:3px var(--s2);
+  font-variant-numeric:tabular-nums;cursor:pointer;border-radius:var(--r-sm)}
+.calrow:hover{background:var(--hover)}
+.cald{width:44px;color:var(--dim);font-size:var(--t-sm);text-align:right}
+.cala{width:52px;color:var(--faint);font-size:var(--t-sm)}
+.calf{flex:1 1 auto;font-family:var(--mono);font-size:var(--t-sm);font-weight:600}
+.calf sub{font-size:9px;color:var(--dim)}
+.calrow button{font-size:var(--t-xs);padding:2px 8px;white-space:nowrap}
+.caltoday{margin:var(--s2) 0;padding:4px var(--s3);border-left:3px solid var(--f-personal);
+  background:var(--sunk);color:var(--f-personal);font-weight:700;font-size:var(--t-sm)}
+
 /* แท็บพจนานุกรม */
 .dictlook{display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center;margin:var(--s3) 0}
 .dicth4{margin:var(--s5) 0 0;font-size:var(--t-md)}

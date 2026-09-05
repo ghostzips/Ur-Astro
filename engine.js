@@ -1229,6 +1229,65 @@ function lookupMeaning(row, ctx) {
   return { kind: "none" };
 }
 
+// ── ปฏิทินโค้งสุริยยาตร์ (แบบ ALL=V — ผู้ใช้เคาะ 5 ก.ย. 2026) ──────────────
+// 8 สูตรปิดบนกริดมุม 22.5° (ชนิด 2 ใช้ 11.25 เพราะสองข้างวิ่งเข้าหากัน)
+// ทุกชนิดลดรูปจาก A+B−C ตามเอกสาร "คณิตในยูเรเนี่ยน" · ไม่มีคณิตใหม่:
+// โค้งเป้า = เลขคณิตองศากำเนิด · วันที่ = solveArcDate ตัวที่สอบเทียบเว็บแล้ว
+const CAL_KINDS = {
+  //        K(a,b,c) = โค้งเป้าฐาน                 คาบ    ปัจจัย
+  "Ar=Bv":      { k: (a, b) => a - b,               p: 22.5,  n: 2, ord: true },
+  "Av1=Bv2":    { k: (a, b) => (b - a) / 2,         p: 11.25, n: 2, ord: false },
+  "Ar/Br=Bv":   { k: (a, b) => (a + b) / 2 - b,     p: 22.5,  n: 2, ord: true },
+  "Ar=Br/Bv":   { k: (a, b) => 2 * (a - b),         p: 45,    n: 2, ord: true },
+  "Ar/Br=Cv":   { k: (a, b, c) => (a + b) / 2 - c,  p: 22.5,  n: 3, ord: false },
+  "Av/Bv=Cr":   { k: (a, b, c) => c - (a + b) / 2,  p: 22.5,  n: 3, ord: false },
+  "A+B-Cr=Cv":  { k: (a, b, c) => a + b - 2 * c,    p: 22.5,  n: 3, ord: false },
+  "A+B-Cv=Cr":  { k: (a, b, c) => 2 * c - a - b,    p: 22.5,  n: 3, ord: false },
+};
+function arcCalendar(radix, jdBirth, opt) {
+  const tz = opt.tz, jdRef = opt.jdRef;
+  const W = opt.windowYears === undefined ? 1 : opt.windowYears;
+  const kinds = opt.kinds || Object.keys(CAL_KINDS);
+  const codes = CODE_ORDER.filter((c) => radix[c] !== undefined);
+  const arcNow = solarArc(jdBirth, jdRef, tz);
+  // ขอบหน้าต่างคิดจากโค้งจริง ณ ขอบเวลา (ไม่ประมาณ 1°/ปี)
+  const arcLo = Math.max(0.02, solarArc(jdBirth, jdRef - W * 365.2422, tz));
+  const arcHi = solarArc(jdBirth, jdRef + W * 365.2422, tz);
+  const out = [];
+  const push = (kind, a, b, c, K, p) => {
+    let t = ((K % p) + p) % p;
+    t += p * Math.ceil((arcLo - t) / p);
+    for (; t <= arcHi + 1e-9; t += p) {
+      if (t < arcLo - 1e-9) continue;
+      const guess = jdRef + (t - arcNow) * 365.2422;
+      const jd = solveArcDate(jdBirth, t, guess, 360.0, tz);
+      out.push({ kind, a, b, c: c || null, arc: t, jd });
+    }
+  };
+  for (const kind of kinds) {
+    const D = CAL_KINDS[kind];
+    if (!D) continue;
+    if (D.n === 2) {
+      for (let i = 0; i < codes.length; i++)
+        for (let j = D.ord ? 0 : i + 1; j < codes.length; j++) {
+          if (i === j) continue;
+          push(kind, codes[i], codes[j], null,
+               D.k(radix[codes[i]], radix[codes[j]]), D.p);
+        }
+    } else {
+      for (let i = 0; i < codes.length; i++)
+        for (let j = i + 1; j < codes.length; j++)
+          for (let m = 0; m < codes.length; m++) {
+            if (m === i || m === j) continue;
+            push(kind, codes[i], codes[j], codes[m],
+                 D.k(radix[codes[i]], radix[codes[j]], radix[codes[m]]), D.p);
+          }
+    }
+  }
+  out.sort((x, y) => x.jd - y.jd);
+  return out;
+}
+
 // ค้นพจนานุกรมด้วยคีย์เวิร์ด — คืนทุกสมการที่คำแปลมีคำนั้น
 // (ฟีเจอร์ UI ล้วน ไม่แตะการคำนวณ · ผู้ใช้ขอ 31 ส.ค. 2026)
 function dictSearch(q, ctx) {
@@ -1259,6 +1318,7 @@ const AISTRO = {
   monthTable, monthSummary, rowText, rowFactors,
   transitAspectDates, transitFactorAt, TRANSIT_SPEED,
   activationDates, transitWindows, solveArcDate, radiationRows, dictSearch,
+  arcCalendar, CAL_KINDS,
   FORMULA_K, FORMULA_SNAP, parseFormulaSide, evalFormulaSide, formulaSolve,
   loadEphem, initEphemBinary, initEphemJs,
   lifetimeEvents, clusterOnDial, pairsOnDial,
