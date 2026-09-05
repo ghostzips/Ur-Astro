@@ -13,7 +13,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v78">
+<link rel="stylesheet" href="style.css?v=urain-v79">
 </head>
 <body>
 <div class="wrap">
@@ -432,14 +432,14 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v78"></script>
-<script src="places.js?v=urain-v78"></script>
-<script src="engine.js?v=urain-v78"></script>
-<script src="render.js?v=urain-v78"></script>
+<script src="glyphs.js?v=urain-v79"></script>
+<script src="places.js?v=urain-v79"></script>
+<script src="engine.js?v=urain-v79"></script>
+<script src="render.js?v=urain-v79"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const SW_CACHE = "urain-v78";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v79";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 // ตัวจับเวลาของ "เดินอัตโนมัติ" — ประกาศไว้บนสุดเพราะ drawDial() อ่านค่านี้
@@ -2660,14 +2660,20 @@ function tmeanWhenHTML(row, mi) {
     return String(Math.floor(h)).padStart(2, "0") + ":" +
            String(Math.floor((h % 1) * 60)).padStart(2, "0");
   };
+  // จุดบนจานของสูตรนี้ — ใช้จุดยึดชุดเดียวกับที่ monthTable ใช้จริง:
+  // kind 1 = ศูนย์รังสีของคู่ (x+y)/2 · kind 2/3/4 = ดาวกำเนิดตัวนำ lead[0]
+  const anchorDeg = row.kind === 1
+    ? AISTRO.mod360((TL.R[row.lead[0]] + TL.R[row.lead[1]]) / 2)
+    : AISTRO.mod360(TL.R[row.lead[0]]);
   return `<div class="mwhen">` + hit.map(([who, a, peak, b]) => {
     const arc = who === "โค้ง";
     // โค้งแก้สมการได้เวลาจริง · ดาวจรมาจากสแกนก้าวครึ่งวัน — ไม่โชว์นาฬิกาให้หลงเชื่อ
     const lab = arc ? "โค้งแม่นสุด" : `${who}จร แม่นสุด`;
     return `<div class="mwrow"><span>⏱ <b>${lab} ${fd(peak)}${arc ? " " + ft(peak) : ""}</b>` +
       ` · เข้า orb ${fd(a)} – คลาย ${fd(b)}</span>` +
-      `<button type="button" data-go="${peak}"` +
-      ` title="หมุนตาราง/จานไปวันนั้น${arc ? "" : " (ความละเอียดสแกน ±ครึ่งวัน)"}">` +
+      `<button type="button" data-go="${peak}" data-deg="${anchorDeg.toFixed(4)}"` +
+      ` title="ปรับวันเป็นวันนั้น เปิดจานหมุน และชี้เข็มไปที่จุดของสูตร` +
+      `${arc ? "" : " (ความละเอียดสแกน ±ครึ่งวัน)"}">` +
       `ไปวันนั้น</button></div>`;
   }).join("") + `</div>`;
 }
@@ -2675,7 +2681,15 @@ $("tmean").addEventListener("click", (e) => {
   const b = e.target.closest("[data-go]");
   if (!b) return;
   const err = gotoJd(+b.dataset.go);   // run() จะปิดป๊อปอัพให้เอง
-  if (err) { $("status").className = "err"; $("status").textContent = err; }
+  if (err) { $("status").className = "err"; $("status").textContent = err; return; }
+  if (b.dataset.deg !== undefined) {
+    // เปิดหน้าจานพร้อมชี้เข็ม/แกนไปที่จุดของสูตร — ใช้เส้นทางเดียวกับ
+    // ปุ่ม "ใช้องศาเข็ม" (applyAxisDeg ตั้ง DIALSEL องศา + เข็ม + แผงแกน)
+    showPanel("pdial");
+    $("axdeg").value = (+b.dataset.deg).toFixed(2);
+    applyAxisDeg();
+    $("dialbox").scrollIntoView({ block: "start" });
+  }
 });
 function tmeanClose() {
   for (const r of $("out").querySelectorAll(".frow.on")) r.classList.remove("on");
