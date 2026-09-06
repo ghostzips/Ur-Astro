@@ -1288,6 +1288,78 @@ function arcCalendar(radix, jdBirth, opt) {
   return out;
 }
 
+// ── เรือนยูเรเนียน (พอร์ตจาก src/aistro.py — สอบเทียบเว็บ 22/22 ดวงอ้างอิง) ──
+// แกนเป็นต้นเรือน แล้วนับทุก 30° · แกนปริยาย = จุดกึ่งกลาง AR/MC → ต้นเรือน 4
+// (แกน MC เดี่ยว → ต้นเรือน 10)
+// **AR รวมอยู่ในผลลัพธ์** — เว็บจัด AR เข้าเรือนตามตำแหน่งด้วย (WEB_HOUSES ก็มี AR)
+// ที่ AR "ไม่เข้าเรือน" คือระดับ *คำแปล* เท่านั้น (houseMeaning(AR) = null) —
+// ฝั่ง UI จึงกรอง AR ออกจากจานเอง ไม่ใช่กรองที่ engine (คงข้อมูลดิบให้ตรงเว็บ)
+function uranianAxis(radix) { return mod360((radix.AR + radix.MC) / 2); }
+function uranianHouses(positions, axis, axisHouse) {
+  axisHouse = axisHouse === undefined ? 4 : axisHouse;
+  const out = {};
+  for (let h = 1; h <= 12; h++) out[h] = [];
+  for (const k in positions) {
+    const h = ((Math.floor(mod360(positions[k] - axis) / 30) + axisHouse - 1) % 12) + 1;
+    out[h].push(k);
+  }
+  for (let h = 1; h <= 12; h++) out[h].sort();
+  return out;
+}
+// เรือนของดาวรายตัว (คืน 1..12) — สูตรเดียวกับ uranianHouses (ต้องสอดคล้องกันเสมอ)
+function houseOf(lon, axis, axisHouse) {
+  axisHouse = axisHouse === undefined ? 4 : axisHouse;
+  return ((Math.floor(mod360(lon - axis) / 30) + axisHouse - 1) % 12) + 1;
+}
+function houseCusps(axis, axisHouse) {
+  axisHouse = axisHouse === undefined ? 4 : axisHouse;
+  const out = {};
+  for (let off = 0; off < 12; off++)
+    out[((off + axisHouse - 1) % 12) + 1] = mod360(axis + off * 30);
+  return out;
+}
+
+// ── คำแปลดาวในเรือน (พอร์ตจาก house_meaning · dict แยกไฟล์ house_dict.json.gz) ──
+// การ์ด = template + ช่องเสียบ (นิยามดาว × ธีมเรือน) ตรงคำต่อคำกับเว็บ
+// context = ชื่อไทยเต็ม เช่น "ดวงบุคคล" (map จาก ctx สั้น person/country/... ที่ UI ใช้)
+let _HDICT = null;
+const HCTX_MAP = { person: "ดวงบุคคล", country: "ดวงประเทศ/เมือง",
+  company: "ดวงบริษัท/องค์กร", stock: "ดวงหุ้น/ตลาด", team: "ดวงทีมกีฬา" };
+function initHouseDict(obj) { _HDICT = obj; return !!obj; }
+function houseDictReady() { return !!_HDICT; }
+async function loadHouseDict(url) {
+  if (_HDICT) return true;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("โหลดคำแปลเรือนไม่ได้: HTTP " + res.status);
+  const path = String(url).split(/[?#]/)[0];
+  let txt;
+  if (/\.gz$/.test(path) && typeof DecompressionStream === "function") {
+    txt = await new Response(res.body.pipeThrough(new DecompressionStream("gzip"))).text();
+  } else txt = await res.text();
+  return initHouseDict(JSON.parse(txt));
+}
+// คืนคำแปลดาวในเรือน หรือ null ถ้าไม่มี (AR ไม่เข้าเรือน · ดวง/เรือนนอกฐาน)
+// ctx = person|country|company|stock (สั้นแบบ UI) · owner = ดาวเจ้าของเรือน (ถ้ามี)
+function houseMeaning(planet, house, ctx, owner) {
+  if (!_HDICT) return null;
+  const context = HCTX_MAP[ctx] || "ดวงบุคคล";
+  const pdef = (_HDICT.planet_def[context] || {})[planet];
+  const theme = (_HDICT.house_theme[context] || {})[String(house)];
+  if (!pdef || !theme) return null;
+  const kind = owner ? "owner" : "noowner";
+  let text = _HDICT.templates[kind + "|" + context];
+  if (!text) return null;
+  text = text.replace(/\{PDEF\}/g, pdef).replace(/\{HTHEME\}/g, theme)
+             .replace(/\{P\}/g, planet).replace(/\{H\}/g, String(house));
+  if (owner) {
+    const odef = (_HDICT.planet_def[context] || {})[owner] ||
+                 (_HDICT.owner_extra || {})[owner];
+    if (!odef) return null;
+    text = text.replace(/\{ODEF\}/g, odef).replace(/\{O\}/g, owner);
+  }
+  return text;
+}
+
 // ค้นพจนานุกรมด้วยคีย์เวิร์ด — คืนทุกสมการที่คำแปลมีคำนั้น
 // (ฟีเจอร์ UI ล้วน ไม่แตะการคำนวณ · ผู้ใช้ขอ 31 ส.ค. 2026)
 function dictSearch(q, ctx) {
@@ -1325,6 +1397,8 @@ const AISTRO = {
   axisPictures, sumPictures, resolveAxis, aspect225, aspectTrue, aspectRank,
   ASPECT_ORDER, midpointShort, sepCircle,
   loadDict, initDict, dictInfo, lookupMeaning, dictKey2,
+  uranianAxis, uranianHouses, houseOf, houseCusps,
+  loadHouseDict, initHouseDict, houseDictReady, houseMeaning,
   CODE_ORDER, FACTOR_CLASS, MONTH_TABLE_TRANSITS,
   DIAL_DEFAULT, ORB_RT, SIDEREAL_YEAR, TROPICAL_MONTH,
 };

@@ -293,6 +293,47 @@ footer{margin-top:var(--s7);padding-top:var(--s4);border-top:1px solid var(--rul
 .postab tr:hover td:first-child{background:var(--sunk)}
 .postab td.fk{font-weight:700;color:var(--ink)}
 .postab tr:hover td{background:var(--hover)}
+/* แท็บเรือนชะตา — จานเรือน 12 ช่อง (SVG) */
+#hwheelwrap{display:flex;justify-content:center;margin:var(--s3) 0}
+.hsvg{width:100%;max-width:480px;height:auto;touch-action:manipulation}
+.hsvg .hring{fill:none;stroke:var(--rule)}
+.hsvg .hsec0{fill:var(--sunk)}
+.hsvg .hsec1{fill:var(--panel)}
+.hsvg [data-hnum]{cursor:pointer}
+.hsvg .hsec0:hover,.hsvg .hsec1:hover{fill:var(--hover)}
+.hsvg .hspoke{stroke:var(--rule-soft)}
+.hsvg .hnum{fill:var(--faint);font-size:13px;text-anchor:middle;dominant-baseline:middle;cursor:pointer}
+.hsvg .hnum.axis{fill:var(--f-personal);font-weight:700}
+.hsvg .hhit{fill:transparent;cursor:pointer}
+.hsvg .hhit:hover{fill:color-mix(in srgb,var(--accent) 22%,transparent)}
+/* สัญลักษณ์ดาว (ใช้ทั้งในจานและในคำแปล) — text=Unicode(☉♀) · hglp=path(ทิพย์) · hgl-code=MC/AS */
+.hgl{font-family:"Apple Symbols","Segoe UI Symbol","Noto Sans Symbols 2",system-ui,sans-serif;
+  text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.hglp{pointer-events:none;stroke:none}
+.hgl-code{font-family:var(--mono);font-weight:700;text-anchor:middle;
+  dominant-baseline:central;pointer-events:none}
+svg .f-personal{fill:var(--f-personal)} svg .f-good{fill:var(--f-good)}
+svg .f-bad{fill:var(--f-bad)} svg .f-booster{fill:var(--f-booster)}
+svg .f-neutral{fill:var(--f-neutral)}
+/* สัญลักษณ์เล็กหน้าอักษรย่อในคำแปลเรือน */
+.gmini{display:inline-block;width:20px;height:20px;vertical-align:-4px;margin-right:3px}
+.gmini svg{display:block;width:100%;height:100%}
+.hsvg .hcenter{fill:var(--dim);font-size:12px;text-anchor:middle;dominant-baseline:middle}
+.hsvg .hcenter.sm{fill:var(--faint);font-size:10px;font-family:var(--mono)}
+/* สีดาวตามชั้น (ใช้ตัวแปรเดียวกับตาราง) */
+.hsvg .f-personal{fill:var(--f-personal)} .hsvg .f-good{fill:var(--f-good)}
+.hsvg .f-bad{fill:var(--f-bad)} .hsvg .f-booster{fill:var(--f-booster)}
+.hsvg .f-neutral{fill:var(--f-neutral)}
+#hbelow{margin-top:var(--s2)}
+.hhead{font-size:var(--t-md);font-weight:700;color:var(--accent);
+  display:flex;justify-content:space-between;align-items:baseline;
+  padding-bottom:var(--s2);border-bottom:1px solid var(--rule-soft);margin-bottom:var(--s2)}
+.hhead .hcount{font-size:var(--t-xs);font-weight:400;color:var(--faint)}
+.hitem{padding:var(--s2) 0;border-bottom:1px solid var(--rule-soft)}
+.hitem:last-child{border-bottom:0}
+.hitem.on{background:var(--sunk);border-radius:var(--r-sm);padding:var(--s2)}
+.hitem>b{font-family:var(--mono)}
+.hitem .mtext{color:var(--ink);margin-top:2px;line-height:1.6}
 #laynote{min-height:1.2em;margin:var(--s2) 2px 0;font-size:var(--t-md);color:var(--dim)}
 .posgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));
   gap:var(--s1) var(--s4);font-family:var(--mono);font-size:var(--t-sm);
@@ -725,6 +766,19 @@ p.hint:empty{display:none}
 .calrow button{font-size:var(--t-xs);padding:2px 8px;white-space:nowrap}
 .caltoday{margin:var(--s2) 0;padding:4px var(--s3);border-left:3px solid var(--f-personal);
   background:var(--sunk);color:var(--f-personal);font-weight:700;font-size:var(--t-sm)}
+
+/* แท็บกาลชะตา */
+#horout{margin-top:var(--s3)}
+.horwhen{font-size:var(--t-sm);color:var(--dim);padding:var(--s2) 0;
+  display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center}
+.horwhen button{font-size:var(--t-xs);padding:2px 8px;white-space:nowrap}
+.horh{margin:var(--s4) 0 var(--s2);font-size:var(--t-sm);font-weight:700;color:var(--accent)}
+.horfac{display:flex;flex-direction:column;gap:2px;font-size:var(--t-sm)}
+.horfac b{font-family:var(--mono);color:var(--f-personal)}
+.horhit{font-size:var(--t-xs);color:var(--f-good,#7fbf7f);white-space:nowrap}
+.horsum{font-size:var(--t-sm)}
+.hordisc{font-size:var(--t-xs);color:var(--faint);margin:var(--s2) 0 0;line-height:1.6}
+.horm{margin-bottom:var(--s2)}
 
 /* แท็บพจนานุกรม */
 .dictlook{display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center;margin:var(--s3) 0}

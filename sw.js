@@ -3,7 +3,7 @@
  * กลยุทธ์: cache-first ทุกไฟล์ในรายการ (แอปนี้ไม่มีข้อมูลที่ต้องสดใหม่เลย
  * ทุกอย่างคำนวณในเครื่อง) เปลี่ยน CACHE เมื่อปล่อยเวอร์ชันใหม่เพื่อล้างของเก่า
  */
-const CACHE = "urain-v84";
+const CACHE = "urain-v86";
 const FILES = [
   "./",
   "./index.html",
@@ -14,6 +14,7 @@ const FILES = [
   "./render.js",
   "./ephem.bin.gz",
   "./dict.json.gz",
+  "./house_dict.json.gz",
   "./manifest.json",
   "./icon.svg",
   "./icon-maskable.svg",

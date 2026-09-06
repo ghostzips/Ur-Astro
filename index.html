@@ -13,7 +13,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v84">
+<link rel="stylesheet" href="style.css?v=urain-v86">
 </head>
 <body>
 <div class="wrap">
@@ -80,6 +80,8 @@
   <button type="button" class="tab" data-p="ptable">ตารางดูดวงจร</button>
   <button type="button" class="tab" data-p="pctr">ศูนย์รังสี 360°</button>
   <button type="button" class="tab" data-p="pcal">ปฏิทินโค้ง</button>
+  <button type="button" class="tab" data-p="phor">กาลชะตา</button>
+  <button type="button" class="tab" data-p="phouse">เรือนชะตา</button>
   <button type="button" class="tab" data-p="ppos">ตำแหน่งดาว</button>
   <button type="button" class="tab" data-p="ptl">ไทม์ไลน์</button>
   <button type="button" class="tab" data-p="plife">แผนที่ชีวิต</button>
@@ -117,8 +119,12 @@
 </div>
 
 <section class="band" id="out"></section>
-<div class="mbox" id="tmean" hidden></div>
 </div><!-- /ptable -->
+
+<!-- ป๊อปอัพคำแปล (ลอย position:fixed) ต้องอยู่นอกทุก panel — ไม่งั้นเวลากดจาก
+     แท็บอื่นที่ panel เจ้าของถูก display:none ป๊อปอัพจะสูง 0 มองไม่เห็น
+     (บั๊กที่เคยซ่อนใน v84/v85 เพราะเทสต์เช็คแค่ textContent ไม่เช็ค offsetHeight) -->
+<div class="mbox" id="tmean" hidden></div>
 
 <div class="panel" id="pdict">
 <section class="legend" id="dictbox">
@@ -427,6 +433,35 @@
 </section>
 </div>
 
+<div class="panel" id="phor">
+<section class="legend" id="horbox">
+  <h3>กาลชะตา (ถาม-ตอบ)</h3>
+  <p class="dialnote">ตั้งดวง ณ วินาทีที่กด "ตอบ" (พิกัด/เขตเวลาเดียวกับหน้าตั้งดวง)
+    แล้วหาสูตรจริงบนจาน 22°30′ ด้วยกฎลูกโซ่ orb 1.2° — คำแปลทุกบรรทัดคัดจาก
+    พจนานุกรมตำราคำต่อคำ <b>ไม่มีข้อความที่เครื่องแต่งเอง</b> ·
+    แกน AS/MC ไวต่อเวลา (ราว 1° ต่อ 4 นาที) กาลชะตาจึงต่างกันได้ทุกนาทีที่ถาม</p>
+  <div class="dictlook">
+    <input id="horq" placeholder="พิมพ์คำถาม เช่น ควรย้ายงานไหม · ปล่อยว่าง = ดูภาพรวมตัวเรา"
+      style="flex:1 1 220px">
+    <button type="button" id="horgo">ตอบ</button>
+  </div>
+  <div class="dictlook"><span class="lbl">เรื่องที่จับได้</span>
+    <span class="laychips" id="hortopics"></span></div>
+  <div id="horout"><p class="svempty">พิมพ์คำถามแล้วกด "ตอบ"</p></div>
+</section>
+</div>
+
+<div class="panel" id="phouse">
+<section class="legend" id="housebox">
+  <h3>เรือนชะตายูเรเนียน</h3>
+  <p class="dialnote">จานแบ่ง 12 เรือน · แกน <b>AR/MC</b> เป็นต้นเรือน 4 แล้วนับทุก 30°
+    (ระบบเรือนยูเรเนียน สอบเทียบเว็บแล้ว) · ดาวกำเนิดวางในเรือนของตัวเอง —
+    กดดาวหรือช่องเรือนเพื่อดูคำแปลจากตำรา (จุดเมษ AR ไม่นับเข้าเรือน)</p>
+  <div id="hwheelwrap"><div id="hwheel"></div></div>
+  <div id="hbelow"><p class="svempty">กดคำนวณดวงก่อน</p></div>
+</section>
+</div>
+
 <div class="panel" id="ppos">
 <section class="legend" id="radixbox" style="display:none">
   <h3>ตำแหน่งดาว 9 ชั้น
@@ -453,14 +488,14 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v84"></script>
-<script src="places.js?v=urain-v84"></script>
-<script src="engine.js?v=urain-v84"></script>
-<script src="render.js?v=urain-v84"></script>
+<script src="glyphs.js?v=urain-v86"></script>
+<script src="places.js?v=urain-v86"></script>
+<script src="engine.js?v=urain-v86"></script>
+<script src="render.js?v=urain-v86"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const SW_CACHE = "urain-v84";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v86";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 let DIALMARKS = null, _markTimer = 0;   // วงเส้นประกะพริบครอบดาวของสูตร (v80)
@@ -507,6 +542,10 @@ function clearResults() {
   $("out").innerHTML = "";
   $("laytab").innerHTML = "";
   $("laynote").textContent = "";
+  // จานเรือน — ถ้าไม่ล้าง จานของดวงเก่าจะค้างอยู่หลังกรอกผิด/ล้างผล
+  HWHEEL = null; HOPEN = null;
+  $("hwheel").innerHTML = "";
+  $("hbelow").innerHTML = '<p class="svempty">กดคำนวณดวงก่อน</p>';
   $("gwrap").innerHTML = "";
   $("lifewrap").innerHTML = "";
   $("lfcount").textContent = "";
@@ -647,6 +686,7 @@ function run() {
              String(Math.round((mn - Math.floor(mn)) * 60)).padStart(2, "0") + '"';
     };
     renderLayers(R, jd, jdT, lat, lon, fmt);
+    renderHouseWheel(R);
     $("radixbox").style.display = "";
     TL = { R, jd, jdT, months, tables, lat, lon,
            place: placeTxt0 === "กำหนดเอง…" ? "" : placeTxt0 };
@@ -709,6 +749,145 @@ function renderLayers(R, jdB, jdT, lat, lon, fmt) {
     });
   });
 }
+const fmtDeg = (v) => {
+  let d = Math.floor(v), m = Math.round((v - d) * 60);
+  // ปัดลิปดาอาจได้ 60 (เช่น 80.999° → 80°60′) — ทดเป็นองศาถัดไป แล้ว wrap 360
+  if (m === 60) { d += 1; m = 0; }
+  d = ((d % 360) + 360) % 360;
+  return `${d}°${String(m).padStart(2, "0")}′`;
+};
+
+// ── จานเรือนชะตายูเรเนียน (แท็บ เรือนชะตา) ─────────────────────────────────
+// วงกลม 12 เรือน · แกน AR/MC ต้นเรือน 4 · เรือน 10 อยู่บน (กัมมะ) · เรือน 1 ซ้าย
+// กดดาว/ช่องเรือน → รายละเอียดเรือนนั้นด้านล่าง (ธีม + คำแปลตำรารายดาว ไม่แต่ง)
+let HWHEEL = null, HOPEN = null;   // HOPEN = {h,focus} เรือนที่กำลังเปิดใต้จาน
+const HOUSE_TH = { 1: "ตัวตน/เริ่มต้น", 2: "ทรัพย์/คุณค่า", 3: "สื่อสาร/ญาติ",
+  4: "ฐานราก/บ้าน", 5: "สร้างสรรค์/บุตร", 6: "งาน/สุขภาพ", 7: "คู่/สัมพันธ์",
+  8: "เปลี่ยนแปลง/ร่วม", 9: "ไกล/ความเชื่อ", 10: "การงาน/สถานะ",
+  11: "เครือข่าย/หวัง", 12: "เบื้องหลัง/ปล่อยวาง" };
+function houseAngle(h) { return 180 + (h - 1) * 30; }   // องศา ccw · เรือน1=ซ้าย เรือน10=บน
+// สัญลักษณ์ดาวเป็น markup SVG — ดาวหลักใช้อักขระ Unicode (GLYPH_UNI) · ดาวทิพย์
+// ใช้เส้น path (URAN_GLYPHS พิกัด 0..1) แปลงมาวางที่ (x,y) ขนาด size · จุด MC/AS
+// ไม่มีสัญลักษณ์สากลจึงคงอักษรย่อ · cls = f-<class> ให้สีตามชั้นดาว
+function svgGlyph(code, x, y, size, cls) {
+  const uni = GLYPH_UNI[code];
+  if (uni)
+    return `<text class="hgl ${cls}" x="${x}" y="${y}" font-size="${size}">${uni}</text>`;
+  const path = (globalThis.URAN_GLYPHS || {})[code];
+  if (path && path.length) {
+    const b = glyphBox(code), w = b.x1 - b.x0, hh = b.y1 - b.y0, k = size / hh;
+    const tx = x - (b.x0 + w / 2) * k, ty = y - (b.y0 + hh / 2) * k;
+    let d = "";
+    for (const c of path) {
+      if (c[0] === "Z") { d += "Z"; continue; }
+      let seg = c[0];
+      for (let i = 1; i < c.length; i += 2)
+        seg += (c[i] * k + tx).toFixed(1) + "," + (c[i + 1] * k + ty).toFixed(1) + " ";
+      d += seg;
+    }
+    return `<path class="hglp ${cls}" d="${d}"/>`;
+  }
+  return `<text class="hgl-code ${cls}" x="${x}" y="${y}" ` +
+    `font-size="${Math.round(size * 0.6)}">${code}</text>`;
+}
+function renderHouseWheel(R) {
+  const axis = AISTRO.uranianAxis(R);
+  const houses = AISTRO.uranianHouses(R, axis, 4);
+  HWHEEL = { axis, houses };
+  // ขยายวงให้สัญลักษณ์โปร่ง ไม่ทับกัน (viewBox 460) · rStar = รัศมีวางดาว
+  const cx = 230, cy = 230, rOut = 224, rIn = 128, rNum = 208, rStar = 180;
+  const GSZ = 24;   // ขนาดสัญลักษณ์
+  const P = (r, deg) => [cx + r * Math.cos(deg * Math.PI / 180),
+                         cy - r * Math.sin(deg * Math.PI / 180)];
+  let s = `<svg viewBox="0 0 460 460" class="hsvg" xmlns="http://www.w3.org/2000/svg">`;
+  // วงกลมนอก/ใน
+  s += `<circle cx="${cx}" cy="${cy}" r="${rOut}" class="hring"/>`;
+  s += `<circle cx="${cx}" cy="${cy}" r="${rIn}" class="hring"/>`;
+  for (let h = 1; h <= 12; h++) {
+    const a0 = houseAngle(h) - 15, a1 = houseAngle(h) + 15, ac = houseAngle(h);
+    // ช่อง (sector) กดได้ — สลับสีคู่/คี่
+    const [x0o, y0o] = P(rOut, a0), [x1o, y1o] = P(rOut, a1);
+    const [x0i, y0i] = P(rIn, a0), [x1i, y1i] = P(rIn, a1);
+    s += `<path class="hsec${h % 2}" data-hnum="${h}" ` +
+      `d="M${x0i},${y0i} L${x0o},${y0o} A${rOut},${rOut} 0 0 0 ${x1o},${y1o} ` +
+      `L${x1i},${y1i} A${rIn},${rIn} 0 0 1 ${x0i},${y0i} Z"/>`;
+    // เส้นแบ่งเรือน
+    const [xs0, ys0] = P(rIn, a0), [xs1, ys1] = P(rOut, a0);
+    s += `<line class="hspoke" x1="${xs0}" y1="${ys0}" x2="${xs1}" y2="${ys1}"/>`;
+    // เลขเรือน (เน้นต้นเรือน 4 = แกน)
+    const [xn, yn] = P(rNum, ac);
+    s += `<text class="hnum${h === 4 ? " axis" : ""}" x="${xn}" y="${yn}" ` +
+      `data-hnum="${h}">${h}</text>`;
+    // ดาวในเรือน — uranianHouses คืน AR ด้วย (ตรงเว็บ AR อยู่ในเรือนได้) แต่จาน
+    // ไม่แสดง AR เพราะจุดเมษไม่มี "คำแปลดาวในเรือน" (houseMeaning คืน null)
+    const stars = houses[h].filter((c) => c !== "AR");
+    const n = stars.length;
+    // ดาวมากในเรือนเดียวจะชิดกันจนกดผิดตัว — กว้าง spread ตามจำนวน (ไม่เกิน 28°
+    // ใน sector 30°) และเมื่อ ≥5 ดาว สลับ 2 ชั้นรัศมีให้ระยะห่างพอกดแยกได้
+    const spread = n > 1 ? Math.min(28, 10 * (n - 1)) : 0;
+    const twoRing = n >= 5;
+    stars.forEach((c, i) => {
+      const aa = ac - spread / 2 + (n > 1 ? spread * i / (n - 1) : 0);
+      const rr = twoRing ? rStar + (i % 2 ? 16 : -16) : rStar;
+      const [xs, ys] = P(rr, aa);
+      // วงกลมโปร่งใสเป็น hit area — สัญลักษณ์ (text/path) รับ pointer ไม่ครบพื้นที่
+      s += `<circle class="hhit" cx="${xs}" cy="${ys}" r="15" ` +
+        `data-hp="${c}" data-hh="${h}"/>`;
+      s += svgGlyph(c, xs, ys, GSZ, "f-" + AISTRO.FACTOR_CLASS[c]);
+    });
+  }
+  // แกนกลาง
+  s += `<text class="hcenter" x="${cx}" y="${cy - 4}">เรือน</text>`;
+  s += `<text class="hcenter sm" x="${cx}" y="${cy + 14}">แกน ${fmtDeg(axis)}</text>`;
+  s += `</svg>`;
+  $("hwheel").innerHTML = s;
+  $("hbelow").innerHTML = `<p class="svempty">กดดาวหรือช่องเรือนบนจาน เพื่อดูคำแปล</p>`;
+}
+// แสดงรายละเอียดเรือน h ด้านล่างจาน (ธีม + คำแปลตำราของทุกดาวในเรือน · ไม่แต่ง)
+// HSEQ กันคำขอเก่าเขียนทับ: กดเรือน → await โหลด dict → ระหว่างนั้นกดเรือนอื่น
+// หรือคำนวณดวงใหม่ (HWHEEL เปลี่ยน) คำขอเก่าที่ค้าง await ต้องไม่เขียนผลทับ
+let HSEQ = 0;
+async function showHouse(h, focusPlanet) {
+  if (!HWHEEL) return;
+  const seq = ++HSEQ, wheel = HWHEEL;
+  const box = $("hbelow"), esc = AISTRO_RENDER.esc;
+  const stars = wheel.houses[h].filter((c) => c !== "AR");
+  box.innerHTML = `<div class="mnone">กำลังโหลดคำแปลเรือน …</div>`;
+  const ok = await houseNeed();
+  // มีคำขอใหม่กว่า หรือดวงถูกคำนวณใหม่ระหว่างรอโหลด → ทิ้งผลเก่า ไม่เขียนทับ
+  if (seq !== HSEQ || HWHEEL !== wheel) return;
+  let html = `<div class="hhead">เรือน ${h} · ${HOUSE_TH[h]}` +
+    `<span class="hcount">${stars.length ? stars.length + " ดาว" : "ไม่มีดาว"}</span></div>`;
+  if (!stars.length) {
+    html += `<p class="svempty">เรือนนี้ไม่มีดาวกำเนิด</p>`;
+  } else if (!ok) {
+    html += `<p class="svempty">โหลดคำแปลไม่สำเร็จ — ลองใหม่ (ดาวในเรือน: ${stars.join(" ")})</p>`;
+  } else {
+    for (const c of stars) {
+      const txt = AISTRO.houseMeaning(c, h, ctxNow());
+      const cls = "f-" + AISTRO.FACTOR_CLASS[c];
+      // หัวข้อ = สัญลักษณ์ + อักษรย่อกำกับ (ผู้ใช้ขอ 6 ก.ย.)
+      html += `<div class="hitem${c === focusPlanet ? " on" : ""}">` +
+        `<span class="gmini"><svg viewBox="0 0 26 26">` +
+        svgGlyph(c, 13, 14, 17, cls) + `</svg></span>` +
+        `<b class="${cls}">${c}</b> ในเรือน ${h}` +
+        (txt ? `<div class="mtext">${esc(txt)}</div>`
+             : `<div class="mnone">ไม่มีคำแปลในตำรา</div>`) + `</div>`;
+    }
+  }
+  box.innerHTML = html;
+  HOPEN = { h, focus: focusPlanet };   // จำไว้ให้ ctype เปลี่ยนบริบทแล้ว re-render ตามได้
+  if (focusPlanet) {
+    const el = box.querySelector(".hitem.on");
+    if (el) el.scrollIntoView({ block: "nearest" });
+  }
+}
+$("hwheel").addEventListener("click", (e) => {
+  const star = e.target.closest("[data-hp]");
+  if (star) { showHouse(+star.dataset.hh, star.dataset.hp); return; }
+  const sec = e.target.closest("[data-hnum]");
+  if (sec) showHouse(+sec.dataset.hnum);
+});
 
 // ── ประเภทดวง ────────────────────────────────────────────────────────────
 // เว็บ AISTRO มีช่องนี้เหมือนกัน และ**ไม่กระทบการคำนวณเลย** (พิสูจน์แล้ว:
@@ -2521,11 +2700,25 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v84")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v86")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
   return DICT_PROMISE;
+}
+// คำแปลดาวในเรือน — dict แยกไฟล์ (5 KB) โหลดครั้งแรกที่กดดูคำแปลเรือน
+// ชื่อ houseDictLoad (ไม่ใช่ houseDictReady) กันชนกับ AISTRO.houseDictReady
+// ของ engine ที่เป็น global เหมือนกัน (sync คืน boolean) — คนละหน้าที่กัน
+let HDICT_PROMISE = null;
+function houseDictLoad() {
+  if (AISTRO.houseDictReady()) return Promise.resolve();
+  if (!HDICT_PROMISE)
+    HDICT_PROMISE = AISTRO.loadHouseDict("house_dict.json.gz?v=urain-v86")
+      .catch((e) => { HDICT_PROMISE = null; throw e; });
+  return HDICT_PROMISE;
+}
+async function houseNeed() {
+  try { await houseDictLoad(); return true; } catch (e) { return false; }
 }
 // โทเคนคำขอคำแปล — เพิ่มทุกครั้งที่กดแถวใหม่ "และทุกครั้งที่คำนวณดวงใหม่"
 // เช็ค classList อย่างเดียวไม่พอ เพราะ element เก่าที่ถูกถอดจาก DOM ยังมีคลาส on
@@ -2789,7 +2982,7 @@ $("out").addEventListener("click", (e) => {
 // กดที่ใดก็ได้นอกแถวสูตร = ปิดคำแปล (ผู้ใช้ขอ — รวมถึงกดบนตัวป๊อปอัพเอง)
 document.addEventListener("click", (e) => {
   if ($("tmean").hidden) return;
-  if (e.target.closest(".frow, .calrow")) return;   // กดแถวอื่น = เปิดอันใหม่แทน
+  if (e.target.closest(".frow, .calrow, .hcell")) return;   // กดแถวอื่น = เปิดอันใหม่แทน
   tmeanClose();
 });
 
@@ -2803,6 +2996,8 @@ $("ctype").addEventListener("change", () => {
     const spec = rowSpec(row);
     if (box && box.classList.contains("mbox") && spec) box.innerHTML = meanHTML(spec);
   }
+  // จานเรือน: ถ้ากำลังเปิดคำแปลเรือนอยู่ ให้แปลใหม่ตามบริบทที่เปลี่ยน
+  if (HOPEN && AISTRO.houseDictReady()) showHouse(HOPEN.h, HOPEN.focus);
 });
 
 // วงเส้นประกะพริบครอบดาวของสูตร (มาจากปุ่ม "ไปวันนั้น")
@@ -3108,6 +3303,201 @@ $("callist").addEventListener("click", async (e) => {
   if (!await dictNeed()) { box.innerHTML = await dictErrHTML(new Error("โหลดไม่สำเร็จ")); return; }
   box.innerHTML = `<div class="mnote">${calFmt(ev)} · โค้ง ${ev.arc.toFixed(2)}°</div>` +
     meanHTML(calSpec(ev));
+  tmeanPlace(row);
+});
+
+// ── กาลชะตา (ถาม-ตอบ) — ประกอบคำตอบจากตำราเท่านั้น ไม่มีข้อความแต่งเอง ─────
+// สถาปัตยกรรมตามผลศึกษาเว็บอ้างอิง (knowledge/aistro_ai_qa_study.md):
+// ชั้นที่แม่นคือ "คำนวณจริง + คำแปลตำรา + ห้ามแต่ง" · ชั้น LLM คือชั้นที่มั่ว
+// แอปออฟไลน์จึงทำเฉพาะชั้นที่แม่น: ดวงคำถาม ณ เวลาถาม → กฎลูกโซ่ 22.5/1.2
+// (ชุดเดียวกับที่สอบเทียบเว็บ 20/20) → คำแปลคำต่อคำ → สรุปด้วยการนับจริง
+// คีย์เวิร์ดดาวเดี่ยวย่อจากตำราวิทเทอ (knowledge/aistro_witte_factors.json)
+const HOR_KW = {
+  MC: "ตัวเจ้าชะตา จิต", AS: "ญาติ บุคคลสนิท สิ่งแวดล้อมใกล้ชิด",
+  SU: "ร่างกาย ชีวิต ความแข็งแรง", MO: "อารมณ์ สตรี ประชาชน",
+  NO: "ความผูกพัน การติดต่อ", ME: "ความคิด การพูด การเขียน แผนการ",
+  VE: "ความรัก ความสวยงาม ความสงบสุข", MA: "การกระทำ กิจกรรม ความหุนหัน",
+  JU: "โชคลาภ เงินทอง ความสำเร็จ", SA: "อุปสรรค การพลัดพราก ความยากลำบาก",
+  AR: "บุคคลทั่วไป ถนนหนทาง โลก", UR: "ความฉับพลัน เหตุกะทันหัน",
+  NE: "ความไม่แจ่มใส การหลอกลวง การสลายตัว", PL: "การเปลี่ยนแปลง พัฒนาการ",
+  CU: "ครอบครัว การแต่งงาน สมาคม", HA: "ความขาดแคลน เจ็บป่วยเรื้อรัง",
+  ZE: "การอำนวยการ งานตามแผน", KR: "เจ้านาย ผู้ยิ่งใหญ่ สิทธิอำนาจ",
+  AP: "ความสำเร็จยิ่งใหญ่ การขยาย วิทยาศาสตร์", AD: "ความจำกัดใหญ่หลวง การสิ้นสุด",
+  VU: "พลังมหาศาล กำลัง", PO: "วิญญาณ แนวความคิด การรู้แจ้ง",
+};
+const HOR_TOPICS = [
+  { k: "งาน", th: "การงาน", f: ["MA", "ZE", "KR"],
+    re: /งาน|อาชีพ|เจ้านาย|หัวหน้า|สมัคร|ตำแหน่ง|ธุรกิจ|ค้าขาย|ลูกค้า|โปรเจ|เลื่อนขั้น/ },
+  { k: "เงิน", th: "การเงิน/โชคลาภ", f: ["JU", "AP"],
+    re: /เงิน|ทรัพย์|รายได้|หนี้|ลงทุน|หุ้น|โชค|ลาภ|กำไร|ขาดทุน|ซื้อ|ขาย/ },
+  { k: "รัก", th: "ความรัก/คู่", f: ["VE", "CU", "NO"],
+    re: /รัก|แฟน|คู่|แต่งงาน|จีบ|อกหัก|เลิกกัน|เลิกรา|คบ/ },
+  { k: "ครอบครัว", th: "ครอบครัว", f: ["CU", "MO", "AS"],
+    re: /ครอบครัว|พ่อ|แม่|ลูก(?!ค้า)|ญาติ|พี่|น้อง/ },
+  { k: "สุขภาพ", th: "สุขภาพ", f: ["SU", "HA", "MA"],
+    re: /สุขภาพ|ป่วย|โรค|หมอ|ผ่าตัด|เจ็บ|ปวด/ },
+  { k: "เดินทาง", th: "เดินทาง/ติดต่อ", f: ["ME", "NO", "AR"],
+    re: /เดินทาง|ติดต่อ|ข่าว|เอกสาร|สัญญา|รถ|ต่างประเทศ/ },
+  { k: "เรียน", th: "การเรียน", f: ["ME", "PO", "AP"],
+    re: /เรียน|สอบ|ศึกษา|อบรม|วิจัย/ },
+  { k: "เปลี่ยน", th: "การเปลี่ยนแปลง/ย้าย", f: ["UR", "PL", "AD"],
+    re: /ย้าย|เปลี่ยน|เริ่มใหม่|ลาออก/ },
+  { k: "ทั่วไป", th: "ทั่วไป (ตัวเรา)", f: ["MC", "SU", "MO"], re: null },
+];
+// ชุดดี/หนัก/เจ้าชะตา — ชุดเดียวกับกติกานับของตารางดูดวงจร (สอบเทียบเว็บแล้ว)
+const HOR_GOOD = ["VE", "JU", "KR", "AP"], HOR_BAD = ["SA", "NE", "HA", "AD"];
+const HOR_SELF = ["AR", "MC", "AS", "SU", "MO", "NO"];
+let HOR = { on: {}, ans: null };
+
+function horChips() {
+  $("hortopics").innerHTML = HOR_TOPICS.map((t) =>
+    `<button type="button" class="laychip${HOR.on[t.k] ? " on" : ""}"` +
+    ` data-hk="${t.k}" title="${t.th}">${t.k}</button>`).join("");
+}
+horChips();
+$("hortopics").addEventListener("click", (e) => {
+  const c = e.target.closest("[data-hk]");
+  if (!c) return;
+  HOR.on[c.dataset.hk] = !HOR.on[c.dataset.hk];
+  horChips();
+  if (HOR.ans) horRender();          // สลับเรื่องใช้ดวงคำถามเดิม ไม่ตั้งเวลาใหม่
+});
+
+const horGap = (x, y) => {
+  const d = Math.abs(AISTRO.mod360(x - y)) % 22.5;
+  return Math.min(d, 22.5 - d);
+};
+async function horAsk() {
+  const out = $("horout");
+  if (!TL) {
+    out.innerHTML = '<p class="svempty">กดคำนวณดวงก่อน — กาลชะตาใช้พิกัด/เขตเวลาจากหน้าตั้งดวง</p>';
+    return;
+  }
+  const q = $("horq").value.trim();
+  HOR.on = {};
+  let hits = [];
+  for (const t of HOR_TOPICS) {
+    const m = t.re && q ? q.match(t.re) : null;
+    if (m) { HOR.on[t.k] = true; hits.push(m[0]); }
+  }
+  if (!hits.length) HOR.on["ทั่วไป"] = true;
+  horChips();
+  // ดวงคำถาม = เวลาเครื่อง ณ วินาทีนี้ ตีเป็นเวลาท้องถิ่นตามเขตเวลาที่ตั้งไว้
+  const n = new Date();
+  const hr = n.getHours() + n.getMinutes() / 60 + n.getSeconds() / 3600;
+  const { R, jd } = AISTRO.buildRadix(n.getFullYear(), n.getMonth() + 1,
+    n.getDate(), hr, TZ, TL.lat, TL.lon);
+  // กฎลูกโซ่แตกทุกคู่ — วิธีเดียวกับหน้า "AI ดูดวงกำเนิด" ที่สอบเทียบ 20/20
+  const pairs = [];
+  for (const g of AISTRO.clusterOnDial(R, 22.5, 1.2)) {
+    for (let i = 0; i < g.members.length; i++)
+      for (let j = i + 1; j < g.members.length; j++)
+        pairs.push({ a: g.members[i], b: g.members[j],
+                     gap: horGap(R[g.members[i]], R[g.members[j]]) });
+  }
+  pairs.sort((p, w) => p.gap - w.gap);
+  HOR.ans = { R, jd, q, hits, pairs,
+    when: `${n.getDate()}/${n.getMonth() + 1}/${n.getFullYear() + 543} ` +
+      `${String(n.getHours()).padStart(2, "0")}:` +
+      `${String(n.getMinutes()).padStart(2, "0")}:` +
+      `${String(n.getSeconds()).padStart(2, "0")}` };
+  out.innerHTML = '<div class="mnone">กำลังโหลดพจนานุกรม …</div>';
+  await dictNeed();                  // โหลดไม่ได้ก็ยังแสดงสูตร (แถวกดซ้ำได้)
+  horRender();
+}
+$("horgo").addEventListener("click", horAsk);
+$("horq").addEventListener("keydown", (e) => { if (e.key === "Enter") horAsk(); });
+
+function horRender() {
+  const A = HOR.ans, esc = AISTRO_RENDER.esc;
+  const fset = {};
+  for (const t of HOR_TOPICS) if (HOR.on[t.k]) for (const f of t.f) fset[f] = true;
+  const rel = A.pairs.filter((p) => fset[p.a] || fset[p.b]);
+  // ธงสูตรที่คำแปลกล่าวถึงคำในคำถามตรง ๆ (เทียบกับพจนานุกรมจริง)
+  const dictOK = DICT_STATE === "ready";
+  for (const p of rel) {
+    p.hit = "";
+    if (dictOK && A.hits.length) {
+      const m = AISTRO.lookupMeaning({ type: "A", p: p.a, axis: p.b }, ctxNow());
+      const hay = (m.text || "") + (m.witte || "");
+      p.hit = A.hits.find((w) => hay.indexOf(w) >= 0) || "";
+    }
+  }
+  rel.sort((x, y) => (y.hit ? 1 : 0) - (x.hit ? 1 : 0) || x.gap - y.gap);
+  const nGood = rel.filter((p) => HOR_GOOD.indexOf(p.a) >= 0 || HOR_GOOD.indexOf(p.b) >= 0).length;
+  const nBad = rel.filter((p) => HOR_BAD.indexOf(p.a) >= 0 || HOR_BAD.indexOf(p.b) >= 0).length;
+  const nSelf = rel.filter((p) => HOR_SELF.indexOf(p.a) >= 0 || HOR_SELF.indexOf(p.b) >= 0).length;
+  let h = `<div class="horwhen">⏱ ดวงคำถาม ณ ${A.when}` +
+    (A.q ? ` · "${esc(A.q)}"` : "") +
+    ` · สูตรทั้งดวง ${A.pairs.length} คู่ · เกี่ยวกับเรื่องที่เลือก ${rel.length} คู่ ` +
+    `<button type="button" id="hordial">เปิดจาน ณ เวลาถาม</button></div>`;
+  // A) ดาวประจำเรื่อง พร้อมคีย์เวิร์ดตำรา
+  h += `<div class="horh">ดาวประจำเรื่อง (คีย์เวิร์ดตำราวิทเทอ)</div><div class="horfac">` +
+    Object.keys(fset).map((f) =>
+      `<span><b>${f}</b> — ${esc(HOR_KW[f])}</span>`).join("") + `</div>`;
+  // B) สูตรจริงในดวงคำถามที่แตะดาวประจำเรื่อง
+  h += `<div class="horh">สูตรในดวงคำถามที่แตะดาวประจำเรื่อง (กดแถวเพื่อดูคำแปล)</div>`;
+  if (!rel.length) {
+    h += `<p class="svempty">ไม่มีสูตรที่แตะดาวประจำเรื่องในดวงคำถามนี้ —
+      ตำราไม่มีอะไรให้อ่านสำหรับเรื่องนี้ ณ เวลานี้ (ลองเปิดเรื่องอื่น หรือถามใหม่ภายหลัง)</p>`;
+  } else {
+    h += rel.map((p, i) =>
+      `<div class="calrow" data-hp="${i}">` +
+      `<b class="calf">${p.a}=${p.b}</b>` +
+      `<span class="cala">${p.gap.toFixed(2)}°</span>` +
+      (p.hit ? `<span class="horhit">🔎 ตรงคำว่า "${esc(p.hit)}"</span>` : "") +
+      `</div>`).join("");
+  }
+  // C) คำแปลคำต่อคำของสูตรเด่น (ธงตรงคำถามก่อน แล้วไล่ orb แน่นสุด)
+  if (rel.length && dictOK) {
+    h += `<div class="horh">คำแปลจากพจนานุกรม (สูตรเด่น ${Math.min(5, rel.length)} อันดับแรก)</div>`;
+    for (const p of rel.slice(0, 5)) {
+      h += `<div class="mbox horm"><div class="mnote">${p.a}=${p.b} · ${p.gap.toFixed(2)}°` +
+        (p.hit ? ` · 🔎 "${esc(p.hit)}"` : "") + `</div>` +
+        meanHTML({ type: "A", p: p.a, axis: p.b }) + `</div>`;
+    }
+  } else if (rel.length) {
+    h += `<p class="svempty">โหลดพจนานุกรมไม่สำเร็จ — กดแถวสูตรเพื่อลองโหลดใหม่</p>`;
+  }
+  // D) นับจริง — ไม่ฟันธง ไม่มีข้อความแต่ง (บทเรียนจากเว็บอ้างอิง:
+  //    "ระดับความมั่นใจ" ที่ตอบ "สูง" ทุกครั้งคือมาตรวัดหลอก เราไม่ทำแบบนั้น)
+  h += `<div class="horh">นับตามกติกาตารางดูดวงจร</div>` +
+    `<div class="horsum">แตะดาวฝั่งดี (VE/JU/KR/AP) <b>${nGood}</b> สูตร · ` +
+    `ฝั่งหนัก (SA/NE/HA/AD) <b>${nBad}</b> สูตร · ` +
+    `แตะจุดเจ้าชะตา (AR/MC/AS/SU/MO/NO) <b>${nSelf}</b> สูตร</div>` +
+    `<p class="hordisc">หน้านี้ประกอบคำตอบจากคำแปลตำราและการนับเท่านั้น
+    ไม่มีข้อความที่เครื่องแต่งเองหรือระดับความมั่นใจปลอม —
+    อ่านคำแปลจริงด้านบนประกอบการตัดสินใจ</p>`;
+  $("horout").innerHTML = h;
+  HOR.rel = rel;
+}
+
+$("horout").addEventListener("click", async (e) => {
+  if (e.target.closest("#hordial")) {
+    const A = HOR.ans;
+    const err = gotoJd(A.jd);
+    if (err) { $("status").className = "err"; $("status").textContent = err; return; }
+    showPanel("pdial");
+    const p0 = HOR.rel && HOR.rel[0];
+    DIALFROM = { h: "กาลชะตา" + (p0 ? ` ${p0.a}=${p0.b}` : "") };
+    if (p0) {
+      $("axdeg").value = AISTRO.mod360(A.R[p0.a]).toFixed(2);
+      applyAxisDeg();
+      dialMarksSet([{ c: p0.a, src: "t" }, { c: p0.b, src: "t" }]);
+    }
+    $("dialbox").scrollIntoView({ block: "start" });
+    return;
+  }
+  const row = e.target.closest(".calrow[data-hp]");
+  if (!row || !HOR.rel) return;
+  const p = HOR.rel[+row.dataset.hp];
+  const box = $("tmean");
+  box.hidden = false;
+  box.innerHTML = '<div class="mnone">กำลังโหลดพจนานุกรม …</div>';
+  tmeanPlace(row);
+  if (!await dictNeed()) { box.innerHTML = await dictErrHTML(new Error("โหลดไม่สำเร็จ")); return; }
+  box.innerHTML = `<div class="mnote">${p.a}=${p.b} · ${p.gap.toFixed(2)}°</div>` +
+    meanHTML({ type: "A", p: p.a, axis: p.b });
   tmeanPlace(row);
 });
 
