@@ -1360,6 +1360,78 @@ function houseMeaning(planet, house, ctx, owner) {
   return text;
 }
 
+// ── ดาวทำมุมสัมพันธ์ (พอร์ตจาก src/aistro.py — สอบเทียบเว็บ 478/3128 คู่) ──────
+// กฎสองขั้นที่ถอดจากเว็บ (ไม่ตรงไปตรงมา):
+//  1. เลือกจุดมุม: ลองตระกูลสาย 2 (แบ่งครึ่ง) ก่อน ถ้าจุดใกล้สุดอยู่ใน orb ใช้เลย
+//     ไม่ถึงค่อยไปสาย 3 (แบ่งสาม) — จึงมีคู่ที่เว็บเลือกจุด "ไกลกว่า" จุดสาย 3
+//  2. ตั้งชื่อมุม: ค่าหยาบสุดที่หารจุดนั้นลงตัว ไล่สาย 3 ก่อนสาย 2
+//     (จุด 22.5° ได้ชื่อ 7.5° · จุด 180° ได้ชื่อ 60° · จุด 101.25° ได้ชื่อ 11.25°)
+const ASPECT_FAMILY_2 = [180, 90, 45, 22.5, 11.25, 5.625];
+const ASPECT_FAMILY_3 = [120, 60, 30, 15, 7.5];
+function nearestAspectPoint(delta, family) {
+  let bestO = 1e9, bestPt = 0;
+  const d = ((delta % 360) + 360) % 360;
+  for (const x of family) {
+    const pt = ((Math.round(d / x) * x) % 360 + 360) % 360;
+    const o = Math.abs((((d - pt + 180) % 360) + 360) % 360 - 180);
+    if (o < bestO - 1e-12) { bestO = o; bestPt = pt; }
+  }
+  return [bestO, bestPt];
+}
+function aspectName(point, nameOrder) {
+  nameOrder = nameOrder || ASPECT_FAMILY_3.concat(ASPECT_FAMILY_2);
+  if (Math.abs(point) < 1e-9 || Math.abs(point - 360) < 1e-9) return 0;
+  for (const x of nameOrder) {
+    const q = point / x;
+    if (Math.abs(q - Math.round(q)) < 1e-9) return x;
+  }
+  return null;
+}
+// คืน {ang, orb} หรือ null — delta = ผลต่างองศาดิบ (bฝั่ง − aฝั่ง)
+function aspectInFamilies(delta, orb, select, nameOrder) {
+  orb = orb === undefined ? 1.0 : orb;
+  select = select || [ASPECT_FAMILY_2, ASPECT_FAMILY_3];
+  for (const family of select) {
+    const [o, pt] = nearestAspectPoint(delta, family);
+    if (o <= orb) {
+      const nm = aspectName(pt, nameOrder);
+      return nm === null ? null : { ang: nm, orb: o };
+    }
+  }
+  return null;
+}
+// ตารางดาว–ดาวทำมุมสัมพันธ์ · kinds = ["r-r","r-t","t-t",...] คู่ชั้นดวง
+// คืน { "r-r": [{a,b,ang,orb},...], ... } — คู่ชั้นเดียวกันไม่ซ้ำ (a<b ตาม CODE_ORDER)
+// คู่ต่างชั้นครบทุกอันดับ (รวมดาวเดียวกันคนละชั้น เช่น AR=AR)
+function pairAspects(radix, jdBirth, jdTransit, opt) {
+  opt = opt || {};
+  const kinds = opt.kinds || ["r-r", "r-t", "t-t"];
+  const orb = opt.orb === undefined ? 1.0 : opt.orb;
+  const need = new Set();
+  for (const k of kinds) k.split("-").forEach((L) => need.add(L));
+  const pos = {};
+  for (const L of need)
+    pos[L] = layerPositions(radix, jdBirth, jdTransit, L, opt.lat, opt.lon, opt.tz);
+  const out = {};
+  for (const kind of kinds) {
+    const [la, lb] = kind.split("-");
+    const rows = [];
+    const same = la === lb;
+    for (let i = 0; i < CODE_ORDER.length; i++) {
+      const a = CODE_ORDER[i];
+      if (!(a in pos[la])) continue;
+      for (let j = same ? i + 1 : 0; j < CODE_ORDER.length; j++) {
+        const b = CODE_ORDER[j];
+        if (!(b in pos[lb])) continue;
+        const r = aspectInFamilies(pos[lb][b] - pos[la][a], orb);
+        if (r) rows.push({ a, b, ang: r.ang, orb: r.orb });
+      }
+    }
+    out[kind] = rows;
+  }
+  return out;
+}
+
 // ค้นพจนานุกรมด้วยคีย์เวิร์ด — คืนทุกสมการที่คำแปลมีคำนั้น
 // (ฟีเจอร์ UI ล้วน ไม่แตะการคำนวณ · ผู้ใช้ขอ 31 ส.ค. 2026)
 function dictSearch(q, ctx) {
@@ -1399,6 +1471,7 @@ const AISTRO = {
   loadDict, initDict, dictInfo, lookupMeaning, dictKey2,
   uranianAxis, uranianHouses, houseOf, houseCusps,
   loadHouseDict, initHouseDict, houseDictReady, houseMeaning,
+  pairAspects, aspectInFamilies, aspectName, ASPECT_FAMILY_2, ASPECT_FAMILY_3,
   CODE_ORDER, FACTOR_CLASS, MONTH_TABLE_TRANSITS,
   DIAL_DEFAULT, ORB_RT, SIDEREAL_YEAR, TROPICAL_MONTH,
 };

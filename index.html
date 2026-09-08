@@ -13,7 +13,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v86">
+<link rel="stylesheet" href="style.css?v=urain-v87">
 </head>
 <body>
 <div class="wrap">
@@ -82,9 +82,11 @@
   <button type="button" class="tab" data-p="pcal">ปฏิทินโค้ง</button>
   <button type="button" class="tab" data-p="phor">กาลชะตา</button>
   <button type="button" class="tab" data-p="phouse">เรือนชะตา</button>
+  <button type="button" class="tab" data-p="pasp">มุมสัมพันธ์</button>
   <button type="button" class="tab" data-p="ppos">ตำแหน่งดาว</button>
   <button type="button" class="tab" data-p="ptl">ไทม์ไลน์</button>
   <button type="button" class="tab" data-p="plife">แผนที่ชีวิต</button>
+  <button type="button" class="tab" data-p="pfac">ความหมายปัจจัย</button>
   <button type="button" class="tab" data-p="pdict">พจนานุกรม</button>
   <!-- แท็บ "เทียบกับเว็บ" ถูกถอดตามที่ผู้ใช้ขอ (31 ส.ค. 2026) — แผง pcmp
        และโค้ดยังอยู่ เผื่ออยากคืน · การสอบเทียบจริงอยู่ในเทสต์ JXA ทั้งหมด -->
@@ -451,6 +453,22 @@
 </section>
 </div>
 
+<div class="panel" id="pasp">
+<section class="legend" id="aspbox">
+  <h3>ดาวทำมุมสัมพันธ์ <span class="hint">(ร่าง)</span></h3>
+  <p class="dialnote">ดาว–ดาวทำมุมกันในตระกูลมุมยูเรเนียน (แบ่งครึ่ง/แบ่งสาม) orb 1° ·
+    กฎเลือกจุด+ตั้งชื่อมุมตรงเว็บ 478/478 คู่ · กดแถวดูคำแปลคู่จากตำรา
+    (A ทำมุม B ≡ A/B ตามหลัก RULES ข้อ 0)</p>
+  <div class="dictlook">
+    <span class="lbl">คู่ชั้นดวง</span>
+    <span class="laychips" id="aspkinds"></span>
+    <button type="button" id="aspgo">คำนวณ</button>
+    <b class="mrsum" id="aspcount"></b>
+  </div>
+  <div id="asplist"><p class="svempty">เลือกคู่ชั้นดวงแล้วกดคำนวณ</p></div>
+</section>
+</div>
+
 <div class="panel" id="phouse">
 <section class="legend" id="housebox">
   <h3>เรือนชะตายูเรเนียน</h3>
@@ -459,6 +477,15 @@
     กดดาวหรือช่องเรือนเพื่อดูคำแปลจากตำรา (จุดเมษ AR ไม่นับเข้าเรือน)</p>
   <div id="hwheelwrap"><div id="hwheel"></div></div>
   <div id="hbelow"><p class="svempty">กดคำนวณดวงก่อน</p></div>
+</section>
+</div>
+
+<div class="panel" id="pfac">
+<section class="legend" id="facbox">
+  <h3>ความหมายปัจจัย 22</h3>
+  <p class="dialnote">อ้างอิงล้วน — สัญลักษณ์ · อักษรย่อ · ความหมายยูเรเนียน · เชิงเวลา/วัย
+    (เอกสาร "รหัสวิทยา") · ไม่กระทบการคำนวณ</p>
+  <div id="faclist"></div>
 </section>
 </div>
 
@@ -488,14 +515,14 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v86"></script>
-<script src="places.js?v=urain-v86"></script>
-<script src="engine.js?v=urain-v86"></script>
-<script src="render.js?v=urain-v86"></script>
+<script src="glyphs.js?v=urain-v87"></script>
+<script src="places.js?v=urain-v87"></script>
+<script src="engine.js?v=urain-v87"></script>
+<script src="render.js?v=urain-v87"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const SW_CACHE = "urain-v86";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v87";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 let DIALMARKS = null, _markTimer = 0;   // วงเส้นประกะพริบครอบดาวของสูตร (v80)
@@ -889,6 +916,129 @@ $("hwheel").addEventListener("click", (e) => {
   if (sec) showHouse(+sec.dataset.hnum);
 });
 
+// ── ดาวทำมุมสัมพันธ์ (แท็บ มุมสัมพันธ์) ────────────────────────────────────
+// 15 คู่ชั้นดวง (สอบเทียบเว็บ 3,128 คู่ fingerprint) · [kind, สัญกรณ์, ชื่อไทย]
+const ASP_KINDS = [
+  ["r-r", "r=r", "กำเนิด×กำเนิด"], ["r-t", "r=t", "กำเนิด×จร"], ["t-t", "t=t", "จร×จร"],
+  ["r-v1", "r=v1", "กำเนิด×โค้งสุริยะ+"], ["r-v2", "r=v2", "กำเนิด×โค้งสุริยะ−"],
+  ["v1-v2", "v1=v2", "โค้ง+×โค้ง−"],
+  ["r-l1", "r=l1", "กำเนิด×โค้งจันทร์+"], ["r-l2", "r=l2", "กำเนิด×โค้งจันทร์−"],
+  ["l1-l2", "l1=l2", "โค้งจันทร์+×−"],
+  ["r-p", "r=p", "กำเนิด×โปรเกรส"], ["p-p", "p=p", "โปรเกรส×โปรเกรส"],
+  ["r-tp1", "r=tp1", "กำเนิด×Tertiary"], ["tp1-tp1", "tp1=tp1", "Tertiary×Tertiary"],
+  ["r-tp2", "r=tp2", "กำเนิด×Minor"], ["tp2-tp2", "tp2=tp2", "Minor×Minor"],
+];
+// ชื่อมุมไทยเท่าที่มีธรรมเนียม — ที่เหลือแสดงเป็นองศา
+const ASP_TH = { 0: "กุม", 180: "เล็ง", 120: "ตรีโกณ", 90: "ฉาก", 60: "ฉกฉาก",
+  45: "กึ่งฉาก", 30: "กึ่งฉกฉาก" };
+let ASP = { on: { "r-r": true }, rows: null, key: "" };
+function aspGlyphCell(c) {
+  return `<span class="gmini"><svg viewBox="0 0 26 26">` +
+    svgGlyph(c, 13, 14, 17, "f-" + AISTRO.FACTOR_CLASS[c]) + `</svg></span>`;
+}
+function aspChips() {
+  $("aspkinds").innerHTML = ASP_KINDS.map(([k, sym, th]) =>
+    `<button type="button" class="laychip${ASP.on[k] ? " on" : ""}"` +
+    ` data-ak="${k}" title="${th}">${sym}</button>`).join("");
+}
+aspChips();
+$("aspkinds").addEventListener("click", (e) => {
+  const c = e.target.closest("[data-ak]");
+  if (!c) return;
+  ASP.on[c.dataset.ak] = !ASP.on[c.dataset.ak]; aspChips();
+  if (ASP.rows) aspRun();
+});
+$("aspgo").addEventListener("click", () => aspRun());
+function aspRun() {
+  if (!TL) { $("asplist").innerHTML = '<p class="svempty">กดคำนวณดวงก่อน</p>'; return; }
+  const kinds = ASP_KINDS.map(([k]) => k).filter((k) => ASP.on[k]);
+  if (!kinds.length) { $("asplist").innerHTML =
+    '<p class="svempty">เปิดคู่ชั้นดวงอย่างน้อยหนึ่ง</p>'; $("aspcount").textContent = ""; return; }
+  const res = AISTRO.pairAspects(TL.R, TL.jd, TL.jdT,
+    { tz: TZ, lat: TL.lat, lon: TL.lon, kinds });
+  const kindSym = Object.fromEntries(ASP_KINDS.map(([k, sym]) => [k, sym]));
+  const rows = [];
+  for (const k of kinds) for (const r of res[k]) rows.push({ kind: k, ...r });
+  rows.sort((x, y) => x.orb - y.orb);   // แน่นสุด (สำคัญสุด) ก่อน
+  ASP.rows = rows;
+  const dm = (v) => v.toFixed(2);
+  $("asplist").innerHTML = rows.map((r, i) => {
+    const angTh = ASP_TH[r.ang] ? ` ${ASP_TH[r.ang]}` : "";
+    return `<div class="asprow" data-i="${i}">` +
+      `<b class="calf">${aspGlyphCell(r.a)}${r.a} = ${aspGlyphCell(r.b)}${r.b}</b>` +
+      `<span class="aspang">${r.ang}°${angTh}</span>` +
+      `<span class="cala">orb ${dm(r.orb)}</span>` +
+      `<span class="aspkind">${kindSym[r.kind]}</span></div>`;
+  }).join("") || '<p class="svempty">ไม่มีคู่ที่ทำมุมในช่วง orb</p>';
+  $("aspcount").textContent = `${rows.length} คู่`;
+}
+$("asplist").addEventListener("click", async (e) => {
+  const row = e.target.closest(".asprow");
+  if (!row || !ASP.rows) return;
+  const r = ASP.rows[+row.dataset.i];
+  const box = $("tmean");
+  box.hidden = false;
+  box.innerHTML = '<div class="mnone">กำลังโหลดพจนานุกรม …</div>';
+  tmeanPlace(row);
+  if (!await dictNeed()) { box.innerHTML = await dictErrHTML(new Error("โหลดไม่สำเร็จ")); return; }
+  box.innerHTML = `<div class="mnote">${r.a} = ${r.b} · ${r.ang}° · orb ${r.orb.toFixed(2)}</div>` +
+    meanHTML({ type: "A", p: r.a, axis: r.b });
+  tmeanPlace(row);
+});
+
+// ── ความหมายปัจจัย 22 (แท็บอ้างอิง · ไม่แตะการคำนวณ) ────────────────────────
+// เนื้อหายูเรเนียนล้วนจากเอกสาร "รหัสวิทยา" (ปัจจัย ดวงดาว จักรราศี) · ซ่อม
+// encoding ไทยด้วยมือ · สัญลักษณ์ใช้ svgGlyph ตัวเดียวกับแท็บเรือน/มุมสัมพันธ์
+const FAC_INFO = [
+  ["กลุ่มจุดเจ้าชะตา", [
+    ["MC", "เมอริเดียน", "สัญชาตญาณ · ตัวตนที่แท้จริง · จิตวิญญาณ · แรงผลักดัน · ความทะเยอทะยาน · การดิ้นรนไปสู่สิ่งที่ต้องการ", "เวลา: นาที", ""],
+    ["AS", "ลัคนา", "สิ่งแวดล้อมรอบตัว · คนสนิทคุ้นเคย · คนใกล้ชิด · ญาติสนิท · คนที่เจ้าชะตาอุปการะ", "", ""],
+    ["AR", "เมษ", "โลก · อิทธิพลของโลกโดยทั่วไป · เหตุการณ์/เรื่อง/บุคคลทั่วไปที่ไปมาชั่วคราว · ถนนหนทาง", "", ""],
+    ["SU", "อาทิตย์", "กายสังขาร · ร่างกาย · หัวใจ · ความยิ่งใหญ่ · เกียรติยศ · สามี/ชายคนสำคัญ (ดวงหญิง)", "เวลา: วัน", "วัย 21–28"],
+    ["MO", "จันทร์", "จิตใจ · อารมณ์ · สตรี · ความไม่แน่นอน · ประชาชน · การทำงานของสมอง · ภรรยา/หญิงคนสำคัญ (ดวงชาย) · ของเหลว", "เวลา: ชั่วโมง", "วัย 0–7"],
+    ["NO", "ราหู", "พันธะ · ผูกพัน · สายสัมพันธ์ · กรรมพันธุ์ · การติดต่อ · การผูกมัด · หมู่คณะ", "", ""],
+  ]],
+  ["กลุ่มดาวเคราะห์", [
+    ["ME", "พุธ", "การเคลื่อนไหว · ความว่องไว · ความเฉลียวฉลาด · พัฒนาการทางปัญญา · เอกสาร · ข่าวสาร · ลม · การสื่อสาร · เส้นประสาท", "", "วัย 7–14"],
+    ["VE", "ศุกร์", "ความสวยงาม · ความรัก · ความสงบสุข · เสน่ห์ · ศิลปะ · ดนตรี · ความหวาน · เพศสตรีทั่วไป · บางครั้งเงินสด", "", "วัย 14–21"],
+    ["MA", "อังคาร", "การลงมือทำ · กิจกรรม · ความกระตือรือร้น · แรงกระตุ้น · หุนหันพลันแล่น · เหล็ก · ของมีคม · ความร้อน · บาดแผล · โลหิต · บุรุษเพศทั่วไป", "", "วัย 28–35"],
+    ["JU", "พฤหัส", "การขยายตัว · โชคลาภ · ความสำเร็จ · ความสุข · ความหวังดี · ความเมตตา · บุญกุศล · ไขมัน · ปอด · ตับ", "", "วัย 35–42"],
+    ["SA", "เสาร์", "ความจำกัด · ความทุกข์ · ความยากลำบาก · การพลัดพราก · ความยาวนาน · ความตระหนี่ · ความเย็น · ความแข็ง · กระดูก · แคลเซียม", "", "วัย 42–49"],
+    ["UR", "ยูเรนัส (มฤตยู)", "ความแปลกประหลาด · คาดไม่ถึง · สิ่งที่เกิดฉับพลัน · ความตื่นเต้น · ความตึงเครียด · ไม่เหมือนใคร · ไฟฟ้า · สิ่งประดิษฐ์ · เทคโนโลยี", "", "วัย 49–56"],
+    ["NE", "เนปจูน", "ความลวง · ลึกลับ · มีลับลมคมใน · จินตนาการ · ความฝัน · การสลายตัว · หมอกควัน · แก๊ส · พิษ · ของเหลว · สารเคมี · ยา", "", "วัย 56–63"],
+    ["PL", "พลูโต", "พัฒนาการ · การปฏิรูป · สถาปนาใหม่ · การเปลี่ยนแปลง · ยุบแล้วเกิดใหม่ · เปลี่ยนจากภายใน · แตกหน่อ · สืบพันธุ์ · ระบบภูมิคุ้มกัน", "", "วัย 63–70"],
+  ]],
+  ["กลุ่มทรานส์เนปจูน (ดาวทิพย์)", [
+    ["CU", "คิวปิโด", "ครอบครัว · การสมรส · การอยู่ร่วมกัน · การคบหาสมาคม · หมู่คณะ · การสังสรรค์ · บริษัท · ห้างหุ้นส่วน · งานศิลปะ", "", ""],
+    ["HA", "ฮาเดส", "ความเจ็บป่วยเรื้อรัง · สภาวะไม่ปกติ · ความพิการ · ความขาดแคลน · ความขมขื่น · ความตกต่ำ · ความสกปรก · ซากศพ · เซลล์มะเร็ง · ของเก่าโบราณ", "", ""],
+    ["ZE", "เซอุส", "การอำนวยการ · การสร้างสรรค์ · การประดิษฐ์ · เป้าหมายระยะยาว · คำสั่ง · ไฟที่ควบคุม · เครื่องจักรกล · ผลผลิต · อาวุธปืน", "", ""],
+    ["KR", "โครโนส", "ความสูงส่ง · อิสระเสรี · สิทธิอำนาจ · เจ้านาย · ผู้เป็นใหญ่ · รัฐ · ข้าราชการ · บุคคลผู้เหนือกว่าผู้อื่น", "", ""],
+    ["AP", "อโพลอน", "ศาสตร์วิทยาการ · ความรู้ชั้นสูง · ประสบการณ์ · ชื่อเสียง · ความสำเร็จอันยิ่งใหญ่ · การแผ่ขยายกว้างขวาง · การค้า · ความไกลกว้าง", "", ""],
+    ["AD", "แอดเมตอส", "ความจำกัดอันใหญ่หลวง · ความสงบนิ่ง · ความหนัก · ความหนาแน่นสูง · การหมุนวนอยู่กับที่ · วงจร · ความตาย · ธาตุแท้ · วัตถุดิบ · ความลึกซึ้ง", "", ""],
+    ["VU", "วัลคานุส", "พลังอำนาจมหาศาล · อำนาจ · กำลังงาน · พลังที่ไม่อาจหยุดยั้ง · ความเข้มแข็งอย่างที่สุด · กำลังใจเต็มเปี่ยม", "", ""],
+    ["PO", "โพไซดอน", "การรู้แจ้ง · ปรัชญา · ผู้มีความสว่างไสวทางปัญญา · ความเชี่ยวชาญ · แสงธรรม · ธรรมะ", "", ""],
+  ]],
+];
+function facCard([code, name, def, tm, age]) {
+  const chips = [tm, age].filter(Boolean)
+    .map((c) => `<span class="facchip">${c}</span>`).join("");
+  return `<div class="faccard">` +
+    `<span class="facsym"><svg viewBox="0 0 28 28">` +
+    svgGlyph(code, 14, 15, 20, "f-" + AISTRO.FACTOR_CLASS[code]) + `</svg></span>` +
+    `<div class="facbody"><div class="fachd"><b class="facname">${name}</b>` +
+    `<span class="facab">${code}</span></div>` +
+    `<div class="facdef">${def}</div>` +
+    (chips ? `<div class="facmeta">${chips}</div>` : "") + `</div></div>`;
+}
+let FAC_DONE = false;
+function renderFactors() {
+  if (FAC_DONE) return;   // อ้างอิงล้วน วาดครั้งเดียวพอ
+  $("faclist").innerHTML = FAC_INFO.map(([grp, rows]) =>
+    `<div class="facgrp">${grp}</div><div class="facgrid">` +
+    rows.map(facCard).join("") + `</div>`).join("");
+  FAC_DONE = true;
+}
+
 // ── ประเภทดวง ────────────────────────────────────────────────────────────
 // เว็บ AISTRO มีช่องนี้เหมือนกัน และ**ไม่กระทบการคำนวณเลย** (พิสูจน์แล้ว:
 // สลับบุคคล<->บริษัทแล้ว SVG จานดวงเหมือนกันทุกไบต์) มันเป็นบริบทให้คำแปล
@@ -1220,6 +1370,7 @@ const monthRange = () => [
 mrSum();
 
 const PANEL_DRAW = {};
+PANEL_DRAW.pfac = renderFactors;   // แท็บความหมายปัจจัย — วาดตอนเปิดครั้งแรก
 let CUR_PANEL = "pdial";
 
 function showPanel(id) {
@@ -2700,7 +2851,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v86")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v87")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
@@ -2713,7 +2864,7 @@ let HDICT_PROMISE = null;
 function houseDictLoad() {
   if (AISTRO.houseDictReady()) return Promise.resolve();
   if (!HDICT_PROMISE)
-    HDICT_PROMISE = AISTRO.loadHouseDict("house_dict.json.gz?v=urain-v86")
+    HDICT_PROMISE = AISTRO.loadHouseDict("house_dict.json.gz?v=urain-v87")
       .catch((e) => { HDICT_PROMISE = null; throw e; });
   return HDICT_PROMISE;
 }
@@ -2982,7 +3133,7 @@ $("out").addEventListener("click", (e) => {
 // กดที่ใดก็ได้นอกแถวสูตร = ปิดคำแปล (ผู้ใช้ขอ — รวมถึงกดบนตัวป๊อปอัพเอง)
 document.addEventListener("click", (e) => {
   if ($("tmean").hidden) return;
-  if (e.target.closest(".frow, .calrow, .hcell")) return;   // กดแถวอื่น = เปิดอันใหม่แทน
+  if (e.target.closest(".frow, .calrow, .hcell, .asprow")) return;   // กดแถวอื่น = เปิดอันใหม่แทน
   tmeanClose();
 });
 
