@@ -13,7 +13,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v87">
+<link rel="stylesheet" href="style.css?v=urain-v88">
 </head>
 <body>
 <div class="wrap">
@@ -515,14 +515,14 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v87"></script>
-<script src="places.js?v=urain-v87"></script>
-<script src="engine.js?v=urain-v87"></script>
-<script src="render.js?v=urain-v87"></script>
+<script src="glyphs.js?v=urain-v88"></script>
+<script src="places.js?v=urain-v88"></script>
+<script src="engine.js?v=urain-v88"></script>
+<script src="render.js?v=urain-v88"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const SW_CACHE = "urain-v87";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v88";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 let DIALMARKS = null, _markTimer = 0;   // วงเส้นประกะพริบครอบดาวของสูตร (v80)
@@ -2851,7 +2851,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v87")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v88")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
@@ -2864,7 +2864,7 @@ let HDICT_PROMISE = null;
 function houseDictLoad() {
   if (AISTRO.houseDictReady()) return Promise.resolve();
   if (!HDICT_PROMISE)
-    HDICT_PROMISE = AISTRO.loadHouseDict("house_dict.json.gz?v=urain-v87")
+    HDICT_PROMISE = AISTRO.loadHouseDict("house_dict.json.gz?v=urain-v88")
       .catch((e) => { HDICT_PROMISE = null; throw e; });
   return HDICT_PROMISE;
 }
