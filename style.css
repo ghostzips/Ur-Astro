@@ -726,7 +726,12 @@ p.hint:empty{display:none}
 /* จอแคบ: คำแปลเป็นแผ่นเต็มความกว้างที่ขอบล่างจอเสมอ — เห็นแน่นอนไม่ว่ากดแถวไหน
    (เดิมวางตามตำแหน่งแถว ผู้ใช้เจออาการ "กดแล้วไม่แสดงผล" บนมือถือ) */
 @media (max-width:620px){
-  #tmean{left:0;right:0;top:auto;bottom:0;width:100%;max-height:62vh;
+  /* box-sizing:border-box สำคัญ — width:100% + เส้นขอบซ้าย 3px/ขวา 1px จะล้นขอบขวาจอ
+     ไป ~5px ถ้าเป็น content-box (เทสต์คำยาวจับได้: right=593 บนจอ 588) */
+  /* left/top ใส่ !important เพราะ tmeanPlace ในโหมดจอกว้างเขียน inline style ไว้ —
+     ถ้ามีเส้นทางไหนเปิดกล่องโดยไม่ผ่าน tmeanPlace (เช่น เทสต์/โค้ดในอนาคต) ค่าค้าง
+     จะดันแผ่นเลยขอบขวาจอ (จับได้: right=593 บนจอ 588 = left ค้าง 5px) */
+  #tmean{left:0!important;right:0;top:auto!important;bottom:0;width:100%;max-height:62vh;
     border:1px solid var(--rule);border-top:3px solid var(--f-personal);
     border-radius:var(--r-md) var(--r-md) 0 0;
     box-shadow:0 -10px 30px rgba(0,0,0,.45)}
@@ -1100,3 +1105,13 @@ p.hint:empty{display:none}
 .cald{white-space:nowrap}
 .calhm{margin-left:6px;color:var(--faint);font-size:var(--t-xs)}
 .calhm.weak{text-decoration:line-through}
+
+/* v97: กล่องคำแปลทุกชนิดต้องตัดบรรทัดได้เสมอ ห้ามล้นจอ (ผู้ใช้เจอบนมือถือ)
+   สูตรแบบ MC+PO−APv1=APr และคีย์เวิร์ดที่คั่นด้วย "/" เป็นคำเดียวยาว ๆ ไม่มีช่องว่าง
+   ถ้าไม่สั่ง overflow-wrap เบราว์เซอร์จะไม่ยอมหักคำ → ยาวทะลุกล่อง · ครอบทุกกล่อง
+   ที่ใช้ meanHTML: #tmean · #dqout · .horm (กาลชะตา) · .ctrmean (ศูนย์รังสี) · #hbelow (เรือน) */
+.mbox,.ctrmean,#hbelow,#fxout{min-width:0;overflow-wrap:anywhere;word-break:break-word}
+.mbox *,.ctrmean *,#hbelow *,#fxout *{max-width:100%;overflow-wrap:anywhere}
+.mbox .mnote,.mbox .mtext,.mbox .mwitte,.ctrmean .mnote,.ctrmean .mtext,.ctrmean .mwitte{white-space:normal}
+.mbox .mwrow{flex-wrap:wrap}
+.mbox .mwrow span{min-width:0}

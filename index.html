@@ -13,7 +13,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v94">
+<link rel="stylesheet" href="style.css?v=urain-v97">
 </head>
 <body>
 <div class="wrap">
@@ -539,14 +539,14 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v94"></script>
-<script src="places.js?v=urain-v94"></script>
-<script src="engine.js?v=urain-v94"></script>
-<script src="render.js?v=urain-v94"></script>
+<script src="glyphs.js?v=urain-v97"></script>
+<script src="places.js?v=urain-v97"></script>
+<script src="engine.js?v=urain-v97"></script>
+<script src="render.js?v=urain-v97"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const SW_CACHE = "urain-v94";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v97";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 let DIALMARKS = null, _markTimer = 0;   // วงเส้นประกะพริบครอบดาวของสูตร (v80)
@@ -1017,7 +1017,11 @@ $("asplist").addEventListener("click", async (e) => {
   box.hidden = false;
   box.innerHTML = '<div class="mnone">กำลังโหลดพจนานุกรม …</div>';
   tmeanPlace(row);
-  if (!await dictNeed()) { box.innerHTML = await dictErrHTML(new Error("โหลดไม่สำเร็จ")); return; }
+  if (!await dictNeed()) {
+    const errHtml = await dictErrHTML(new Error("โหลดไม่สำเร็จ"));
+    if (TMEAN_ROW === row) box.innerHTML = errHtml;   // ยามหลัง await ทุกครั้ง ทางผิดพลาดด้วย
+    return;
+  }
   if (TMEAN_ROW !== row) return;             // ผู้ใช้กดปิด/กดแถวอื่นระหว่างโหลด
   box.innerHTML = `<div class="mnote">${r.a} = ${r.b} · ${r.ang}° · orb ${r.orb.toFixed(2)}</div>` +
     meanHTML({ type: "A", p: r.a, axis: r.b });
@@ -1341,7 +1345,11 @@ $("scday").addEventListener("click", async (e) => {
   }
   box.innerHTML = '<div class="mnone">กำลังโหลดพจนานุกรม …</div>';
   tmeanPlace(row);
-  if (!await dictNeed()) { box.innerHTML = await dictErrHTML(new Error("โหลดไม่สำเร็จ")); return; }
+  if (!await dictNeed()) {
+    const errHtml = await dictErrHTML(new Error("โหลดไม่สำเร็จ"));
+    if (TMEAN_ROW === row) box.innerHTML = errHtml;   // ยามหลัง await ทุกครั้ง ทางผิดพลาดด้วย
+    return;
+  }
   if (TMEAN_ROW !== row) return;             // ผู้ใช้กดปิด/กดแถวอื่นระหว่างโหลด
   if (row.dataset.kind === "abc") {
     const { a, b, c } = row.dataset;
@@ -3184,7 +3192,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v94")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v97")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
@@ -3457,8 +3465,11 @@ function tmeanPlace(rowEl) {
   box.style.top = "0px";                       // วัดความสูงจริงก่อนค่อยวางจุด
   const bh = box.offsetHeight;
   const below = r.bottom + 6, above = r.top - 6 - bh;
-  box.style.top = (below + bh <= innerHeight - 8 || above < 8 ? below
-                   : above) + "px";
+  let top = below + bh <= innerHeight - 8 || above < 8 ? below : above;
+  // แถวต้นทางอาจเลื่อนพ้นจอไปแล้ว (เช่น เลื่อนหน้าแล้วหมุนจอ) → ค่าที่ได้ติดลบ/เกินจอ
+  // หนีบไว้ในจอเสมอ (ChatGPT จับได้: แถว top −400 ได้กล่องที่ −344 มองไม่เห็นทั้งกล่อง)
+  top = Math.max(8, Math.min(top, innerHeight - bh - 8));
+  box.style.top = top + "px";
 }
 $("out").addEventListener("click", (e) => {
   const r = e.target.closest(".frow");
@@ -3475,6 +3486,12 @@ $("out").addEventListener("click", (e) => {
   requestAnimationFrame(() => {
     if (!$("tmean").hidden && r.isConnected) tmeanPlace(r);
   });
+});
+// หมุนจอ/ย่อหน้าต่างขณะคำแปลเปิดอยู่ → ต้องจัดตำแหน่งใหม่ เพราะโหมดสลับที่ 620px
+// (ลอยใกล้แถว ↔ แผ่นล่างจอ) ถ้าไม่จัดใหม่ กล่องจะค้างแบบไม่มีตำแหน่งบนจอกว้าง
+window.addEventListener("resize", () => {
+  if ($("tmean").hidden || !TMEAN_ROW || !TMEAN_ROW.isConnected) return;
+  tmeanPlace(TMEAN_ROW);
 });
 // กดที่ใดก็ได้นอกแถวสูตร = ปิดคำแปล (ผู้ใช้ขอ — รวมถึงกดบนตัวป๊อปอัพเอง)
 document.addEventListener("click", (e) => {
@@ -3753,24 +3770,31 @@ function calSpec(ev) {
 // เกณฑ์รวม = คีย์คำแปลเดียวกัน + โค้งเท่ากัน (ปัด 4 ตำแหน่ง) — ตรงตาม RULES ข้อ 0
 // (A/B=C ≡ A+B−C=C) และครอบกรณี Av1=Bv2 ↔ Ar/Br=Bv ที่สลับ A,B แล้วได้สมการเดิม
 // สัญกรณ์ที่ชั้นแรงกว่าเป็นตัวหลัก ที่เหลือเก็บไว้ในป้าย alt
+// เกณฑ์ "โค้งเท่ากัน" = ต่างกันไม่เกิน 1e-6° (เดิม toFixed(4) กว้างถึง 1e-4° ≈ 50 นาที
+// ของเวลาจริง — ChatGPT ชี้ว่าสองสมการคนละภาพที่บังเอิญแม่นใกล้กันจะถูกยุบเป็นแถวเดียว
+// แล้วแถวนั้นได้ kind ของตัวหนึ่งแต่ arc/jd ของอีกตัว) · สัญกรณ์เดียวกันจริงต่างกันแค่
+// ระดับ 1e-12 จึงยังจับได้ครบ · เทียบทีละคู่ในคีย์เดียวกัน ไม่ใช้การปัดเลข (กันตกขอบปัด)
+const CAL_MERGE_EPS = 1e-6;
 function calMerge(ev) {
   const seen = {}, rows = [];
   for (const e of ev) {
     const dk = AISTRO.dictKey2(e.a, e.b) + (e.c ? "." + e.c : "");
-    const key = dk + "@" + e.arc.toFixed(4);
     const tier = CAL_TIER[e.kind] || 3;
-    const cur = seen[key];
+    const bucket = seen[dk] || (seen[dk] = []);
+    let cur = null;
+    for (const r of bucket) if (Math.abs(r.arc - e.arc) < CAL_MERGE_EPS) { cur = r; break; }
     if (!cur) {
       const asp = AISTRO.arcEventAspect(TL.R, e);
       const r = { kind: e.kind, a: e.a, b: e.b, c: e.c, arc: e.arc, jd: e.jd,
         tier, alt: [], cls: AISTRO.pictureClass([e.a, e.b, e.c]),
         ang: asp ? asp.ang : null, fam: asp ? asp.fam : null };
-      seen[key] = r; rows.push(r);
+      bucket.push(r); rows.push(r);
     } else if (tier < cur.tier) {
-      // สลับให้สัญกรณ์ชั้นแรงกว่าเป็นตัวหลัก — มุมจริงต้องคิดใหม่ตามสัญกรณ์ใหม่
-      // (คนละสัญกรณ์ = คนละคู่จุดบนวง มุมจริงจึงไม่จำเป็นต้องเท่ากัน)
+      // สลับให้สัญกรณ์ชั้นแรงกว่าเป็นตัวหลัก — ต้องย้าย **ทุกค่าของเหตุการณ์** ไปด้วย
+      // (kind/a/b/c/arc/jd) แล้วคิดมุมจริงใหม่ ไม่งั้นเวลา/วันที่/มุมมาจากคนละเหตุการณ์
       cur.alt.push(calFmt(cur));
       cur.kind = e.kind; cur.a = e.a; cur.b = e.b; cur.c = e.c; cur.tier = tier;
+      cur.arc = e.arc; cur.jd = e.jd;
       const asp2 = AISTRO.arcEventAspect(TL.R, cur);
       cur.ang = asp2 ? asp2.ang : null; cur.fam = asp2 ? asp2.fam : null;
     } else {
@@ -3840,8 +3864,7 @@ function calTopHTML(gs) {
 function calRowHTML(e, i, band, withTime) {
   const c = AISTRO.revjul(e.jd + TZ / 24);
   const DOT = { 1: "●●●", 2: "●●", 3: "●" };
-  const d = Math.floor(e.arc);
-  const arc = d + ":" + String(Math.round((e.arc - d) * 60)).padStart(2, "0");
+  const arc = calArcFmt(e.arc);
   return `<div class="calrow${band ? " cband" : ""}" data-i="${i}">` +
     (withTime ? calTimeHTML(e)
       : `<span class="cald">${c[2]}/${c[1]}<span class="calhm${
@@ -3858,6 +3881,7 @@ function calRowHTML(e, i, band, withTime) {
 // แผง "ทั้งวัน" — ผู้ใช้ขอ: กดวันไหนแล้วเห็นทุกสมการที่แม่นในวันนั้นของ All=V
 // จัดกลุ่มตามชั้นความแรงแบบเดียวกับแท็บแนวโน้ม · กดแถวได้คำแปลตำราเหมือนกัน
 function calShowDay(jd) {
+  if (!CAL.rows) { $("calday").innerHTML = ""; return; }
   const dkey = (x) => AISTRO.revjul(x + TZ / 24).slice(0, 3).join("/");
   const k = dkey(jd);
   const items = CAL.rows.filter((r) => dkey(r.jd) === k);
@@ -3900,15 +3924,27 @@ function calShiftAll(rows) {
   const R2 = AISTRO.chartAt(jd2, TL.lat, TL.lon);
   for (const r of rows) {
     if (r.shift !== undefined) continue;
-    const s = AISTRO.arcEventShift(r, jd2, R2, TZ);
+    // สมการที่อยู่ชิดขอบข้อมูล 1900–2099 อาจทำให้ตัวแก้สมการวิ่งเลยขอบแล้วโยน
+    // RangeError — ถ้าปล่อยทะลุขึ้นไป ปฏิทินทั้งหน้าจะไม่ถูกวาดเลย · ยอมไม่มีค่า ±
+    // เฉพาะแถวนั้นดีกว่า (calTimeHTML รองรับ null อยู่แล้ว)
+    let s = null;
+    try { s = AISTRO.arcEventShift(r, jd2, R2, TZ); } catch (e) { s = null; }
     r.shift = s === null ? null : Math.abs(s);
   }
 }
+// โค้งเป็น องศา:ลิปดา — ปัดเป็นลิปดารวมก่อนค่อยแยก (เดิมแยกองศาก่อนแล้วปัดลิปดา
+// ทำให้ 39.999 ได้ "39:60" — ChatGPT จับได้ · เป็นแค่การแสดงผล ค่าจริงไม่เปลี่ยน)
+function calArcFmt(arc) {
+  const tot = Math.round(arc * 60);
+  return Math.floor(tot / 60) + ":" + String(tot % 60).padStart(2, "0");
+}
 // เวลาไทย HH:MM ของสมการ (ใช้ทั้งรายการยาวและแผงทั้งวัน)
 function calHM(e) {
+  // ตัดเศษนาที ไม่ปัด — ปัดแล้ว 23:59:40 จะกลายเป็น 00:00 ทั้งที่วันที่ยังเป็นวันเดิม
+  // (ChatGPT จับได้) · ตัดเศษทำให้เวลากับวันที่ (ซึ่งมาจาก jd เดียวกัน) สอดคล้องเสมอ
   const c = AISTRO.revjul(e.jd + TZ / 24);
-  let h = Math.floor(c[3]), m = Math.round((c[3] - h) * 60);
-  if (m === 60) { m = 0; h = (h + 1) % 24; }
+  const tot = Math.floor(c[3] * 60 + 1e-9);        // +1e-9 กัน 59.99999 → 59
+  const h = Math.floor(tot / 60) % 24, m = tot % 60;
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 // เวลาไทยของสมการ + ป้ายความคลาด (คิดจาก r.shift ที่วัดมาแล้ว)
@@ -3932,6 +3968,9 @@ function calRun() {
   if (!kinds.length) {
     $("callist").innerHTML = '<p class="svempty">เปิดชนิดสมการอย่างน้อยหนึ่งชนิด</p>';
     $("caltop").innerHTML = ""; $("calcount").textContent = "";
+    // แผงทั้งวันที่ค้างอยู่จะมีปุ่มชี้ไปที่ CAL.rows ซึ่งกำลังจะเป็น null → ต้องล้างด้วย
+    // (ChatGPT จับได้: ปิดชนิดสุดท้ายแล้วกดปุ่มในแผงเก่า = TypeError)
+    $("calday").innerHTML = ""; CAL.dayJd = undefined;
     CAL.rows = null; CAL.key = ""; return;
   }
   const key = [TL.jd, TL.jdT, CAL.win, kinds.join(",")].join("|");
@@ -3989,7 +4028,9 @@ $("caltop").addEventListener("click", (e) => {
 async function calListClick(e) {
   const go = e.target.closest("[data-calgo]");
   if (go) {
+    if (!CAL.rows) return;                    // รายการถูกล้างไปแล้ว ปุ่มค้าง
     const ev = CAL.rows[+go.dataset.calgo];
+    if (!ev) return;
     const err = gotoJd(ev.jd);
     if (err) { $("status").className = "err"; $("status").textContent = err; return; }
     showPanel("pdial");
@@ -4008,7 +4049,11 @@ async function calListClick(e) {
   box.hidden = false;
   box.innerHTML = '<div class="mnone">กำลังโหลดพจนานุกรม …</div>';
   tmeanPlace(row);
-  if (!await dictNeed()) { box.innerHTML = await dictErrHTML(new Error("โหลดไม่สำเร็จ")); return; }
+  if (!await dictNeed()) {
+    const errHtml = await dictErrHTML(new Error("โหลดไม่สำเร็จ"));
+    if (TMEAN_ROW === row) box.innerHTML = errHtml;   // ยามหลัง await ทุกครั้ง ทางผิดพลาดด้วย
+    return;
+  }
   if (TMEAN_ROW !== row) return;             // ผู้ใช้กดปิด/กดแถวอื่นระหว่างโหลด
   // ป้ายมุม: เว็บอ้างอิงพับ 135→45 และ 67.5/112.5/157.5→22.5 (RULES "สาย 22.5")
   const angTxt = ev.ang === null ? "" :
@@ -4032,6 +4077,7 @@ $("calday").addEventListener("click", (e) => {
   const go = e.target.closest("#cdgo");
   if (go) {                                   // ตั้งดวงจรเป็นวันนั้นเลย (คำนวณใหม่ทั้งแอป)
     const jd = +go.dataset.cdjd;
+    if (!CAL.rows) return;
     const err = gotoJd(jd);
     if (err) { $("status").className = "err"; $("status").textContent = err; return; }
     // gotoJd → recalc → clearResults ล้างปฏิทินทิ้ง ต้องสร้างใหม่แล้วเปิดวันเดิมค้างไว้
@@ -4042,7 +4088,7 @@ $("calday").addEventListener("click", (e) => {
   if (e.target.closest("#cdsort")) {           // สลับเรียงตามเวลา/ตามชั้น
     CAL.dsort = CAL.dsort === "time" ? "tier" : "time";
     const jd0 = CAL.dayJd;
-    if (jd0 !== undefined) calShowDay(jd0);
+    if (jd0 !== undefined && CAL.rows) calShowDay(jd0);
     return;
   }
   if (e.target.closest("#cdclose")) { $("calday").innerHTML = ""; return; }
@@ -4239,7 +4285,11 @@ $("horout").addEventListener("click", async (e) => {
   box.hidden = false;
   box.innerHTML = '<div class="mnone">กำลังโหลดพจนานุกรม …</div>';
   tmeanPlace(row);
-  if (!await dictNeed()) { box.innerHTML = await dictErrHTML(new Error("โหลดไม่สำเร็จ")); return; }
+  if (!await dictNeed()) {
+    const errHtml = await dictErrHTML(new Error("โหลดไม่สำเร็จ"));
+    if (TMEAN_ROW === row) box.innerHTML = errHtml;   // ยามหลัง await ทุกครั้ง ทางผิดพลาดด้วย
+    return;
+  }
   if (TMEAN_ROW !== row) return;             // ผู้ใช้กดปิด/กดแถวอื่นระหว่างโหลด
   box.innerHTML = `<div class="mnote">${p.a}=${p.b} · ${p.gap.toFixed(2)}°</div>` +
     meanHTML({ type: "A", p: p.a, axis: p.b });
