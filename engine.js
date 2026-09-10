@@ -1510,6 +1510,23 @@ function arcEventAspect(radix, ev) {
   return { sep, ang: at.ang, orb: at.orb, fam: aspect225(sep).ang };
 }
 
+// ── ความไวของ "เวลาที่สมการแม่น" ต่อความคลาดของเวลาเกิด (v93) ──────────────
+// ปฏิทินโค้งแก้สมการได้ถึงระดับนาที แต่ตัวเลขนั้นจะมีความหมายก็ต่อเมื่อเวลาเกิดแม่น
+// ฟังก์ชันนี้คืนว่า "ถ้าดวงกำเนิดขยับไปเป็น radix2/jdBirth2 แล้ว สมการเดิมจะแม่นช้า/เร็ว
+// ไปกี่นาที" — เอาไปแสดงเป็นค่า ± ข้างเวลา ผู้ใช้จะได้รู้ว่าแถวไหนโฟกัสเวลาได้จริง
+// (วัดจริงกับ 5 ดวง: เวลาเกิดคลาด 1 นาที → ดาวช้าล้วนเลื่อนกลาง ๆ 12 นาที
+//  แต่สมการที่มีดาวเร็ว/มุมเมืองเลื่อนกลาง ๆ ถึง 4 ชั่วโมง)
+function arcEventShift(ev, jdBirth2, radix2, tz) {
+  const D = CAL_KINDS[ev.kind];
+  if (!D) return null;
+  const K = D.n === 2 ? D.k(radix2[ev.a], radix2[ev.b])
+                      : D.k(radix2[ev.a], radix2[ev.b], radix2[ev.c]);
+  let t = ((K % D.p) + D.p) % D.p;
+  t += D.p * Math.round((ev.arc - t) / D.p);      // ทวีคูณที่ใกล้ครั้งเดิมที่สุด
+  const jd = solveArcDate(jdBirth2, t, ev.jd, 360.0, tz);
+  return (jd - ev.jd) * 1440;                     // นาที (บวก = แม่นช้าลง)
+}
+
 // ค้นพจนานุกรมด้วยคีย์เวิร์ด — คืนทุกสมการที่คำแปลมีคำนั้น
 // (ฟีเจอร์ UI ล้วน ไม่แตะการคำนวณ · ผู้ใช้ขอ 31 ส.ค. 2026)
 function dictSearch(q, ctx) {
@@ -1552,6 +1569,7 @@ const AISTRO = {
   pairAspects, aspectInFamilies, aspectName, ASPECT_FAMILY_2, ASPECT_FAMILY_3,
   scoreDay, aspectClass, aspectScore, SCORE_WEIGHT,
   pictureClass, arcEventSides, arcEventAspect,
+  arcEventShift,
   CODE_ORDER, FACTOR_CLASS, MONTH_TABLE_TRANSITS,
   DIAL_DEFAULT, ORB_RT, SIDEREAL_YEAR, TROPICAL_MONTH,
 };

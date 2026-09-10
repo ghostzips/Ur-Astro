@@ -768,6 +768,9 @@ p.hint:empty{display:none}
   background:var(--sunk);color:var(--f-personal);font-weight:700;font-size:var(--t-sm)}
 /* v91: All=V — มุมจริง · คลาสปัจจัย · สัญกรณ์ที่รวมแล้ว · การ์ดช่วงเวลาเด่น */
 .calang{width:52px;color:var(--accent);font-size:var(--t-sm);text-align:right}
+/* v93: แถบสีสลับทีละวัน — ประกาศก่อน :hover/.hit เพื่อไม่ให้ทับสถานะพวกนั้น */
+.calrow.cband{background:var(--sunk)}
+.calrow.cband:hover{background:var(--hover)}
 /* คอลัมน์คลาสปัจจัย — คลาสสีมาจาก .f-* จึงต้องไม่กำหนด color ทับที่นี่ */
 .calcls{width:52px;font-size:var(--t-xs);text-align:right;white-space:nowrap}
 /* ผสม = มีทั้งดีและร้ายในภาพ — ไม่ให้สีข้างใดข้างหนึ่ง กันการชี้นำ ใช้คำบอกแทน */
@@ -1063,3 +1066,24 @@ p.hint:empty{display:none}
 .fsangs .laychips{margin:0;gap:3px}
 .fsangs .laychip{cursor:pointer;padding:3px 5px}
 .fsnote{display:block;margin-top:3px;color:var(--warn-ink)}
+
+/* v93: เวลาในวัน + ป้ายความคลาดจากเวลาเกิด (แผงทั้งวันของปฏิทินโค้ง) */
+.cdwarn{margin:var(--s2) 0 0;font-size:var(--t-xs);color:var(--dim);line-height:1.5}
+.cdtime{width:46px;font-size:var(--t-sm);font-weight:700;font-variant-numeric:tabular-nums}
+.cdpm{width:66px;font-size:10px;text-align:right;white-space:nowrap}
+.cdtime.weak{color:var(--faint);text-decoration:line-through}
+.cdpm-ok{color:var(--f-good)}
+.cdpm-mid{color:var(--f-booster)}
+.cdpm-weak{color:var(--f-bad)}
+@media (max-width:620px){
+  /* แถวในแผงทั้งวันไม่มีคอลัมน์วัน (d) แต่มีเวลา (t) กับความคลาด (pm) แทน
+     ทุกลูกต้องมีพื้นที่ในแม่แบบ — ตัวที่ตกหล่น (เช่น lv) จะถูกวางลงแถวใหม่เอง
+     ทำให้จุดชั้นลอยไปอยู่ขวาสุดคนละบรรทัดและแถวสูงเป็นสองเท่า (เจอจากภาพจริง) */
+  /* คอลัมน์ต้องประกาศใหม่ด้วย — แม่แบบเดิมให้คอลัมน์กว้าง (1fr) เป็นช่องที่ 3
+     ซึ่งในแผงนี้คือจุดชั้น ทำให้สูตรถูกบีบไปติดขอบขวา (เจอจากภาพจริง) */
+  .cdwrap .calrow{grid-template-columns:auto auto auto 1fr;
+    grid-template-areas:"t pm lv f" "a ang cls b"}
+  .cdwrap .cdtime{grid-area:t;width:auto}
+  .cdwrap .cdpm{grid-area:pm;width:auto;text-align:left}
+  .cdwrap .sclv{justify-self:start}
+}

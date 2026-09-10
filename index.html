@@ -13,7 +13,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v92">
+<link rel="stylesheet" href="style.css?v=urain-v93">
 </head>
 <body>
 <div class="wrap">
@@ -539,14 +539,14 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v92"></script>
-<script src="places.js?v=urain-v92"></script>
-<script src="engine.js?v=urain-v92"></script>
-<script src="render.js?v=urain-v92"></script>
+<script src="glyphs.js?v=urain-v93"></script>
+<script src="places.js?v=urain-v93"></script>
+<script src="engine.js?v=urain-v93"></script>
+<script src="render.js?v=urain-v93"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const SW_CACHE = "urain-v92";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v93";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 let DIALMARKS = null, _markTimer = 0;   // วงเส้นประกะพริบครอบดาวของสูตร (v80)
@@ -604,7 +604,7 @@ function clearResults() {
   $("scnote").hidden = true;         // คำเตือนขอบข้อมูลเป็นของดวงเก่า ต้องไม่ค้าง
   // ปฏิทินโค้ง — บั๊กชั้นเดียวกับจานเรือน/กราฟแนวโน้ม: ถ้าไม่ล้าง รายการสมการของ
   // ดวงเก่าค้างบนจอ และกดแถวยังอ่าน CAL.rows ชุดเก่าได้ (เจอตอนทำ All=V · v91)
-  CAL.ev = null; CAL.rows = null; CAL.key = "";
+  CAL.ev = null; CAL.rows = null; CAL.key = ""; CAL.dayJd = undefined;
   $("caltop").innerHTML = "";
   $("calday").innerHTML = "";
   $("callist").innerHTML = '<p class="svempty">เลือกชนิดสมการแล้วกดคำนวณ</p>';
@@ -1011,12 +1011,14 @@ function aspRun() {
 $("asplist").addEventListener("click", async (e) => {
   const row = e.target.closest(".asprow");
   if (!row || !ASP.rows) return;
+  if (tmeanToggle(row)) return;              // กดซ้ำแถวเดิม = ปิด
   const r = ASP.rows[+row.dataset.i];
   const box = $("tmean");
   box.hidden = false;
   box.innerHTML = '<div class="mnone">กำลังโหลดพจนานุกรม …</div>';
   tmeanPlace(row);
   if (!await dictNeed()) { box.innerHTML = await dictErrHTML(new Error("โหลดไม่สำเร็จ")); return; }
+  if (TMEAN_ROW !== row) return;             // ผู้ใช้กดปิด/กดแถวอื่นระหว่างโหลด
   box.innerHTML = `<div class="mnote">${r.a} = ${r.b} · ${r.ang}° · orb ${r.orb.toFixed(2)}</div>` +
     meanHTML({ type: "A", p: r.a, axis: r.b });
   tmeanPlace(row);
@@ -1329,6 +1331,7 @@ $("scevbtn").addEventListener("click", () => scShowEvents());
 $("scday").addEventListener("click", async (e) => {
   const row = e.target.closest(".scrow");
   if (!row) return;
+  if (tmeanToggle(row)) return;              // กดซ้ำแถวเดิม = ปิด
   const box = $("tmean"); box.hidden = false;
   const orbTxt = row.dataset.o ? ` · orb ${(+row.dataset.o).toFixed(2)}°` : "";
   if (row.dataset.none) {
@@ -1339,6 +1342,7 @@ $("scday").addEventListener("click", async (e) => {
   box.innerHTML = '<div class="mnone">กำลังโหลดพจนานุกรม …</div>';
   tmeanPlace(row);
   if (!await dictNeed()) { box.innerHTML = await dictErrHTML(new Error("โหลดไม่สำเร็จ")); return; }
+  if (TMEAN_ROW !== row) return;             // ผู้ใช้กดปิด/กดแถวอื่นระหว่างโหลด
   if (row.dataset.kind === "abc") {
     const { a, b, c } = row.dataset;
     box.innerHTML = `<div class="mnote">${a}r = ${b}r = ${c}t · ภาพดาว (คีย์ 3 ดาวจากตำรา)${orbTxt}</div>` +
@@ -3180,7 +3184,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v92")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v93")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
@@ -3336,6 +3340,7 @@ async function showRowMeaning(el) {
   if (!TL || mi === undefined || ri === undefined) return;
   const row = (TL.tables[+mi] || [])[+ri];
   if (!row) return;
+  if (tmeanToggle(el)) return;               // กดซ้ำแถวเดิม = ปิด
   for (const r of $("out").querySelectorAll(".frow.on")) r.classList.remove("on");
   el.classList.add("on");
   box.hidden = false;
@@ -3425,9 +3430,19 @@ $("tmean").addEventListener("click", (e) => {
     $("dialbox").scrollIntoView({ block: "start" });
   }
 });
+// แถวที่เปิดคำแปลอยู่ตอนนี้ — ใช้ทำ "กดซ้ำที่แถวเดิม = ปิด" (ผู้ใช้ขอจากมือถือ:
+// เดิมป๊อปอัพค้างจนกว่าจะกดที่ว่าง ซึ่งบนจอเล็กหาที่ว่างกดยาก)
+let TMEAN_ROW = null;
 function tmeanClose() {
   for (const r of $("out").querySelectorAll(".frow.on")) r.classList.remove("on");
+  TMEAN_ROW = null;
   $("tmean").hidden = true; $("tmean").innerHTML = "";
+}
+// คืน true = "ปิดไปแล้ว ไม่ต้องเปิดต่อ" · ทุกจุดที่เปิดคำแปลต้องเรียกอันนี้ก่อน
+function tmeanToggle(rowEl) {
+  if (!$("tmean").hidden && TMEAN_ROW === rowEl) { tmeanClose(); return true; }
+  TMEAN_ROW = rowEl;
+  return false;
 }
 function tmeanPlace(rowEl) {
   const box = $("tmean"), r = rowEl.getBoundingClientRect();
@@ -3641,7 +3656,8 @@ const CAL_KIND_TH = [
   ["Ar/Br=Cv",  "Ar/Br=Cv"], ["Av/Bv=Cr", "Av/Bv=Cr"],
   ["A+B-Cr=Cv", "A+B−Cr=Cv"], ["A+B-Cv=Cr", "A+B−Cv=Cr"],
 ];
-let CAL = { win: 1, on: { "Ar=Bv": true, "Av1=Bv2": true }, ev: null, rows: null, key: "" };
+let CAL = { win: 1, on: { "Ar=Bv": true, "Av1=Bv2": true }, ev: null, rows: null, key: "",
+  dsort: "tier" };
 // ── ชั้นความแรง (v91) — ตามลำดับในตำรา: ดาวเดียว > ศูนย์รังสี > จุดอิทธิพล ──
 // เป็นการจัดชั้น "ความแรง" ไม่ใช่การตัดสินดี/ร้าย (ดี/ร้ายอยู่คอลัมน์ถัดไป)
 const CAL_TIER = { "Ar=Bv": 1, "Av1=Bv2": 1, "Ar/Br=Bv": 2, "Ar=Br/Bv": 2,
@@ -3817,13 +3833,13 @@ function calTopHTML(gs) {
 }
 // แถวเดียวใช้ร่วมกันทั้งรายการยาวและแผง "ทั้งวัน" — data-i ชี้ตำแหน่งใน CAL.rows
 // (ตัวจัดการคลิกอ่านจาก data-i ตัวเดียวกัน จึงต้องวาดโครงเดียวกันเสมอ)
-function calRowHTML(e, i) {
+function calRowHTML(e, i, band, withTime) {
   const c = AISTRO.revjul(e.jd + TZ / 24);
   const DOT = { 1: "●●●", 2: "●●", 3: "●" };
   const d = Math.floor(e.arc);
   const arc = d + ":" + String(Math.round((e.arc - d) * 60)).padStart(2, "0");
-  return `<div class="calrow" data-i="${i}">` +
-    `<span class="cald">${c[2]}/${c[1]}</span>` +
+  return `<div class="calrow${band ? " cband" : ""}" data-i="${i}">` +
+    (withTime ? calTimeHTML(e) : `<span class="cald">${c[2]}/${c[1]}</span>`) +
     `<span class="cala">${arc}</span>` +
     `<span class="sclv sclv${e.tier}" title="${CAL_TIER_TH[e.tier]}">${DOT[e.tier]}</span>` +
     `<b class="calf">${calFmt(e)}` +
@@ -3840,27 +3856,61 @@ function calShowDay(jd) {
   const k = dkey(jd);
   const items = CAL.rows.filter((r) => dkey(r.jd) === k);
   if (!items.length) { $("calday").innerHTML = ""; return; }
-  items.sort((x, y) => x.tier - y.tier || x.arc - y.arc);
+  // ── เวลาในวัน + ความคลาดจริง (ผู้ใช้ถาม "ระบุเวลาเพื่อโฟกัสได้ไหม") ──
+  // เอนจินแก้สมการได้ถึงนาที แต่ตัวเลขจะมีความหมายก็ต่อเมื่อเวลาเกิดแม่น จึงคิด
+  // ค่า ± รายสมการจากของจริง: ขยับเวลาเกิด 1 นาที แล้วดูว่าสมการนั้นเลื่อนกี่นาที
+  const R2 = AISTRO.chartAt(TL.jd + 1 / 1440, TL.lat, TL.lon);
+  for (const r of items) {
+    if (r.shift === undefined) {
+      const s = AISTRO.arcEventShift(r, TL.jd + 1 / 1440, R2, TZ);
+      r.shift = s === null ? null : Math.abs(s);
+    }
+  }
+  items.sort(CAL.dsort === "time" ? (x, y) => x.jd - y.jd
+                                  : (x, y) => x.tier - y.tier || x.arc - y.arc);
   const cnt = {};
   for (const r of items) cnt[r.cls] = (cnt[r.cls] || 0) + 1;
   const mix = ["good", "booster", "neutral", "mixed", "bad"]
     .filter((c) => cnt[c]).map((c) => `<span class="f-${c}">${CLS_TH[c]} ${cnt[c]}</span>`)
     .join(" · ");
+  const focus = items.filter((r) => r.shift !== null && r.shift <= 60).length;
   let html = `<div class="cdhead"><b>${CAL_DFULL(jd)}</b>` +
     `<span class="cdn">ทั้งหมด ${items.length} สมการ</span>` +
     `<span class="cdmix">${mix}</span>` +
+    `<button type="button" id="cdsort" data-s="${CAL.dsort}">${
+      CAL.dsort === "time" ? "เรียงตามชั้น" : "เรียงตามเวลา"}</button>` +
     `<button type="button" id="cdgo" data-cdjd="${jd}">ตั้งดวงจรเป็นวันนี้</button>` +
-    `<button type="button" id="cdclose">ปิด</button></div>`;
-  let lastTier = 0;
+    `<button type="button" id="cdclose">ปิด</button></div>` +
+    `<p class="cdwarn">เวลาในวันคำนวณได้จริง แต่<b>ไวต่อเวลาเกิดมาก</b> — เลข ± คือ` +
+    ` เวลาจะเลื่อนเท่าไรถ้าเวลาเกิดผิดไปเพียง <b>1 นาที</b> ·` +
+    ` โฟกัสเวลาได้เฉพาะแถวที่ ± น้อย (วันนี้มี ${focus} จาก ${items.length} แถวที่ ± ไม่เกิน 1 ชม.)</p>`;
+  let lastHead = "";
   for (const r of items) {
-    if (r.tier !== lastTier) {
-      html += `<div class="scgrp">ชั้น ${r.tier} · ${CAL_TIER_TH[r.tier]}</div>`;
-      lastTier = r.tier;
-    }
-    html += calRowHTML(r, r.i);
+    const head = CAL.dsort === "time" ? "" : `ชั้น ${r.tier} · ${CAL_TIER_TH[r.tier]}`;
+    if (head && head !== lastHead) { html += `<div class="scgrp">${head}</div>`; lastHead = head; }
+    html += calRowHTML(r, r.i, false, true);
   }
+  CAL.dayJd = jd;
   $("calday").innerHTML = `<div class="cdwrap">${html}</div>`;
   $("calday").scrollIntoView({ block: "start" });
+}
+// เวลาไทยของสมการ + ป้ายความคลาด (คิดจาก r.shift ที่วัดมาแล้ว)
+function calTimeHTML(e) {
+  const c = AISTRO.revjul(e.jd + TZ / 24);
+  let h = Math.floor(c[3]), m = Math.round((c[3] - h) * 60);
+  if (m === 60) { m = 0; h = (h + 1) % 24; }
+  const t = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  if (e.shift === null || e.shift === undefined)
+    return `<span class="cdtime">${t}</span>`;
+  const s = e.shift;
+  const pm = s < 90 ? `±${Math.round(s)} น.`
+    : s < 2880 ? `±${(s / 60).toFixed(s < 600 ? 1 : 0)} ชม.`
+    : `±${Math.round(s / 1440)} วัน`;
+  const lv = s <= 60 ? "ok" : s <= 360 ? "mid" : "weak";
+  // ±เกิน 6 ชม. = เวลาในวันไม่มีความหมายแล้ว ขีดฆ่านาฬิกาทิ้งให้เห็นชัด ไม่ใช่แค่จาง
+  return `<span class="cdtime${lv === "weak" ? " weak" : ""}">${t}</span>` +
+    `<span class="cdpm cdpm-${lv}" title="ถ้าเวลาเกิดผิด 1 นาที เวลานี้เลื่อน ${
+      Math.round(s)} นาที">${pm}</span>`;
 }
 function calRun() {
   if (!TL) { $("callist").innerHTML = '<p class="svempty">กดคำนวณดวงก่อน</p>'; return; }
@@ -3879,9 +3929,12 @@ function calRun() {
   }
   const rows = CAL.rows;
   const MTH = AISTRO_RENDER.MONTH_TH;
-  let html = "", lastMonth = "", todayDone = false;
+  // แถบสีสลับ "ทีละวัน" — ผู้ใช้บอกว่าสีเดียวกันหมดแล้วดูช่วงวันยาก (v93)
+  let html = "", lastMonth = "", todayDone = false, lastDay = "", band = false;
   rows.forEach((e, i) => {
     const c = AISTRO.revjul(e.jd + TZ / 24);
+    const dKey = c[0] + "/" + c[1] + "/" + c[2];
+    if (dKey !== lastDay) { band = !band; lastDay = dKey; }
     if (!todayDone && e.jd >= TL.jdT) {
       const n = AISTRO.revjul(TL.jdT + TZ / 24);
       html += `<div class="caltoday">← วันนี้ (วันดวงจร ${n[2]}/${n[1]}/${n[0] + 543})</div>`;
@@ -3892,7 +3945,7 @@ function calRun() {
       html += `<div class="calmonth">${MTH[c[1] - 1]} ${c[0] + 543}</div>`;
       lastMonth = mKey;
     }
-    html += calRowHTML(e, i);
+    html += calRowHTML(e, i, band);
   });
   if (!todayDone) html += `<div class="caltoday">← วันนี้</div>`;
   $("callist").innerHTML = html || '<p class="svempty">ไม่มีสมการในช่วงนี้</p>';
@@ -3934,12 +3987,14 @@ async function calListClick(e) {
   }
   const row = e.target.closest(".calrow");
   if (!row || !CAL.rows) return;
+  if (tmeanToggle(row)) return;              // กดซ้ำแถวเดิม = ปิด
   const ev = CAL.rows[+row.dataset.i];
   const box = $("tmean");
   box.hidden = false;
   box.innerHTML = '<div class="mnone">กำลังโหลดพจนานุกรม …</div>';
   tmeanPlace(row);
   if (!await dictNeed()) { box.innerHTML = await dictErrHTML(new Error("โหลดไม่สำเร็จ")); return; }
+  if (TMEAN_ROW !== row) return;             // ผู้ใช้กดปิด/กดแถวอื่นระหว่างโหลด
   // ป้ายมุม: เว็บอ้างอิงพับ 135→45 และ 67.5/112.5/157.5→22.5 (RULES "สาย 22.5")
   const angTxt = ev.ang === null ? "" :
     ` · มุมจริง ${ev.ang}°${ASP_TH[ev.ang] ? " " + ASP_TH[ev.ang] : ""}` +
@@ -3962,6 +4017,12 @@ $("calday").addEventListener("click", (e) => {
     // gotoJd → recalc → clearResults ล้างปฏิทินทิ้ง ต้องสร้างใหม่แล้วเปิดวันเดิมค้างไว้
     calRun();
     calShowDay(jd);
+    return;
+  }
+  if (e.target.closest("#cdsort")) {           // สลับเรียงตามเวลา/ตามชั้น
+    CAL.dsort = CAL.dsort === "time" ? "tier" : "time";
+    const jd0 = CAL.dayJd;
+    if (jd0 !== undefined) calShowDay(jd0);
     return;
   }
   if (e.target.closest("#cdclose")) { $("calday").innerHTML = ""; return; }
@@ -4152,12 +4213,14 @@ $("horout").addEventListener("click", async (e) => {
   }
   const row = e.target.closest(".calrow[data-hp]");
   if (!row || !HOR.rel) return;
+  if (tmeanToggle(row)) return;              // กดซ้ำแถวเดิม = ปิด
   const p = HOR.rel[+row.dataset.hp];
   const box = $("tmean");
   box.hidden = false;
   box.innerHTML = '<div class="mnone">กำลังโหลดพจนานุกรม …</div>';
   tmeanPlace(row);
   if (!await dictNeed()) { box.innerHTML = await dictErrHTML(new Error("โหลดไม่สำเร็จ")); return; }
+  if (TMEAN_ROW !== row) return;             // ผู้ใช้กดปิด/กดแถวอื่นระหว่างโหลด
   box.innerHTML = `<div class="mnote">${p.a}=${p.b} · ${p.gap.toFixed(2)}°</div>` +
     meanHTML({ type: "A", p: p.a, axis: p.b });
   tmeanPlace(row);
