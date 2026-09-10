@@ -823,9 +823,15 @@ p.hint:empty{display:none}
 .scrow b{flex:1 1 auto;font-family:var(--mono);font-weight:600}
 .scdate{width:52px;color:var(--accent);font-size:var(--t-xs);text-align:right}
 .sccls{width:58px;color:var(--dim);font-size:var(--t-xs);text-align:right}
-.scorb{width:64px;color:var(--faint);font-size:var(--t-xs);text-align:right}
 .scsc{width:30px;text-align:right;font-weight:700}
 #scevbtn{margin-left:var(--s2);font-size:var(--t-xs)}
+/* v90: ระดับความแรง (จุด) · หัวข้อกลุ่ม · ตัวห้อยชั้นดวง t/r · แถวภาพดาวรวม */
+.lay{font-size:9px;color:var(--faint);vertical-align:sub;margin-left:1px;font-weight:400}
+.scgrp{margin:var(--s3) 0 var(--s1);padding-top:var(--s2);border-top:1px solid var(--rule-soft);
+  font-size:var(--t-xs);font-weight:700;color:var(--dim);letter-spacing:.03em}
+.sclv{width:44px;text-align:right;font-size:10px;letter-spacing:1px;white-space:nowrap}
+.sclv1{color:var(--pos)} .sclv2{color:var(--dim)} .sclv3{color:var(--faint)}
+.scpic{background:var(--sunk)}
 
 /* แท็บพจนานุกรม */
 .dictlook{display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center;margin:var(--s3) 0}

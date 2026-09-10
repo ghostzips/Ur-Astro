@@ -13,7 +13,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v89">
+<link rel="stylesheet" href="style.css?v=urain-v90">
 </head>
 <body>
 <div class="wrap">
@@ -533,14 +533,14 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v89"></script>
-<script src="places.js?v=urain-v89"></script>
-<script src="engine.js?v=urain-v89"></script>
-<script src="render.js?v=urain-v89"></script>
+<script src="glyphs.js?v=urain-v90"></script>
+<script src="places.js?v=urain-v90"></script>
+<script src="engine.js?v=urain-v90"></script>
+<script src="render.js?v=urain-v90"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const SW_CACHE = "urain-v89";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v90";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 let DIALMARKS = null, _markTimer = 0;   // วงเส้นประกะพริบครอบดาวของสูตร (v80)
@@ -1150,35 +1150,87 @@ function scDraw() {
   }
 }
 const CLS_TH = { good: "ดี", booster: "เสริมแรง", neutral: "กลาง", mixed: "ผสม", bad: "ร้าย" };
-// แถวสูตร กดได้ → คำแปลตำรา (ดาวกลับตำแหน่งเดิม t=r ไม่มีคำแปล บอกตรง ๆ)
+// ดาวจรที่เคลื่อน "ช้า" (พฤหัสขึ้นไป + ทิพย์) — ทรานสิตของกลุ่มนี้นาน/นาน ๆ ครั้ง
+// ดาวเร็ว (จันทร์/อาทิตย์/พุธ/ศุกร์/อังคาร/มุมเมือง) ทำมุมถี่ ผ่านเร็ว
+const SC_SLOW = new Set(["JU", "SA", "UR", "NE", "PL", "CU", "HA", "ZE", "KR", "AP", "AD", "VU", "PO"]);
+// ── ระดับความแรง (v90 · ผู้ใช้ขอ "เรียบเรียงเป็นระดับ") ─────────────────────
+// เกณฑ์ = ข้อเท็จจริงเชิงดาราศาสตร์ล้วน (ความช้าของดาวจร × ความเข้าตรง) ไม่ใช่การฟันธง
+//   1 เด่น      ดาวจรช้า + orb ≤ 0.25°
+//   2 ปานกลาง   ดาวจรช้า orb ≤ 1° · หรือดาวเร็วเข้าตรง ≤ 0.25°
+//   3 พื้นหลัง  ที่เหลือ (ดาวเร็วห่าง ผ่านเร็ว) · ดาวกลับตำแหน่งเดิม t=r (ตำราไม่มีคำแปล)
+function scLevel(h) {
+  if (h.t === h.r) return 3;
+  const slow = SC_SLOW.has(h.t);
+  if (slow && h.o <= 0.25) return 1;
+  if ((slow && h.o <= 1.0) || (!slow && h.o <= 0.25)) return 2;
+  return 3;
+}
+const LV_DOT = { 1: "●●●", 2: "●●", 3: "●" };
+// ตัวห้อยชั้นดวง (t = ดาวจร · r = ดาวกำเนิด) แบบเดียวกับป้ายบนจาน — แท็บนี้ใช้แค่ 2 ชั้นนี้
+const scCode = (c, lay) => `${c}<span class="lay">${lay}</span>`;
+// แถวสูตร กดได้ → คำแปลตำรา · เลข orb จริงไว้ใน title/ป๊อปอัพ ไม่รกในแถว (ผู้ใช้ข้อ 3)
 function scRow(h, extra) {
-  const same = h.t === h.r;
+  const same = h.t === h.r, lv = scLevel(h);
   return `<div class="scrow f-${AISTRO.FACTOR_CLASS[h.t]}"` +
-    ` data-t="${h.t}" data-r="${h.r}"${same ? ' data-none="1"' : ""}>` +
-    `<b>${h.t} = ${h.r}</b>` +
+    ` data-t="${h.t}" data-r="${h.r}" data-o="${h.o.toFixed(3)}" data-lv="${lv}"${same ? ' data-none="1"' : ""}>` +
+    `<b>${scCode(h.t, "t")} = ${scCode(h.r, "r")}</b>` +
     (extra || `<span class="sccls">${CLS_TH[h.cls]}</span>`) +
-    `<span class="scorb">orb ${h.o.toFixed(2)}</span>` +
+    `<span class="sclv sclv${lv}" title="orb ${h.o.toFixed(2)}°">${LV_DOT[lv]}</span>` +
     `<span class="scsc">${h.sc > 0 ? "+" + h.sc : h.sc}</span></div>`;
 }
+// ── ภาพดาวรวม (v90 · ผู้ใช้ข้อ 2) ───────────────────────────────────────────
+// ดาวจร T ชนดาวกำเนิด A และ B ในวันเดียว (ทั้งคู่ระดับ ≤2) → ภาพดาว A=B=T
+// เปิดคีย์ 3 ดาวจากตำราตรง ๆ (dict.three ครบ 4,620/4,620) ตามหลัก RULES ข้อ 0
+// (A=B=C ≡ A+B−C) · **ไม่เย็บ**คำแปล 2 ดาวสองอันเป็นประโยคใหม่ — นั่นคือแต่ง
+// ชน ≥3 ดาวกำเนิด → แตกเป็นภาพทีละคู่ตามหลักเดิม
+function scPictures(hits) {
+  const byT = {};
+  for (const h of hits)
+    if (h.t !== h.r && scLevel(h) <= 2) (byT[h.t] = byT[h.t] || []).push(h);
+  const out = [];
+  for (const t in byT) {
+    const rs = byT[t].slice().sort((a, b) => a.o - b.o);
+    for (let i = 0; i < rs.length; i++)
+      for (let j = i + 1; j < rs.length; j++)
+        out.push({ t, a: rs[i].r, b: rs[j].r, o: Math.max(rs[i].o, rs[j].o) });
+  }
+  return out.sort((x, y) => x.o - y.o);   // ภาพที่สมาชิกอ่อนสุดยังเข้าตรง = แน่นสุดก่อน
+}
+function scPicRow(p) {
+  const lv = SC_SLOW.has(p.t) && p.o <= 0.25 ? 1 : 2;
+  return `<div class="scrow scpic f-${AISTRO.FACTOR_CLASS[p.t]}" data-kind="abc"` +
+    ` data-a="${p.a}" data-b="${p.b}" data-c="${p.t}" data-o="${p.o.toFixed(3)}" data-lv="${lv}">` +
+    `<b>${scCode(p.a, "r")} = ${scCode(p.b, "r")} = ${scCode(p.t, "t")}</b>` +
+    `<span class="sccls">ภาพดาว</span>` +
+    `<span class="sclv sclv${lv}" title="orb ${p.o.toFixed(2)}°">${LV_DOT[lv]}</span>` +
+    `<span class="scsc"></span></div>`;
+}
+const scSection = (title, rows) => rows ? `<div class="scgrp">${title}</div>${rows}` : "";
+const SC_HEAD_HINT = `· <b>ดาวจร<span class="lay">t</span> = ดาวกำเนิด<span class="lay">r</span></b> · กดแถวดูคำแปลตำรา`;
 function scPickDay(i) {
   if (!TL || !SC.data || i < 0 || i >= SC.data.length) return;
   SC.mode = "day"; SC.sel = i; scDraw();
   const jd = scJd(i), dt = AISTRO.revjul(jd + TZ / 24);
   const s = AISTRO.scoreDay(TL.R, TL.jd, jd, { tz: TZ, lat: TL.lat, lon: TL.lon });
-  const rows = s.hits.slice().sort((a, b) =>   // มีคำแปลก่อน · ในกลุ่มเรียงเข้าตรงสุดก่อน
-    (a.t === a.r) - (b.t === b.r) || a.o - b.o)
-    .map((h) => scRow(h)).join("");
+  // เข้าตรงสุดก่อนในแต่ละระดับ · ดาวกลับตำแหน่งเดิม (t=r ไม่มีคำแปล) ไว้ท้ายสุดเสมอ
+  // — ไม่งั้น AR=AR (orb 0 ตลอด) จะโผล่หัวกลุ่มพื้นหลังทุกวัน
+  const hits = s.hits.slice().sort((a, b) =>
+    (a.t === a.r) - (b.t === b.r) || a.o - b.o);
+  const lv = { 1: [], 2: [], 3: [] };
+  for (const h of hits) lv[scLevel(h)].push(h);
+  const pics = scPictures(hits);
   const sign = s.total > 0 ? "+" + s.total : s.total;
   $("scday").innerHTML =
     `<div class="scsum">${dt[2]}/${dt[1]}/${dt[0] + 543} · คะแนนสุทธิ <b>${sign}</b> ` +
-    `· ${s.hits.length} สูตร <span class="hint">· กดสูตรเพื่อดูคำแปลตำรา</span></div>` +
-    (rows || '<p class="svempty">ไม่มีสูตรในวันนี้</p>');
+    `· ${s.hits.length} สูตร <span class="hint">${SC_HEAD_HINT}</span></div>` +
+    scSection("●●● เด่น — ดาวจรช้า เข้าตรง ≤ 0.25°", lv[1].map((h) => scRow(h)).join("")) +
+    scSection("◆ ภาพดาวรวม — ดาวจรตัวเดียวชน ≥2 ดาวกำเนิด (คำแปล 3 ดาว)", pics.map(scPicRow).join("")) +
+    scSection("●● ปานกลาง — ดาวจรช้า ≤ 1° · ดาวเร็วเข้าตรง ≤ 0.25°", lv[2].map((h) => scRow(h)).join("")) +
+    scSection("● พื้นหลัง — ดาวเร็วห่าง · ดาวกลับตำแหน่งเดิม", lv[3].map((h) => scRow(h)).join("")) ||
+    '<p class="svempty">ไม่มีสูตรในวันนี้</p>';
 }
-// ดาวจรที่เคลื่อน "ช้า" (พฤหัสขึ้นไป + ทิพย์) — ทรานสิตของกลุ่มนี้นาน/นาน ๆ ครั้ง
-// = "เหตุการณ์เด่น" จริง · ดาวเร็ว (จันทร์/อาทิตย์/พุธ/ศุกร์/อังคาร/มุมเมือง) ทำมุมถี่
-// เกินกว่าจะเป็น "เหตุการณ์" — ยังดูได้ในโหมดรายวัน (กดแท่ง)
-const SC_SLOW = new Set(["JU", "SA", "UR", "NE", "PL", "CU", "HA", "ZE", "KR", "AP", "AD", "VU", "PO"]);
 // ขั้น 2 — เหตุการณ์เด่นช่วงนี้: หาวันที่ความสัมพันธ์ "เข้าตรง" (orb ต่ำสุด) ในช่วง
+// เฉพาะดาวจรช้า (ครั้งแรกนับทุกดาวได้ 1,067 รายการ/6 เดือน — จันทร์ทำมุมถี่ ไม่ใช่ "เด่น")
 function scShowEvents() {
   if (!TL || !SC.data) return;
   SC.mode = "events"; SC.sel = -1; scDraw();
@@ -1207,7 +1259,7 @@ function scShowEvents() {
   }).join("");
   $("scday").innerHTML =
     `<div class="scsum">เหตุการณ์เด่น (ดาวจรช้า เข้าตรง orb ≤ ${EXACT}°) · ${events.length} รายการ ` +
-    `<span class="hint">· เรียงตามวัน · กดดูคำแปลตำรา</span></div>` +
+    `<span class="hint">· เรียงตามวัน ${SC_HEAD_HINT}</span></div>` +
     (rows || '<p class="svempty">ไม่มีความสัมพันธ์เข้าตรงในช่วงนี้</p>');
 }
 $("sccanvas").addEventListener("click", (e) => {
@@ -1218,21 +1270,29 @@ $("sccanvas").addEventListener("click", (e) => {
   scPickDay(i);
 });
 $("scevbtn").addEventListener("click", () => scShowEvents());
-// กดแถวสูตร → คำแปลตำรา (reuse meanHTML · ดาวกลับตำแหน่งเดิมบอกไม่มีคำแปล)
+// กดแถว → คำแปลตำรา (reuse meanHTML) · คู่ = type A · ภาพดาว = type ABC (คีย์ 3 ดาว)
+// ดาวกลับตำแหน่งเดิมบอกตรง ๆ ว่าไม่มีคำแปล · เลข orb จริงโชว์ในป๊อปอัพ
 $("scday").addEventListener("click", async (e) => {
   const row = e.target.closest(".scrow");
   if (!row) return;
   const box = $("tmean"); box.hidden = false;
+  const orbTxt = row.dataset.o ? ` · orb ${(+row.dataset.o).toFixed(2)}°` : "";
   if (row.dataset.none) {
-    box.innerHTML = '<div class="mnote">' + row.dataset.t + " = " + row.dataset.r +
+    box.innerHTML = '<div class="mnote">' + row.dataset.t + "t = " + row.dataset.r + "r" + orbTxt +
       '</div><div class="mnone">ดาวกลับตำแหน่งเดิม — ตำราไม่มีคำแปลคู่นี้</div>';
     tmeanPlace(row); return;
   }
   box.innerHTML = '<div class="mnone">กำลังโหลดพจนานุกรม …</div>';
   tmeanPlace(row);
   if (!await dictNeed()) { box.innerHTML = await dictErrHTML(new Error("โหลดไม่สำเร็จ")); return; }
-  box.innerHTML = `<div class="mnote">${row.dataset.t} = ${row.dataset.r}</div>` +
-    meanHTML({ type: "A", p: row.dataset.t, axis: row.dataset.r });
+  if (row.dataset.kind === "abc") {
+    const { a, b, c } = row.dataset;
+    box.innerHTML = `<div class="mnote">${a}r = ${b}r = ${c}t · ภาพดาว (คีย์ 3 ดาวจากตำรา)${orbTxt}</div>` +
+      meanHTML({ type: "ABC", a, b, c });
+  } else {
+    box.innerHTML = `<div class="mnote">${row.dataset.t}t = ${row.dataset.r}r${orbTxt}</div>` +
+      meanHTML({ type: "A", p: row.dataset.t, axis: row.dataset.r });
+  }
   tmeanPlace(row);
 });
 function renderScore() {
@@ -3057,7 +3117,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v89")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v90")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
