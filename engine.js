@@ -1469,6 +1469,47 @@ function scoreDay(radix, jdBirth, jdTransit, opt) {
   return { total, hits };
 }
 
+// ── คลาสภาพดาว N ปัจจัย + มุมจริงของสมการปฏิทินโค้ง (v91) ─────────────────
+// pictureClass ใช้ **กติกาเดียวกับ aspectClass ทุกตัวอักษร** ต่างแค่รับหลายปัจจัย
+// จึงลดรูปเป็น aspectClass เมื่อส่ง 2 ปัจจัย (test_score ตรวจครบ 396 คู่ของ oracle)
+// ไม่ใช่กติกาใหม่ — แค่ขยายเซ็ตให้ครอบภาพ 3 ปัจจัยของปฏิทินโค้ง
+function pictureClass(codes) {
+  const s = new Set();
+  for (const c of codes) if (c) s.add(FACTOR_CLASS[c]);
+  if (s.has("bad")) return s.has("good") ? "mixed" : "bad";
+  if (s.has("good")) return "good";
+  if (s.has("neutral")) return "neutral";
+  if (s.has("booster")) return "booster";
+  return "neutral";
+}
+// สองข้างของสมการ ณ โค้ง ev.arc — คิดจากดวงกำเนิด + โค้งล้วน (v1 = r+arc · v2 = r−arc)
+// ไม่เรียกคัมภีร์ซ้ำ · ศูนย์รังสีใช้ (a+b)/2 ดิบ ชุดเดียวกับที่ arcCalendar ใช้ตั้งสมการ
+function arcEventSides(radix, ev) {
+  const a = radix[ev.a], b = radix[ev.b], c = ev.c ? radix[ev.c] : 0, t = ev.arc;
+  switch (ev.kind) {
+    case "Ar=Bv":      return [a, b + t];
+    case "Av1=Bv2":    return [a + t, b - t];
+    case "Ar/Br=Bv":   return [(a + b) / 2, b + t];
+    case "Ar=Br/Bv":   return [a, b + t / 2];
+    case "Ar/Br=Cv":   return [(a + b) / 2, c + t];
+    case "Av/Bv=Cr":   return [(a + b) / 2 + t, c];
+    case "A+B-Cr=Cv":  return [a + b - c, c + t];
+    // ชนิดนี้ A,B,C อยู่ชั้น v ทั้งชุด (ภาพผลรวมของดวงเดิน) เทียบกับ C ชั้นกำเนิด:
+    // (a+t)+(b+t)−(c+t) = a+b−c+t   ตรงกับ K = 2c−a−b ที่ arcCalendar ใช้
+    case "A+B-Cv=Cr":  return [a + b - c + t, c];
+    default:           return null;
+  }
+}
+// มุมจริงบนวง 360° ของสมการ — sep เป็นทวีคูณ 22.5 เสมอเมื่อสมการแม่น
+// fam = ป้ายพับตามเว็บ (RULES ข้อ "สาย 22.5": 135→45 · 67.5/112.5/157.5→22.5)
+function arcEventAspect(radix, ev) {
+  const sides = arcEventSides(radix, ev);
+  if (!sides) return null;
+  const sep = sepCircle(mod360(sides[0]), mod360(sides[1]));
+  const at = aspectTrue(sep);
+  return { sep, ang: at.ang, orb: at.orb, fam: aspect225(sep).ang };
+}
+
 // ค้นพจนานุกรมด้วยคีย์เวิร์ด — คืนทุกสมการที่คำแปลมีคำนั้น
 // (ฟีเจอร์ UI ล้วน ไม่แตะการคำนวณ · ผู้ใช้ขอ 31 ส.ค. 2026)
 function dictSearch(q, ctx) {
@@ -1510,6 +1551,7 @@ const AISTRO = {
   loadHouseDict, initHouseDict, houseDictReady, houseMeaning,
   pairAspects, aspectInFamilies, aspectName, ASPECT_FAMILY_2, ASPECT_FAMILY_3,
   scoreDay, aspectClass, aspectScore, SCORE_WEIGHT,
+  pictureClass, arcEventSides, arcEventAspect,
   CODE_ORDER, FACTOR_CLASS, MONTH_TABLE_TRANSITS,
   DIAL_DEFAULT, ORB_RT, SIDEREAL_YEAR, TROPICAL_MONTH,
 };

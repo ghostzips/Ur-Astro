@@ -13,7 +13,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v90">
+<link rel="stylesheet" href="style.css?v=urain-v92">
 </head>
 <body>
 <div class="wrap">
@@ -422,16 +422,21 @@
   <p class="dialnote">ทุกสมการที่โค้งจะพามาแม่นพอดีในช่วงที่เลือก เรียงตามวัน ·
     สูตรปิด 8 ชนิด (ลดรูปจาก A+B−C ทั้งหมด) · วันที่แก้ด้วยตัวเดียวกับที่สอบเทียบ
     กับเว็บแล้ว · <b>ลำดับความแรง: ดาวเดียว &gt; ศูนย์รังสี &gt; จุดอิทธิพล</b> —
-    ค่าตั้งต้นจึงเปิดเฉพาะชนิดคู่ดาว เปิดชนิดอื่นเพิ่มได้ (ระวังกองทัพจุด)</p>
+    ค่าตั้งต้นจึงเปิดเฉพาะชนิดคู่ดาว เปิดชนิดอื่นเพิ่มได้ (ระวังกองทัพจุด) ·
+    <b>All=V</b> เปิดทุกชนิดพร้อมกันแล้วรวมสมการที่เป็นภาพเดียวกันคนละสัญกรณ์เป็นแถวเดียว
+    · จุด ●●● คือชั้นความแรง · คอลัมน์ท้ายคือมุมจริงบนวง 360° และคลาสของปัจจัยในภาพ</p>
   <div class="dictlook">
     <span class="lbl">ช่วง</span>
     <span class="laychips" id="calwin"></span>
     <span class="sep"></span>
     <span class="lbl">ชนิดสมการ</span>
     <span class="laychips" id="calkinds"></span>
+    <button type="button" id="calallv" title="เปิดทุกชนิดพร้อมกัน แล้วรวมสมการที่ซ้ำ">All=V</button>
     <button type="button" id="calgo">คำนวณ</button>
     <b class="mrsum" id="calcount"></b>
   </div>
+  <div id="caltop"></div>
+  <div id="calday"></div>
   <div id="callist"><p class="svempty">เลือกชนิดสมการแล้วกดคำนวณ</p></div>
 </section>
 </div>
@@ -494,6 +499,7 @@
     <button type="button" id="scevbtn">⚡ เหตุการณ์เด่นช่วงนี้</button>
   </div>
   <div id="scwrap"><canvas id="sccanvas"></canvas></div>
+  <p class="ctnote warn" id="scnote" hidden></p>
   <div id="scday"><p class="svempty">กดคำนวณดวงก่อน แล้วกดแท่งในกราฟ</p></div>
 </section>
 </div>
@@ -533,14 +539,14 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v90"></script>
-<script src="places.js?v=urain-v90"></script>
-<script src="engine.js?v=urain-v90"></script>
-<script src="render.js?v=urain-v90"></script>
+<script src="glyphs.js?v=urain-v92"></script>
+<script src="places.js?v=urain-v92"></script>
+<script src="engine.js?v=urain-v92"></script>
+<script src="render.js?v=urain-v92"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const SW_CACHE = "urain-v90";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v92";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 let DIALMARKS = null, _markTimer = 0;   // วงเส้นประกะพริบครอบดาวของสูตร (v80)
@@ -595,6 +601,14 @@ function clearResults() {
   SC.data = null; SC.sel = -1; SC._geom = null;
   { const sc = $("sccanvas"); sc.getContext("2d").clearRect(0, 0, sc.width, sc.height); }
   $("scday").innerHTML = '<p class="svempty">กดคำนวณดวงก่อน แล้วกดแท่งในกราฟ</p>';
+  $("scnote").hidden = true;         // คำเตือนขอบข้อมูลเป็นของดวงเก่า ต้องไม่ค้าง
+  // ปฏิทินโค้ง — บั๊กชั้นเดียวกับจานเรือน/กราฟแนวโน้ม: ถ้าไม่ล้าง รายการสมการของ
+  // ดวงเก่าค้างบนจอ และกดแถวยังอ่าน CAL.rows ชุดเก่าได้ (เจอตอนทำ All=V · v91)
+  CAL.ev = null; CAL.rows = null; CAL.key = "";
+  $("caltop").innerHTML = "";
+  $("calday").innerHTML = "";
+  $("callist").innerHTML = '<p class="svempty">เลือกชนิดสมการแล้วกดคำนวณ</p>';
+  $("calcount").textContent = "";
   $("gwrap").innerHTML = "";
   $("lifewrap").innerHTML = "";
   $("lfcount").textContent = "";
@@ -1074,18 +1088,57 @@ scChips();
 $("scrange").addEventListener("click", (e) => {
   const c = e.target.closest("[data-scd]");
   if (!c) return;
-  SC.days = +c.dataset.scd; scChips(); scCompute(); scDraw();
+  // สลับช่วงต้องเป็น "ทั้งหมดหรือไม่เลย" — เดิมตั้ง SC.days/base ก่อน ถ้า scCompute
+  // ล้ม (ชนขอบข้อมูล) จะเหลือกราฟชุดเก่าคู่กับฐานวันใหม่ กดแท่งได้วันผิดชุด
+  const prev = { days: SC.days, base: SC.base, data: SC.data, sel: SC.sel };
+  SC.days = +c.dataset.scd;
+  try { scCompute(); } catch (err) {
+    SC.days = prev.days; SC.base = prev.base; SC.data = prev.data; SC.sel = prev.sel;
+    scChips(); scDraw();
+    $("scnote").hidden = false;
+    $("scnote").textContent = "⚠️ เปลี่ยนช่วงไม่ได้: " + (err.message || err);
+    return;
+  }
+  scChips(); scDraw();
   $("scday").innerHTML = '<p class="svempty">กดแท่งในกราฟเพื่อดูสูตรของวันนั้น</p>';
 });
-function scJd(i) { return SC.base + i; }        // เที่ยง UT ของวันที่ i
+function scJd(i) { return SC.base + i; }        // เที่ยงวันท้องถิ่นของวันที่ i
+// เที่ยงวันท้องถิ่นของวันเดียวกับ jd (เขตเวลาคงที่ทั้งแอป ไม่มี DST)
+// เดิมใช้ Math.floor(jd)+0.5 ซึ่งคือ "เที่ยงคืน UTC" — กรอกเวลาเย็น (เช่น 19:00 +07)
+// แล้วแท่งของวันจรเลื่อนไปเป็นวันถัดไปเวลา 07:00 น. (ChatGPT จับได้ · ผู้ใช้เคาะให้
+// ใช้เที่ยงวันท้องถิ่น 10 ก.ย. 2026 — เป็นตัวแทนกลางวันและวันบนแท่งตรงปฏิทินไทย)
+function scNoon(jd) {
+  const c = AISTRO.revjul(jd + TZ / 24);
+  return AISTRO.julday(c[0], c[1], c[2], 12 - TZ);
+}
+// ช่วงกราฟต้องอยู่ในข้อมูล 1900–2099 เสมอ — วันจรใกล้ขอบทำให้ครึ่งช่วงล้นออกไป
+// แล้ว scoreDay โยน RangeError ทั้งที่วันจรที่กรอกยังอยู่ในช่วง (ChatGPT จับได้)
+// วิธีแก้: เลื่อน/ย่อช่วงให้พอดีขอบ แล้วบอกผู้ใช้ตรง ๆ ว่าย่อเพราะอะไร
 function scCompute() {
-  if (!TL) { SC.data = null; return; }
-  const half = Math.floor(SC.days / 2);
-  SC.base = Math.floor(TL.jdT - half) + 0.5;    // เที่ยง UT วันแรก
+  if (!TL) { SC.data = null; $("scnote").hidden = true; return; }
+  let lo = scNoon(AISTRO.JD_MIN);                       // ตัวอย่างแรกที่อ่านได้
+  if (lo < AISTRO.JD_MIN) lo += 1;
+  let hi = scNoon(AISTRO.JD_MAX);
+  if (hi > AISTRO.JD_MAX) hi -= 1;
+  const span = Math.min(SC.days, Math.floor(hi - lo) + 1);
+  const half = Math.floor(span / 2);
+  let base = scNoon(TL.jdT) - half;
+  if (base < lo) base = lo;
+  if (base + span - 1 > hi) base = hi - span + 1;
+  SC.base = base;
   const arr = [];
-  for (let i = 0; i < SC.days; i++)
-    arr.push(AISTRO.scoreDay(TL.R, TL.jd, scJd(i), { tz: TZ, lat: TL.lat, lon: TL.lon }).total);
+  for (let i = 0; i < span; i++)
+    arr.push(AISTRO.scoreDay(TL.R, TL.jd, base + i, { tz: TZ, lat: TL.lat, lon: TL.lon }).total);
   SC.data = arr; SC.sel = -1;
+  const cut = span < SC.days;
+  const shifted = Math.abs(base - (scNoon(TL.jdT) - half)) > 1e-6;
+  $("scnote").hidden = !(cut || shifted);
+  if (cut || shifted) {
+    const d0 = AISTRO.revjul(base + TZ / 24), d1 = AISTRO.revjul(base + span - 1 + TZ / 24);
+    $("scnote").textContent = "⚠️ ช่วงชนขอบข้อมูล (ค.ศ. 1900–2099) — กราฟแสดง " +
+      `${d0[2]}/${d0[1]}/${d0[0] + 543} ถึง ${d1[2]}/${d1[1]}/${d1[0] + 543}` +
+      (cut ? ` (${span} วัน จาก ${SC.days})` : " (เลื่อนช่วงให้อยู่ในข้อมูล)");
+  }
 }
 function scDraw() {
   const cv = $("sccanvas"), wrap = $("scwrap");
@@ -1238,7 +1291,8 @@ function scShowEvents() {
   const runs = {};   // key t|r -> {best:{i,o,cls,sc}} ต่อช่วงวันติดกัน
   const events = [];
   const prevActive = {};
-  for (let i = 0; i < SC.days; i++) {
+  // ต้องเดินตามจำนวนวันที่ "คำนวณไว้จริง" ไม่ใช่ SC.days — ช่วงอาจถูกย่อเพราะชนขอบข้อมูล
+  for (let i = 0; i < SC.data.length; i++) {
     const s = AISTRO.scoreDay(TL.R, TL.jd, scJd(i), { tz: TZ, lat: TL.lat, lon: TL.lon, orb: EXACT });
     const active = {};
     for (const h of s.hits) {
@@ -1294,6 +1348,15 @@ $("scday").addEventListener("click", async (e) => {
       meanHTML({ type: "A", p: row.dataset.t, axis: row.dataset.r });
   }
   tmeanPlace(row);
+});
+// หมุนมือถือ/ย่อหน้าต่าง → ต้องวาดกราฟใหม่ scDraw ตั้ง canvas.style.width เป็น px
+// ทับ CSS width:100% ถ้าไม่วาดใหม่กราฟจะค้างความกว้างเดิม (ย่อแล้วล้น ขยายแล้วไม่เต็ม)
+// (ChatGPT จับได้ · แท็บจาน/ศูนย์รังสีมี resize handler อยู่แล้ว แท็บนี้ตกไป)
+let _scRT = null;
+window.addEventListener("resize", () => {
+  if (CUR_PANEL !== "pscore" || !SC.data) return;
+  clearTimeout(_scRT);
+  _scRT = setTimeout(scDraw, 120);        // หน่วงกันวาดรัวตอนลากขอบหน้าต่าง
 });
 function renderScore() {
   if (!TL) {
@@ -3117,7 +3180,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v90")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v92")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
@@ -3578,7 +3641,12 @@ const CAL_KIND_TH = [
   ["Ar/Br=Cv",  "Ar/Br=Cv"], ["Av/Bv=Cr", "Av/Bv=Cr"],
   ["A+B-Cr=Cv", "A+B−Cr=Cv"], ["A+B-Cv=Cr", "A+B−Cv=Cr"],
 ];
-let CAL = { win: 1, on: { "Ar=Bv": true, "Av1=Bv2": true }, ev: null, key: "" };
+let CAL = { win: 1, on: { "Ar=Bv": true, "Av1=Bv2": true }, ev: null, rows: null, key: "" };
+// ── ชั้นความแรง (v91) — ตามลำดับในตำรา: ดาวเดียว > ศูนย์รังสี > จุดอิทธิพล ──
+// เป็นการจัดชั้น "ความแรง" ไม่ใช่การตัดสินดี/ร้าย (ดี/ร้ายอยู่คอลัมน์ถัดไป)
+const CAL_TIER = { "Ar=Bv": 1, "Av1=Bv2": 1, "Ar/Br=Bv": 2, "Ar=Br/Bv": 2,
+  "Ar/Br=Cv": 3, "Av/Bv=Cr": 3, "A+B-Cr=Cv": 3, "A+B-Cv=Cr": 3 };
+const CAL_TIER_TH = { 1: "ดาวถึงดาว", 2: "ศูนย์รังสีกับดาว", 3: "จุดอิทธิพล" };
 function calChips() {
   $("calwin").innerHTML = [1, 2].map((w) =>
     `<button type="button" class="laychip${CAL.win === w ? " on" : ""}"` +
@@ -3586,6 +3654,8 @@ function calChips() {
   $("calkinds").innerHTML = CAL_KIND_TH.map(([k, th]) =>
     `<button type="button" class="laychip${CAL.on[k] ? " on" : ""}"` +
     ` data-k="${k}" title="${th}">${k.replace(/-/g, "−")}</button>`).join("");
+  const all = CAL_KIND_TH.every(([k]) => CAL.on[k]);
+  $("calallv").classList.toggle("on", all);
 }
 calChips();
 $("calwin").addEventListener("click", (e) => {
@@ -3599,6 +3669,15 @@ $("calkinds").addEventListener("click", (e) => {
   if (!c) return;
   CAL.on[c.dataset.k] = !CAL.on[c.dataset.k]; calChips();
   if (CAL.ev) calRun();
+});
+// All=V — เปิดทุกชนิดพร้อมกัน (กดซ้ำกลับเป็นค่าตั้งต้น 2 ชนิดคู่ดาว)
+$("calallv").addEventListener("click", () => {
+  const all = CAL_KIND_TH.every(([k]) => CAL.on[k]);
+  CAL.on = {};
+  if (all) { CAL.on["Ar=Bv"] = true; CAL.on["Av1=Bv2"] = true; }
+  else for (const [k] of CAL_KIND_TH) CAL.on[k] = true;
+  calChips();
+  calRun();
 });
 $("calgo").addEventListener("click", () => calRun());
 
@@ -3650,28 +3729,162 @@ function calSpec(ev) {
               : { type: "A", p: ev.a, axis: ev.b };
 }
 
+// รวมสมการที่เป็น "ภาพเดียวกันคนละสัญกรณ์" ให้เป็นแถวเดียว (ผู้ใช้สั่ง v91)
+// เกณฑ์รวม = คีย์คำแปลเดียวกัน + โค้งเท่ากัน (ปัด 4 ตำแหน่ง) — ตรงตาม RULES ข้อ 0
+// (A/B=C ≡ A+B−C=C) และครอบกรณี Av1=Bv2 ↔ Ar/Br=Bv ที่สลับ A,B แล้วได้สมการเดิม
+// สัญกรณ์ที่ชั้นแรงกว่าเป็นตัวหลัก ที่เหลือเก็บไว้ในป้าย alt
+function calMerge(ev) {
+  const seen = {}, rows = [];
+  for (const e of ev) {
+    const dk = AISTRO.dictKey2(e.a, e.b) + (e.c ? "." + e.c : "");
+    const key = dk + "@" + e.arc.toFixed(4);
+    const tier = CAL_TIER[e.kind] || 3;
+    const cur = seen[key];
+    if (!cur) {
+      const asp = AISTRO.arcEventAspect(TL.R, e);
+      const r = { kind: e.kind, a: e.a, b: e.b, c: e.c, arc: e.arc, jd: e.jd,
+        tier, alt: [], cls: AISTRO.pictureClass([e.a, e.b, e.c]),
+        ang: asp ? asp.ang : null, fam: asp ? asp.fam : null };
+      seen[key] = r; rows.push(r);
+    } else if (tier < cur.tier) {
+      // สลับให้สัญกรณ์ชั้นแรงกว่าเป็นตัวหลัก — มุมจริงต้องคิดใหม่ตามสัญกรณ์ใหม่
+      // (คนละสัญกรณ์ = คนละคู่จุดบนวง มุมจริงจึงไม่จำเป็นต้องเท่ากัน)
+      cur.alt.push(calFmt(cur));
+      cur.kind = e.kind; cur.a = e.a; cur.b = e.b; cur.c = e.c; cur.tier = tier;
+      const asp2 = AISTRO.arcEventAspect(TL.R, cur);
+      cur.ang = asp2 ? asp2.ang : null; cur.fam = asp2 ? asp2.fam : null;
+    } else {
+      cur.alt.push(calFmt(e));
+    }
+  }
+  rows.sort((x, y) => x.jd - y.jd);
+  rows.forEach((r, i) => { r.i = i; });
+  return rows;
+}
+// จับกลุ่มสมการ "ที่แม่นวันเดียวกัน" — ระบุวันตรง ๆ ไม่รวมเป็นช่วง (ผู้ใช้เคาะ v92)
+// เดิม v91 รวมหน้าต่าง 7 วัน เพราะชั้น 1–2 แทบไม่เคยตกวันเดียวกัน (วัดจริง: ±1 ปี
+// มี 120 วัน ในนั้น 114 วันมีสมการชั้น ≤2 แค่ตัวเดียว) · เมื่อระบุวันเดียวจึงต้อง
+// **นับทุกชั้น** ของวันนั้น — วันหนึ่งมีได้ถึง 8–9 สมการเมื่อเปิด All=V
+function calDays(rows) {
+  const byKey = {}, gs = [];
+  for (const r of rows) {
+    const c = AISTRO.revjul(r.jd + TZ / 24);
+    const key = c[0] + "/" + c[1] + "/" + c[2];
+    if (!byKey[key]) { byKey[key] = { key, jd0: r.jd, items: [] }; gs.push(byKey[key]); }
+    byKey[key].items.push(r);
+  }
+  for (const g of gs) {
+    g.n = g.items.length;
+    g.best = Math.min.apply(null, g.items.map((r) => r.tier));   // ชั้นแรงสุดของวันนั้น
+    g.cls = {};
+    for (const r of g.items) g.cls[r.cls] = (g.cls[r.cls] || 0) + 1;
+    const good = (g.cls.good || 0) + (g.cls.booster || 0);
+    const bad = (g.cls.bad || 0) + (g.cls.mixed || 0);
+    g.tone = good > bad ? "good" : bad > good ? "bad" : "neutral";
+  }
+  return gs;
+}
+const CAL_DFULL = (jd) => {
+  const c = AISTRO.revjul(jd + TZ / 24);
+  return `${c[2]} ${AISTRO_RENDER.MONTH_TH[c[1] - 1]} ${c[0] + 543}`;
+};
+// เรียง "วันเด่น" ด้วยข้อเท็จจริง 2 ชั้น ไม่มีการให้คะแนนเอง:
+//   ① ชั้นแรงสุดของวันนั้น (ลำดับในตำรา ดาวเดียว > ศูนย์รังสี > จุดอิทธิพล)
+//   ② จำนวนสมการที่แม่นวันเดียวกัน (นับตรง ๆ)
+function calTopHTML(gs) {
+  if (!gs.length) return "";
+  const DOT = { 1: "●●●", 2: "●●", 3: "●" };
+  const top = gs.slice().sort((x, y) =>
+    x.best - y.best || y.n - x.n || x.jd0 - y.jd0).slice(0, 6);
+  const cards = top.map((g) => {
+    const mix = ["good", "booster", "neutral", "mixed", "bad"]
+      .filter((k) => g.cls[k]).map((k) => `${CLS_TH[k]} ${g.cls[k]}`).join(" · ");
+    const fs = g.items.slice(0, 4).map((r) => calFmt(r)).join(" · ") +
+      (g.n > 4 ? ` +${g.n - 4}` : "");
+    const past = g.jd0 < TL.jdT ? '<span class="ctpast">ผ่านมาแล้ว</span>' : "";
+    return `<button type="button" class="ctcard ct-${g.tone}" data-row="${g.items[0].i}">` +
+      `<span class="ctd">${CAL_DFULL(g.jd0)}${past}</span>` +
+      `<span class="ctn"><span class="sclv sclv${g.best}" title="${
+        CAL_TIER_TH[g.best]}">${DOT[g.best]}</span> ${g.n} สมการแม่นวันเดียวกัน</span>` +
+      `<span class="ctmix">${mix}</span>` +
+      `<span class="ctf">${fs}</span></button>`;
+  }).join("");
+  return `<div class="ctwrap"><div class="ctttl">วันเด่น` +
+    `<span class="cthint">เรียงจาก ① ชั้นความแรงสูงสุดของวันนั้น (ดาวเดียว &gt; ศูนย์รังสี` +
+    ` &gt; จุดอิทธิพล) แล้ว ② จำนวนสมการที่แม่นวันเดียวกัน — เป็นการนับ ไม่ใช่คำทำนาย` +
+    ` · "ดี/ร้าย" คือคลาสของปัจจัยในภาพ · กดการ์ดเพื่อไปอ่านคำแปลของวันนั้น</span></div>` +
+    `<div class="ctgrid">${cards}</div></div>`;
+}
+// แถวเดียวใช้ร่วมกันทั้งรายการยาวและแผง "ทั้งวัน" — data-i ชี้ตำแหน่งใน CAL.rows
+// (ตัวจัดการคลิกอ่านจาก data-i ตัวเดียวกัน จึงต้องวาดโครงเดียวกันเสมอ)
+function calRowHTML(e, i) {
+  const c = AISTRO.revjul(e.jd + TZ / 24);
+  const DOT = { 1: "●●●", 2: "●●", 3: "●" };
+  const d = Math.floor(e.arc);
+  const arc = d + ":" + String(Math.round((e.arc - d) * 60)).padStart(2, "0");
+  return `<div class="calrow" data-i="${i}">` +
+    `<span class="cald">${c[2]}/${c[1]}</span>` +
+    `<span class="cala">${arc}</span>` +
+    `<span class="sclv sclv${e.tier}" title="${CAL_TIER_TH[e.tier]}">${DOT[e.tier]}</span>` +
+    `<b class="calf">${calFmt(e)}` +
+    (e.alt.length ? `<span class="calalt">≡ ${e.alt[0]}${
+      e.alt.length > 1 ? " +" + (e.alt.length - 1) : ""}</span>` : "") + `</b>` +
+    `<span class="calang">${e.ang === null ? "" : e.ang + "°"}</span>` +
+    `<span class="calcls f-${e.cls}">${CLS_TH[e.cls]}</span>` +
+    `<button type="button" data-calgo="${i}">ไปวันนั้น</button></div>`;
+}
+// แผง "ทั้งวัน" — ผู้ใช้ขอ: กดวันไหนแล้วเห็นทุกสมการที่แม่นในวันนั้นของ All=V
+// จัดกลุ่มตามชั้นความแรงแบบเดียวกับแท็บแนวโน้ม · กดแถวได้คำแปลตำราเหมือนกัน
+function calShowDay(jd) {
+  const dkey = (x) => AISTRO.revjul(x + TZ / 24).slice(0, 3).join("/");
+  const k = dkey(jd);
+  const items = CAL.rows.filter((r) => dkey(r.jd) === k);
+  if (!items.length) { $("calday").innerHTML = ""; return; }
+  items.sort((x, y) => x.tier - y.tier || x.arc - y.arc);
+  const cnt = {};
+  for (const r of items) cnt[r.cls] = (cnt[r.cls] || 0) + 1;
+  const mix = ["good", "booster", "neutral", "mixed", "bad"]
+    .filter((c) => cnt[c]).map((c) => `<span class="f-${c}">${CLS_TH[c]} ${cnt[c]}</span>`)
+    .join(" · ");
+  let html = `<div class="cdhead"><b>${CAL_DFULL(jd)}</b>` +
+    `<span class="cdn">ทั้งหมด ${items.length} สมการ</span>` +
+    `<span class="cdmix">${mix}</span>` +
+    `<button type="button" id="cdgo" data-cdjd="${jd}">ตั้งดวงจรเป็นวันนี้</button>` +
+    `<button type="button" id="cdclose">ปิด</button></div>`;
+  let lastTier = 0;
+  for (const r of items) {
+    if (r.tier !== lastTier) {
+      html += `<div class="scgrp">ชั้น ${r.tier} · ${CAL_TIER_TH[r.tier]}</div>`;
+      lastTier = r.tier;
+    }
+    html += calRowHTML(r, r.i);
+  }
+  $("calday").innerHTML = `<div class="cdwrap">${html}</div>`;
+  $("calday").scrollIntoView({ block: "start" });
+}
 function calRun() {
   if (!TL) { $("callist").innerHTML = '<p class="svempty">กดคำนวณดวงก่อน</p>'; return; }
   const kinds = CAL_KIND_TH.map(([k]) => k).filter((k) => CAL.on[k]);
-  if (!kinds.length) { $("callist").innerHTML =
-    '<p class="svempty">เปิดชนิดสมการอย่างน้อยหนึ่งชนิด</p>'; $("calcount").textContent = ""; return; }
+  if (!kinds.length) {
+    $("callist").innerHTML = '<p class="svempty">เปิดชนิดสมการอย่างน้อยหนึ่งชนิด</p>';
+    $("caltop").innerHTML = ""; $("calcount").textContent = "";
+    CAL.rows = null; CAL.key = ""; return;
+  }
   const key = [TL.jd, TL.jdT, CAL.win, kinds.join(",")].join("|");
   if (CAL.key !== key) {
     CAL.ev = AISTRO.arcCalendar(TL.R, TL.jd,
       { tz: TZ, jdRef: TL.jdT, windowYears: CAL.win, kinds });
+    CAL.rows = calMerge(CAL.ev);
     CAL.key = key;
   }
-  const ev = CAL.ev;
-  const dm = (v) => { const d = Math.floor(v);
-    return d + ":" + String(Math.round((v - d) * 60)).padStart(2, "0"); };
+  const rows = CAL.rows;
   const MTH = AISTRO_RENDER.MONTH_TH;
   let html = "", lastMonth = "", todayDone = false;
-  ev.forEach((e, i) => {
+  rows.forEach((e, i) => {
     const c = AISTRO.revjul(e.jd + TZ / 24);
     if (!todayDone && e.jd >= TL.jdT) {
-      html += `<div class="caltoday">← วันนี้ (วันดวงจร ${
-        AISTRO.revjul(TL.jdT + TZ / 24)[2]}/${AISTRO.revjul(TL.jdT + TZ / 24)[1]}/${
-        AISTRO.revjul(TL.jdT + TZ / 24)[0] + 543})</div>`;
+      const n = AISTRO.revjul(TL.jdT + TZ / 24);
+      html += `<div class="caltoday">← วันนี้ (วันดวงจร ${n[2]}/${n[1]}/${n[0] + 543})</div>`;
       todayDone = true;
     }
     const mKey = c[1] + "/" + c[0];
@@ -3679,25 +3892,36 @@ function calRun() {
       html += `<div class="calmonth">${MTH[c[1] - 1]} ${c[0] + 543}</div>`;
       lastMonth = mKey;
     }
-    html += `<div class="calrow" data-i="${i}">` +
-      `<span class="cald">${c[2]}/${c[1]}</span>` +
-      `<span class="cala">${dm(e.arc)}</span>` +
-      `<b class="calf">${calFmt(e)}</b>` +
-      `<button type="button" data-calgo="${i}">ไปวันนั้น</button></div>`;
+    html += calRowHTML(e, i);
   });
   if (!todayDone) html += `<div class="caltoday">← วันนี้</div>`;
   $("callist").innerHTML = html || '<p class="svempty">ไม่มีสมการในช่วงนี้</p>';
-  $("calcount").textContent = `${ev.length} สมการ` +
-    (ev.length > 300 ? " · กองทัพจุด — ลองปิดชนิดที่เบาลง" : "");
+  $("calday").innerHTML = "";
+  $("caltop").innerHTML = rows.length ? calTopHTML(calDays(rows)) : "";
+  const merged = CAL.ev.length - rows.length;
+  $("calcount").textContent = `${rows.length} สมการ` +
+    (merged ? ` · รวมสัญกรณ์ซ้ำ ${merged}` : "") +
+    (rows.length > 300 ? " · กองทัพจุด — ลองปิดชนิดที่เบาลง" : "");
   // เลื่อนไปที่เส้นวันนี้
   const t = $("callist").querySelector(".caltoday");
   if (t) t.scrollIntoView({ block: "center" });
 }
+// กดการ์ดวันเด่น → เปิดแผง "ทั้งวัน" ของวันนั้น + ไฮไลต์แถวนั้นในรายการยาว
+$("caltop").addEventListener("click", (e) => {
+  const card = e.target.closest("[data-row]");
+  if (!card || !CAL.rows) return;
+  const ev = CAL.rows[+card.dataset.row];
+  if (!ev) return;
+  calShowDay(ev.jd);
+  const row = $("callist").querySelector(`.calrow[data-i="${card.dataset.row}"]`);
+  $("callist").querySelectorAll(".calrow.hit").forEach((r) => r.classList.remove("hit"));
+  if (row) row.classList.add("hit");
+});
 
-$("callist").addEventListener("click", async (e) => {
+async function calListClick(e) {
   const go = e.target.closest("[data-calgo]");
   if (go) {
-    const ev = CAL.ev[+go.dataset.calgo];
+    const ev = CAL.rows[+go.dataset.calgo];
     const err = gotoJd(ev.jd);
     if (err) { $("status").className = "err"; $("status").textContent = err; return; }
     showPanel("pdial");
@@ -3709,16 +3933,39 @@ $("callist").addEventListener("click", async (e) => {
     return;
   }
   const row = e.target.closest(".calrow");
-  if (!row || !CAL.ev) return;
-  const ev = CAL.ev[+row.dataset.i];
+  if (!row || !CAL.rows) return;
+  const ev = CAL.rows[+row.dataset.i];
   const box = $("tmean");
   box.hidden = false;
   box.innerHTML = '<div class="mnone">กำลังโหลดพจนานุกรม …</div>';
   tmeanPlace(row);
   if (!await dictNeed()) { box.innerHTML = await dictErrHTML(new Error("โหลดไม่สำเร็จ")); return; }
-  box.innerHTML = `<div class="mnote">${calFmt(ev)} · โค้ง ${ev.arc.toFixed(2)}°</div>` +
+  // ป้ายมุม: เว็บอ้างอิงพับ 135→45 และ 67.5/112.5/157.5→22.5 (RULES "สาย 22.5")
+  const angTxt = ev.ang === null ? "" :
+    ` · มุมจริง ${ev.ang}°${ASP_TH[ev.ang] ? " " + ASP_TH[ev.ang] : ""}` +
+    (ev.fam !== ev.ang ? ` (สาย ${ev.fam}°)` : "");
+  box.innerHTML = `<div class="mnote">${calFmt(ev)} · โค้ง ${ev.arc.toFixed(2)}°` +
+    angTxt + ` · ชั้น ${ev.tier} ${CAL_TIER_TH[ev.tier]}` +
+    ` · ปัจจัย<span class="f-${ev.cls}"> ${CLS_TH[ev.cls]}</span>` +
+    (ev.alt.length ? ` · สัญกรณ์เดียวกัน: ${ev.alt.join(" · ")}` : "") + `</div>` +
     meanHTML(calSpec(ev));
   tmeanPlace(row);
+}
+// แถวใช้โครงเดียวกันทั้งสองที่ จึงผูกตัวจัดการคลิกตัวเดียวกันทั้งรายการยาวและแผงทั้งวัน
+$("callist").addEventListener("click", calListClick);
+$("calday").addEventListener("click", (e) => {
+  const go = e.target.closest("#cdgo");
+  if (go) {                                   // ตั้งดวงจรเป็นวันนั้นเลย (คำนวณใหม่ทั้งแอป)
+    const jd = +go.dataset.cdjd;
+    const err = gotoJd(jd);
+    if (err) { $("status").className = "err"; $("status").textContent = err; return; }
+    // gotoJd → recalc → clearResults ล้างปฏิทินทิ้ง ต้องสร้างใหม่แล้วเปิดวันเดิมค้างไว้
+    calRun();
+    calShowDay(jd);
+    return;
+  }
+  if (e.target.closest("#cdclose")) { $("calday").innerHTML = ""; return; }
+  calListClick(e);
 });
 
 // ── กาลชะตา (ถาม-ตอบ) — ประกอบคำตอบจากตำราเท่านั้น ไม่มีข้อความแต่งเอง ─────

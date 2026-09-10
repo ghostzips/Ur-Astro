@@ -766,6 +766,60 @@ p.hint:empty{display:none}
 .calrow button{font-size:var(--t-xs);padding:2px 8px;white-space:nowrap}
 .caltoday{margin:var(--s2) 0;padding:4px var(--s3);border-left:3px solid var(--f-personal);
   background:var(--sunk);color:var(--f-personal);font-weight:700;font-size:var(--t-sm)}
+/* v91: All=V — มุมจริง · คลาสปัจจัย · สัญกรณ์ที่รวมแล้ว · การ์ดช่วงเวลาเด่น */
+.calang{width:52px;color:var(--accent);font-size:var(--t-sm);text-align:right}
+/* คอลัมน์คลาสปัจจัย — คลาสสีมาจาก .f-* จึงต้องไม่กำหนด color ทับที่นี่ */
+.calcls{width:52px;font-size:var(--t-xs);text-align:right;white-space:nowrap}
+/* ผสม = มีทั้งดีและร้ายในภาพ — ไม่ให้สีข้างใดข้างหนึ่ง กันการชี้นำ ใช้คำบอกแทน */
+.f-mixed{color:var(--f-neutral);font-style:italic}
+.calalt{margin-left:var(--s2);color:var(--faint);font-size:10px;font-weight:400}
+.calrow.hit{background:var(--sunk);outline:1px solid var(--f-personal)}
+#caltop:empty{display:none}
+.ctwrap{margin-top:var(--s3);padding-bottom:var(--s2);border-bottom:1px solid var(--rule-soft)}
+.ctttl{font-size:var(--t-sm);font-weight:700;color:var(--accent);margin-bottom:var(--s2)}
+.cthint{display:block;font-weight:400;font-size:var(--t-xs);color:var(--dim)}
+.ctgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:var(--s2)}
+.ctcard{display:flex;flex-direction:column;gap:2px;align-items:flex-start;text-align:left;
+  padding:var(--s2);border:1px solid var(--rule-soft);border-left-width:3px;
+  border-radius:var(--r-sm);background:var(--sunk);cursor:pointer;width:100%}
+.ctcard:hover{background:var(--hover)}
+.ct-good{border-left-color:var(--f-good)}
+.ct-bad{border-left-color:var(--f-bad)}
+.ct-neutral{border-left-color:var(--rule-soft)}
+.ctd{font-size:var(--t-sm);font-weight:700;font-variant-numeric:tabular-nums}
+.ctpast{margin-left:var(--s2);font-weight:400;font-size:10px;color:var(--faint)}
+.ctn{font-size:var(--t-xs);color:var(--dim)}
+/* จุดชั้นความแรงในการ์ด — .sclv เดิมถูกจัดเป็นคอลัมน์กว้าง 44px ต้องปล่อยให้ไหลตามข้อความ */
+.ctn .sclv{width:auto;display:inline}
+.ctmix{font-size:var(--t-xs);color:var(--faint)}
+.ctf{font-family:var(--mono);font-size:10px;color:var(--dim);line-height:1.5}
+.ctf sub{font-size:8px}
+/* v92: แผง "ทั้งวัน" — ทุกสมการที่แม่นในวันที่กด */
+#calday:empty{display:none}
+.cdwrap{margin-top:var(--s3);padding:var(--s2);border:1px solid var(--accent-line);
+  border-radius:var(--r-sm);background:var(--accent-soft)}
+.cdhead{display:flex;flex-wrap:wrap;gap:var(--s2);align-items:baseline;
+  padding-bottom:var(--s2);border-bottom:1px solid var(--rule-soft)}
+.cdhead b{font-size:var(--t-md)}
+.cdn{font-size:var(--t-sm);color:var(--dim)}
+.cdmix{font-size:var(--t-xs);flex:1 1 auto}
+.cdhead button{font-size:var(--t-xs);padding:2px 8px}
+.cdwrap .scgrp{margin:var(--s2) 0 0}
+.cdwrap .calrow{background:var(--panel)}
+@media (max-width:620px){
+  /* จอแคบ — 7 คอลัมน์ยัดบรรทัดเดียวไม่พอ (ปุ่มเคยหลุดไปคั่นกลางระหว่างเลขกับสูตร)
+     จัดเป็นกริด 2 บรรทัด: บรรทัดแรก วัน+ระดับ+สูตร · บรรทัดสอง โค้ง+มุม+คลาส+ปุ่ม */
+  .calrow{display:grid;align-items:center;gap:2px var(--s2);padding:var(--s2);
+    grid-template-columns:auto auto 1fr auto;
+    grid-template-areas:"d lv f f" "a ang cls b"}
+  .calrow .cald{grid-area:d;width:auto}
+  .calrow .sclv{grid-area:lv;width:auto}
+  .calrow .calf{grid-area:f;white-space:normal}
+  .calrow .cala{grid-area:a;width:auto}
+  .calrow .calang{grid-area:ang;width:auto;text-align:left}
+  .calrow .calcls{grid-area:cls;width:auto;text-align:left}
+  .calrow button{grid-area:b;justify-self:end}
+}
 
 /* แท็บกาลชะตา */
 #horout{margin-top:var(--s3)}
