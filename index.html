@@ -13,7 +13,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v93">
+<link rel="stylesheet" href="style.css?v=urain-v94">
 </head>
 <body>
 <div class="wrap">
@@ -539,14 +539,14 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v93"></script>
-<script src="places.js?v=urain-v93"></script>
-<script src="engine.js?v=urain-v93"></script>
-<script src="render.js?v=urain-v93"></script>
+<script src="glyphs.js?v=urain-v94"></script>
+<script src="places.js?v=urain-v94"></script>
+<script src="engine.js?v=urain-v94"></script>
+<script src="render.js?v=urain-v94"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const SW_CACHE = "urain-v93";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v94";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 let DIALMARKS = null, _markTimer = 0;   // วงเส้นประกะพริบครอบดาวของสูตร (v80)
@@ -3184,7 +3184,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v93")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v94")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
@@ -3446,6 +3446,10 @@ function tmeanToggle(rowEl) {
 }
 function tmeanPlace(rowEl) {
   const box = $("tmean"), r = rowEl.getBoundingClientRect();
+  // จอแคบ: ปักเป็นแผ่นล่างจอด้วย CSS ไปเลย ไม่ต้องคำนวณตำแหน่งตามแถว
+  // (บนมือถือแถวอยู่ตรงไหนก็ได้ การวางตามแถวมีโอกาสไปโผล่นอกสายตา — ผู้ใช้เจอ
+  //  อาการ "กดแล้วไม่แสดงผล" · แผ่นล่างจอเห็นแน่นอนทุกกรณี)
+  if (innerWidth <= 620) { box.style.left = ""; box.style.top = ""; return; }
   // ต้องโชว์ก่อนถึงวัดขนาดได้ — hidden แล้ว offsetHeight เป็นศูนย์
   const bw = Math.min(480, innerWidth - 24);
   let left = Math.max(12, Math.min(r.left, innerWidth - bw - 12));
@@ -3839,7 +3843,9 @@ function calRowHTML(e, i, band, withTime) {
   const d = Math.floor(e.arc);
   const arc = d + ":" + String(Math.round((e.arc - d) * 60)).padStart(2, "0");
   return `<div class="calrow${band ? " cband" : ""}" data-i="${i}">` +
-    (withTime ? calTimeHTML(e) : `<span class="cald">${c[2]}/${c[1]}</span>`) +
+    (withTime ? calTimeHTML(e)
+      : `<span class="cald">${c[2]}/${c[1]}<span class="calhm${
+          e.shift > 360 ? " weak" : ""}">${calHM(e)}</span></span>`) +
     `<span class="cala">${arc}</span>` +
     `<span class="sclv sclv${e.tier}" title="${CAL_TIER_TH[e.tier]}">${DOT[e.tier]}</span>` +
     `<b class="calf">${calFmt(e)}` +
@@ -3856,16 +3862,7 @@ function calShowDay(jd) {
   const k = dkey(jd);
   const items = CAL.rows.filter((r) => dkey(r.jd) === k);
   if (!items.length) { $("calday").innerHTML = ""; return; }
-  // ── เวลาในวัน + ความคลาดจริง (ผู้ใช้ถาม "ระบุเวลาเพื่อโฟกัสได้ไหม") ──
-  // เอนจินแก้สมการได้ถึงนาที แต่ตัวเลขจะมีความหมายก็ต่อเมื่อเวลาเกิดแม่น จึงคิด
-  // ค่า ± รายสมการจากของจริง: ขยับเวลาเกิด 1 นาที แล้วดูว่าสมการนั้นเลื่อนกี่นาที
-  const R2 = AISTRO.chartAt(TL.jd + 1 / 1440, TL.lat, TL.lon);
-  for (const r of items) {
-    if (r.shift === undefined) {
-      const s = AISTRO.arcEventShift(r, TL.jd + 1 / 1440, R2, TZ);
-      r.shift = s === null ? null : Math.abs(s);
-    }
-  }
+  calShiftAll(items);
   items.sort(CAL.dsort === "time" ? (x, y) => x.jd - y.jd
                                   : (x, y) => x.tier - y.tier || x.arc - y.arc);
   const cnt = {};
@@ -3894,12 +3891,29 @@ function calShowDay(jd) {
   $("calday").innerHTML = `<div class="cdwrap">${html}</div>`;
   $("calday").scrollIntoView({ block: "start" });
 }
-// เวลาไทยของสมการ + ป้ายความคลาด (คิดจาก r.shift ที่วัดมาแล้ว)
-function calTimeHTML(e) {
+// ── เวลาในวัน + ความคลาดจริง (ผู้ใช้ถาม "ระบุเวลาเพื่อโฟกัสได้ไหม") ──
+// เอนจินแก้สมการได้ถึงนาที แต่ตัวเลขจะมีความหมายก็ต่อเมื่อเวลาเกิดแม่น จึงคิด
+// ค่า ± รายสมการจากของจริง: ขยับเวลาเกิด 1 นาที แล้วดูว่าสมการนั้นเลื่อนกี่นาที
+// ทั้งชุด 1,756 แถวใช้ 6 ms (วัดจริงในเบราว์เซอร์) จึงคิดให้ครบตั้งแต่สร้างรายการ
+function calShiftAll(rows) {
+  const jd2 = TL.jd + 1 / 1440;
+  const R2 = AISTRO.chartAt(jd2, TL.lat, TL.lon);
+  for (const r of rows) {
+    if (r.shift !== undefined) continue;
+    const s = AISTRO.arcEventShift(r, jd2, R2, TZ);
+    r.shift = s === null ? null : Math.abs(s);
+  }
+}
+// เวลาไทย HH:MM ของสมการ (ใช้ทั้งรายการยาวและแผงทั้งวัน)
+function calHM(e) {
   const c = AISTRO.revjul(e.jd + TZ / 24);
   let h = Math.floor(c[3]), m = Math.round((c[3] - h) * 60);
   if (m === 60) { m = 0; h = (h + 1) % 24; }
-  const t = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+// เวลาไทยของสมการ + ป้ายความคลาด (คิดจาก r.shift ที่วัดมาแล้ว)
+function calTimeHTML(e) {
+  const t = calHM(e);
   if (e.shift === null || e.shift === undefined)
     return `<span class="cdtime">${t}</span>`;
   const s = e.shift;
@@ -3925,6 +3939,7 @@ function calRun() {
     CAL.ev = AISTRO.arcCalendar(TL.R, TL.jd,
       { tz: TZ, jdRef: TL.jdT, windowYears: CAL.win, kinds });
     CAL.rows = calMerge(CAL.ev);
+    calShiftAll(CAL.rows);
     CAL.key = key;
   }
   const rows = CAL.rows;
@@ -3999,7 +4014,12 @@ async function calListClick(e) {
   const angTxt = ev.ang === null ? "" :
     ` · มุมจริง ${ev.ang}°${ASP_TH[ev.ang] ? " " + ASP_TH[ev.ang] : ""}` +
     (ev.fam !== ev.ang ? ` (สาย ${ev.fam}°)` : "");
+  const shTxt = ev.shift === null || ev.shift === undefined ? ""
+    : ` (±${ev.shift < 90 ? Math.round(ev.shift) + " น."
+        : ev.shift < 2880 ? (ev.shift / 60).toFixed(1) + " ชม."
+        : Math.round(ev.shift / 1440) + " วัน"} ถ้าเวลาเกิดผิด 1 นาที)`;
   box.innerHTML = `<div class="mnote">${calFmt(ev)} · โค้ง ${ev.arc.toFixed(2)}°` +
+    ` · เวลา ${calHM(ev)}${shTxt}` +
     angTxt + ` · ชั้น ${ev.tier} ${CAL_TIER_TH[ev.tier]}` +
     ` · ปัจจัย<span class="f-${ev.cls}"> ${CLS_TH[ev.cls]}</span>` +
     (ev.alt.length ? ` · สัญกรณ์เดียวกัน: ${ev.alt.join(" · ")}` : "") + `</div>` +
