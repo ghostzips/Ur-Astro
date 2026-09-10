@@ -1432,6 +1432,43 @@ function pairAspects(radix, jdBirth, jdTransit, opt) {
   return out;
 }
 
+// ── คะแนนแนวโน้มรายวัน (Sentiment by Formula · พอร์ตจาก aistro.py score_day) ──
+// คลาส+น้ำหนักมาจากเว็บล้วน (สอบเทียบ pair_class 396/396) — โค้ดรวมคะแนน ไม่ตีความ
+// กฎรวมคลาสจาก FACTOR_CLASS ของดาวสองดวง · น้ำหนัก good+2 booster+1 neutral0 mixed−1 bad−2
+const SCORE_WEIGHT = { good: 2, booster: 1, neutral: 0, mixed: -1, bad: -2 };
+function aspectClass(t, r) {
+  const s = new Set([FACTOR_CLASS[t], FACTOR_CLASS[r]]);
+  if (s.has("bad")) return s.has("good") ? "mixed" : "bad";
+  if (s.has("good")) return "good";
+  if (s.has("neutral")) return "neutral";
+  if (s.has("booster")) return "booster";
+  return "neutral";
+}
+function aspectScore(t, r) { return SCORE_WEIGHT[aspectClass(t, r)]; }
+// คะแนนสุทธิของวัน — นับคู่ (ดาวจร t = ดาวกำเนิด r) ที่ห่างเป็นพหุคูณ step ภายใน orb
+// คืน { total, hits:[{t,r,cls,sc}] } · step 22.5 = ครบมุมที่เว็บใช้ · orb คงที่ 1° (ตั้งได้)
+function scoreDay(radix, jdBirth, jdTransit, opt) {
+  opt = opt || {};
+  const step = opt.step === undefined ? 22.5 : opt.step;
+  const orb = opt.orb === undefined ? 1.0 : opt.orb;
+  const rpos = layerPositions(radix, jdBirth, jdTransit, "r", opt.lat, opt.lon, opt.tz);
+  const tpos = layerPositions(radix, jdBirth, jdTransit, "t", opt.lat, opt.lon, opt.tz);
+  const hits = [];
+  let total = 0;
+  for (const t in tpos) {
+    for (const r in rpos) {
+      const d = Math.abs(tpos[t] - rpos[r]) % step;
+      const o = Math.min(d, step - d);
+      if (o <= orb) {
+        const cls = aspectClass(t, r), sc = SCORE_WEIGHT[cls];
+        hits.push({ t, r, cls, sc, o });
+        total += sc;
+      }
+    }
+  }
+  return { total, hits };
+}
+
 // ค้นพจนานุกรมด้วยคีย์เวิร์ด — คืนทุกสมการที่คำแปลมีคำนั้น
 // (ฟีเจอร์ UI ล้วน ไม่แตะการคำนวณ · ผู้ใช้ขอ 31 ส.ค. 2026)
 function dictSearch(q, ctx) {
@@ -1472,6 +1509,7 @@ const AISTRO = {
   uranianAxis, uranianHouses, houseOf, houseCusps,
   loadHouseDict, initHouseDict, houseDictReady, houseMeaning,
   pairAspects, aspectInFamilies, aspectName, ASPECT_FAMILY_2, ASPECT_FAMILY_3,
+  scoreDay, aspectClass, aspectScore, SCORE_WEIGHT,
   CODE_ORDER, FACTOR_CLASS, MONTH_TABLE_TRANSITS,
   DIAL_DEFAULT, ORB_RT, SIDEREAL_YEAR, TROPICAL_MONTH,
 };

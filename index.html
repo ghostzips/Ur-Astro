@@ -13,7 +13,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v88">
+<link rel="stylesheet" href="style.css?v=urain-v89">
 </head>
 <body>
 <div class="wrap">
@@ -86,6 +86,7 @@
   <button type="button" class="tab" data-p="ppos">ตำแหน่งดาว</button>
   <button type="button" class="tab" data-p="ptl">ไทม์ไลน์</button>
   <button type="button" class="tab" data-p="plife">แผนที่ชีวิต</button>
+  <button type="button" class="tab" data-p="pscore">แนวโน้ม</button>
   <button type="button" class="tab" data-p="pfac">ความหมายปัจจัย</button>
   <button type="button" class="tab" data-p="pdict">พจนานุกรม</button>
   <!-- แท็บ "เทียบกับเว็บ" ถูกถอดตามที่ผู้ใช้ขอ (31 ส.ค. 2026) — แผง pcmp
@@ -480,6 +481,23 @@
 </section>
 </div>
 
+<div class="panel" id="pscore">
+<section class="legend" id="scorebox">
+  <h3>กราฟแนวโน้ม <span class="hint">(กราฟดิบ)</span></h3>
+  <p class="dialnote">คะแนนสุทธิรายวันของสูตรดาวจร=ดาวกำเนิด (รวมคลาสตามตำราเว็บ
+    good+2 · booster+1 · neutral 0 · mixed−1 · bad−2 · สอบเทียบ 396 คู่) —
+    <b>เป็นน้ำหนักเชิงกลไก ไม่ใช่คำพยากรณ์</b> ดูภาพช่วงหนัก-เบาแล้วอ่านเอง ·
+    กดแท่งเพื่อดูสูตรของวันนั้น</p>
+  <div class="dictlook">
+    <span class="lbl">ช่วง</span>
+    <span class="laychips" id="scrange"></span>
+    <button type="button" id="scevbtn">⚡ เหตุการณ์เด่นช่วงนี้</button>
+  </div>
+  <div id="scwrap"><canvas id="sccanvas"></canvas></div>
+  <div id="scday"><p class="svempty">กดคำนวณดวงก่อน แล้วกดแท่งในกราฟ</p></div>
+</section>
+</div>
+
 <div class="panel" id="pfac">
 <section class="legend" id="facbox">
   <h3>ความหมายปัจจัย 22</h3>
@@ -515,14 +533,14 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v88"></script>
-<script src="places.js?v=urain-v88"></script>
-<script src="engine.js?v=urain-v88"></script>
-<script src="render.js?v=urain-v88"></script>
+<script src="glyphs.js?v=urain-v89"></script>
+<script src="places.js?v=urain-v89"></script>
+<script src="engine.js?v=urain-v89"></script>
+<script src="render.js?v=urain-v89"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const SW_CACHE = "urain-v88";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v89";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 let DIALMARKS = null, _markTimer = 0;   // วงเส้นประกะพริบครอบดาวของสูตร (v80)
@@ -573,6 +591,10 @@ function clearResults() {
   HWHEEL = null; HOPEN = null;
   $("hwheel").innerHTML = "";
   $("hbelow").innerHTML = '<p class="svempty">กดคำนวณดวงก่อน</p>';
+  // กราฟแนวโน้ม — บั๊กชั้นเดียวกับจานเรือน: ถ้าไม่ล้าง กราฟ/รายการสูตรของดวงเก่าค้าง
+  SC.data = null; SC.sel = -1; SC._geom = null;
+  { const sc = $("sccanvas"); sc.getContext("2d").clearRect(0, 0, sc.width, sc.height); }
+  $("scday").innerHTML = '<p class="svempty">กดคำนวณดวงก่อน แล้วกดแท่งในกราฟ</p>';
   $("gwrap").innerHTML = "";
   $("lifewrap").innerHTML = "";
   $("lfcount").textContent = "";
@@ -1039,6 +1061,189 @@ function renderFactors() {
   FAC_DONE = true;
 }
 
+// ── กราฟแนวโน้ม (แท็บ แนวโน้ม · คะแนนดิบ scoreDay รายวัน · ไม่ฟันธง) ─────────
+const SC_RANGES = [["3 เดือน", 90], ["6 เดือน", 180], ["1 ปี", 365]];
+const SC = { days: 180, data: null, base: 0, sel: -1, mode: "day" };
+const TH_MON = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
+  "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+function scChips() {
+  $("scrange").innerHTML = SC_RANGES.map(([ti, d]) =>
+    `<button type="button" class="laychip${SC.days === d ? " on" : ""}" data-scd="${d}">${ti}</button>`).join("");
+}
+scChips();
+$("scrange").addEventListener("click", (e) => {
+  const c = e.target.closest("[data-scd]");
+  if (!c) return;
+  SC.days = +c.dataset.scd; scChips(); scCompute(); scDraw();
+  $("scday").innerHTML = '<p class="svempty">กดแท่งในกราฟเพื่อดูสูตรของวันนั้น</p>';
+});
+function scJd(i) { return SC.base + i; }        // เที่ยง UT ของวันที่ i
+function scCompute() {
+  if (!TL) { SC.data = null; return; }
+  const half = Math.floor(SC.days / 2);
+  SC.base = Math.floor(TL.jdT - half) + 0.5;    // เที่ยง UT วันแรก
+  const arr = [];
+  for (let i = 0; i < SC.days; i++)
+    arr.push(AISTRO.scoreDay(TL.R, TL.jd, scJd(i), { tz: TZ, lat: TL.lat, lon: TL.lon }).total);
+  SC.data = arr; SC.sel = -1;
+}
+function scDraw() {
+  const cv = $("sccanvas"), wrap = $("scwrap");
+  if (!SC.data) return;
+  const dpr = window.devicePixelRatio || 1;
+  const W = wrap.clientWidth || 320, H = 200;
+  cv.width = W * dpr; cv.height = H * dpr;
+  cv.style.width = W + "px"; cv.style.height = H + "px";
+  const g = cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, W, H);
+  const css = getComputedStyle(document.body);
+  const cPos = css.getPropertyValue("--pos").trim() || "#3a3";
+  const cNeg = css.getPropertyValue("--neg").trim() || "#c33";
+  const cRule = css.getPropertyValue("--rule").trim() || "#ccc";
+  const cDim = css.getPropertyValue("--faint").trim() || "#888";
+  const cAcc = css.getPropertyValue("--accent").trim() || "#06c";
+  const padT = 12, padB = 22, padL = 26, padR = 6;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const n = SC.data.length;
+  const amax = Math.max(2, ...SC.data.map((v) => Math.abs(v)));
+  const y0 = padT + plotH / 2;                       // เส้นศูนย์
+  const bw = plotW / n;
+  SC._geom = { padL, y0, bw, plotH, n };
+  // แกนศูนย์ + เส้นกริดบน/ล่าง
+  g.strokeStyle = cRule; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(padL, y0); g.lineTo(padL + plotW, y0); g.stroke();
+  g.fillStyle = cDim; g.font = "10px system-ui"; g.textAlign = "right"; g.textBaseline = "middle";
+  g.fillText("+" + amax, padL - 3, padT + 4);
+  g.fillText("0", padL - 3, y0);
+  g.fillText("−" + amax, padL - 3, padT + plotH - 4);
+  // แท่ง
+  for (let i = 0; i < n; i++) {
+    const v = SC.data[i], h = (Math.abs(v) / amax) * (plotH / 2);
+    const x = padL + i * bw;
+    g.fillStyle = v >= 0 ? cPos : cNeg;
+    g.globalAlpha = i === SC.sel ? 1 : 0.72;
+    if (v >= 0) g.fillRect(x, y0 - h, Math.max(1, bw - 0.5), h);
+    else g.fillRect(x, y0, Math.max(1, bw - 0.5), h);
+  }
+  g.globalAlpha = 1;
+  // ป้ายเดือน + เส้นวันจร (เข็มปัจจุบัน)
+  g.textAlign = "center"; g.textBaseline = "top"; g.fillStyle = cDim;
+  let lastMon = -1;
+  for (let i = 0; i < n; i++) {
+    const dt = AISTRO.revjul(scJd(i) + TZ / 24);     // วันไทย
+    if (dt[2] === 1 && dt[1] !== lastMon) {
+      lastMon = dt[1];
+      const x = padL + i * bw;
+      g.strokeStyle = cRule; g.globalAlpha = 0.5;
+      g.beginPath(); g.moveTo(x, padT); g.lineTo(x, padT + plotH); g.stroke();
+      g.globalAlpha = 1;
+      g.fillText(TH_MON[dt[1] - 1], x, padT + plotH + 4);
+    }
+  }
+  // เข็มวันจรที่เลือกไว้ (TL.jdT)
+  const ti = Math.round(TL.jdT - SC.base);
+  if (ti >= 0 && ti < n) {
+    const x = padL + ti * bw + bw / 2;
+    g.strokeStyle = cAcc; g.globalAlpha = 0.8; g.setLineDash([3, 3]);
+    g.beginPath(); g.moveTo(x, padT); g.lineTo(x, padT + plotH); g.stroke();
+    g.setLineDash([]); g.globalAlpha = 1;
+  }
+}
+const CLS_TH = { good: "ดี", booster: "เสริมแรง", neutral: "กลาง", mixed: "ผสม", bad: "ร้าย" };
+// แถวสูตร กดได้ → คำแปลตำรา (ดาวกลับตำแหน่งเดิม t=r ไม่มีคำแปล บอกตรง ๆ)
+function scRow(h, extra) {
+  const same = h.t === h.r;
+  return `<div class="scrow f-${AISTRO.FACTOR_CLASS[h.t]}"` +
+    ` data-t="${h.t}" data-r="${h.r}"${same ? ' data-none="1"' : ""}>` +
+    `<b>${h.t} = ${h.r}</b>` +
+    (extra || `<span class="sccls">${CLS_TH[h.cls]}</span>`) +
+    `<span class="scorb">orb ${h.o.toFixed(2)}</span>` +
+    `<span class="scsc">${h.sc > 0 ? "+" + h.sc : h.sc}</span></div>`;
+}
+function scPickDay(i) {
+  if (!TL || !SC.data || i < 0 || i >= SC.data.length) return;
+  SC.mode = "day"; SC.sel = i; scDraw();
+  const jd = scJd(i), dt = AISTRO.revjul(jd + TZ / 24);
+  const s = AISTRO.scoreDay(TL.R, TL.jd, jd, { tz: TZ, lat: TL.lat, lon: TL.lon });
+  const rows = s.hits.slice().sort((a, b) =>   // มีคำแปลก่อน · ในกลุ่มเรียงเข้าตรงสุดก่อน
+    (a.t === a.r) - (b.t === b.r) || a.o - b.o)
+    .map((h) => scRow(h)).join("");
+  const sign = s.total > 0 ? "+" + s.total : s.total;
+  $("scday").innerHTML =
+    `<div class="scsum">${dt[2]}/${dt[1]}/${dt[0] + 543} · คะแนนสุทธิ <b>${sign}</b> ` +
+    `· ${s.hits.length} สูตร <span class="hint">· กดสูตรเพื่อดูคำแปลตำรา</span></div>` +
+    (rows || '<p class="svempty">ไม่มีสูตรในวันนี้</p>');
+}
+// ดาวจรที่เคลื่อน "ช้า" (พฤหัสขึ้นไป + ทิพย์) — ทรานสิตของกลุ่มนี้นาน/นาน ๆ ครั้ง
+// = "เหตุการณ์เด่น" จริง · ดาวเร็ว (จันทร์/อาทิตย์/พุธ/ศุกร์/อังคาร/มุมเมือง) ทำมุมถี่
+// เกินกว่าจะเป็น "เหตุการณ์" — ยังดูได้ในโหมดรายวัน (กดแท่ง)
+const SC_SLOW = new Set(["JU", "SA", "UR", "NE", "PL", "CU", "HA", "ZE", "KR", "AP", "AD", "VU", "PO"]);
+// ขั้น 2 — เหตุการณ์เด่นช่วงนี้: หาวันที่ความสัมพันธ์ "เข้าตรง" (orb ต่ำสุด) ในช่วง
+function scShowEvents() {
+  if (!TL || !SC.data) return;
+  SC.mode = "events"; SC.sel = -1; scDraw();
+  const EXACT = 0.5;
+  const runs = {};   // key t|r -> {best:{i,o,cls,sc}} ต่อช่วงวันติดกัน
+  const events = [];
+  const prevActive = {};
+  for (let i = 0; i < SC.days; i++) {
+    const s = AISTRO.scoreDay(TL.R, TL.jd, scJd(i), { tz: TZ, lat: TL.lat, lon: TL.lon, orb: EXACT });
+    const active = {};
+    for (const h of s.hits) {
+      if (h.t === h.r || !SC_SLOW.has(h.t)) continue;   // เฉพาะดาวจรช้า · ข้ามดาวกลับตำแหน่ง
+      const k = h.t + "|" + h.r; active[k] = true;
+      if (!runs[k] || h.o < runs[k].o) runs[k] = { i, o: h.o, t: h.t, r: h.r, cls: h.cls, sc: h.sc };
+    }
+    // ปิดช่วงที่ไม่ต่อแล้ว → บันทึกวันเข้าตรงสุดของช่วงเป็น 1 เหตุการณ์
+    for (const k in prevActive) if (!active[k] && runs[k]) { events.push(runs[k]); delete runs[k]; }
+    for (const k in prevActive) delete prevActive[k];
+    for (const k in active) prevActive[k] = true;
+  }
+  for (const k in runs) events.push(runs[k]);
+  events.sort((a, b) => a.i - b.i);
+  const rows = events.map((e) => {
+    const dt = AISTRO.revjul(scJd(e.i) + TZ / 24);
+    return scRow(e, `<span class="scdate">${dt[2]}/${dt[1]}</span>`);
+  }).join("");
+  $("scday").innerHTML =
+    `<div class="scsum">เหตุการณ์เด่น (ดาวจรช้า เข้าตรง orb ≤ ${EXACT}°) · ${events.length} รายการ ` +
+    `<span class="hint">· เรียงตามวัน · กดดูคำแปลตำรา</span></div>` +
+    (rows || '<p class="svempty">ไม่มีความสัมพันธ์เข้าตรงในช่วงนี้</p>');
+}
+$("sccanvas").addEventListener("click", (e) => {
+  if (!SC._geom) return;
+  const rect = e.currentTarget.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const i = Math.floor((x - SC._geom.padL) / SC._geom.bw);
+  scPickDay(i);
+});
+$("scevbtn").addEventListener("click", () => scShowEvents());
+// กดแถวสูตร → คำแปลตำรา (reuse meanHTML · ดาวกลับตำแหน่งเดิมบอกไม่มีคำแปล)
+$("scday").addEventListener("click", async (e) => {
+  const row = e.target.closest(".scrow");
+  if (!row) return;
+  const box = $("tmean"); box.hidden = false;
+  if (row.dataset.none) {
+    box.innerHTML = '<div class="mnote">' + row.dataset.t + " = " + row.dataset.r +
+      '</div><div class="mnone">ดาวกลับตำแหน่งเดิม — ตำราไม่มีคำแปลคู่นี้</div>';
+    tmeanPlace(row); return;
+  }
+  box.innerHTML = '<div class="mnone">กำลังโหลดพจนานุกรม …</div>';
+  tmeanPlace(row);
+  if (!await dictNeed()) { box.innerHTML = await dictErrHTML(new Error("โหลดไม่สำเร็จ")); return; }
+  box.innerHTML = `<div class="mnote">${row.dataset.t} = ${row.dataset.r}</div>` +
+    meanHTML({ type: "A", p: row.dataset.t, axis: row.dataset.r });
+  tmeanPlace(row);
+});
+function renderScore() {
+  if (!TL) {
+    $("scday").innerHTML = '<p class="svempty">กดคำนวณดวงก่อน</p>';
+    const cv = $("sccanvas"); if (cv) cv.getContext("2d").clearRect(0, 0, cv.width, cv.height);
+    return;
+  }
+  scCompute(); scDraw();
+}
+
 // ── ประเภทดวง ────────────────────────────────────────────────────────────
 // เว็บ AISTRO มีช่องนี้เหมือนกัน และ**ไม่กระทบการคำนวณเลย** (พิสูจน์แล้ว:
 // สลับบุคคล<->บริษัทแล้ว SVG จานดวงเหมือนกันทุกไบต์) มันเป็นบริบทให้คำแปล
@@ -1371,6 +1576,7 @@ mrSum();
 
 const PANEL_DRAW = {};
 PANEL_DRAW.pfac = renderFactors;   // แท็บความหมายปัจจัย — วาดตอนเปิดครั้งแรก
+PANEL_DRAW.pscore = renderScore;   // แท็บแนวโน้ม — วาดกราฟตอนเปิด
 let CUR_PANEL = "pdial";
 
 function showPanel(id) {
@@ -2851,22 +3057,20 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v88")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v89")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
   return DICT_PROMISE;
 }
-// คำแปลดาวในเรือน — dict แยกไฟล์ (5 KB) โหลดครั้งแรกที่กดดูคำแปลเรือน
-// ชื่อ houseDictLoad (ไม่ใช่ houseDictReady) กันชนกับ AISTRO.houseDictReady
-// ของ engine ที่เป็น global เหมือนกัน (sync คืน boolean) — คนละหน้าที่กัน
-let HDICT_PROMISE = null;
+// คำแปลดาวในเรือน — ฝังใน index.html (v89) แทนไฟล์แยก house_dict.json.gz
+// เหตุผล: ไฟล์ .gz เล็ก ๆ ตกหล่นตอนอัปขึ้น GitHub 4 ครั้งติด (แท็บเรือนพังบน live)
+// → ฝังไว้ในไฟล์หลักที่อัปแน่นอนเสมอ ตัดปัญหาถาวร · ต้นฉบับ knowledge/aistro_house_dictionary.json
+// ชื่อ houseDictLoad (ไม่ใช่ houseDictReady) กันชนกับ AISTRO.houseDictReady ของ engine
+const HOUSE_DICT_INLINE = {"_meta":{"source":"AISTRO 8.24 /planetary -> AISTRO Dict. -> แท็บ ดาวในเรือน","collected":"2026-08-25","architecture":"การ์ดทั้งหมดเป็น template: กรอบ (ชั้น noowner/owner x บริบท 5) + ช่องเสียบ {P}=รหัสดาว {PDEF}=นิยามดาวตามบริบท {H}=เลขเรือน {HTHEME}=ธีมเรือนตามบริบท {O}/{ODEF}=เจ้าของเรือน (นิยามชุดเดียวกับ {PDEF})","notes":["AR ไม่มีการ์ดในโหมดดาวในเรือน (จุดเมษไม่เข้าเรือน) แต่เป็นเจ้าของเรือนได้ (นิยาม: การเริ่มต้น ตัวตน การผลักดัน)","นิยามเจ้าของเรือน = นิยามดาวของบริบทเดียวกัน (ตรวจ MA บุคคล/ประเทศ/หุ้น ตรงเป๊ะ)","ยืนยัน template ด้วยการ์ด SU-เรือน1 vs MO-เรือน2: ต่างกันแค่ช่องเสียบ"],"revisions":["v87: แก้ AD/AP/PO ให้ตรง archetype (5 บริบท) + เสริมบริบทบุคคล planet_def/house_theme จากเอกสารรหัสวิทยา","v88: trim เทมเพลตคำแปลเรือนให้กระชับ (ลดซ้ำ {HTHEME})"]},"planet_def":{"ดวงบุคคล":{"MC":"ทิศทาง เป้าหมาย ภาพลักษณ์สาธารณะ · สัญชาตญาณ ตัวตนแท้จริง แรงผลักดัน","AS":"วิธีเข้าหาโลก บุคลิกการสื่อสาร · สิ่งแวดล้อมรอบตัว คนใกล้ชิด ญาติสนิท","SU":"แก่นตัวตน ความตั้งใจ ความภาคภูมิ · กายสังขาร หัวใจ เกียรติยศ","MO":"อารมณ์ ความรู้สึก ความต้องการภายใน · จิตใจ อารมณ์ สตรี ประชาชน","NO":"ความผูกพัน วงสังคม การแลกเปลี่ยน · พันธะ สายสัมพันธ์ การติดต่อ หมู่คณะ","ME":"ความคิด การสื่อสาร การเรียนรู้ · ความว่องไว เอกสาร ข่าวสาร เส้นประสาท","VE":"ความสัมพันธ์ คุณค่า ความพอใจ · ความรัก ความสวยงาม เสน่ห์ ศิลปะ","MA":"พลัง การลงมือ ความกล้าเผชิญ · แรงกระตุ้น หุนหันพลันแล่น ของมีคม บาดแผล","JU":"การขยาย โอกาส ความหมาย · โชคลาภ ความสำเร็จ ความเมตตา บุญกุศล","SA":"โครงสร้าง ความรับผิดชอบ ข้อจำกัด · การพลัดพราก ความยาวนาน ความเย็น ความแข็ง","UR":"การเปลี่ยนฉับพลัน อิสระ · คาดไม่ถึง ความตึงเครียด ไฟฟ้า เทคโนโลยี","NE":"อุดมคติ จินตนาการ ความคลุมเครือ · ความลวง ลึกลับ การสลายตัว ของเหลว/แก๊ส","PL":"การเปลี่ยนลึก อำนาจ การเกิดใหม่ · การปฏิรูป สถาปนาใหม่ แตกหน่อ สืบพันธุ์","CU":"การรวมกลุ่ม ระบบ องค์กร · ครอบครัว การสมรส การสังสรรค์ ศิลปะ","HA":"การฟื้นฟู การจัดการของเสีย วงจร · เจ็บป่วยเรื้อรัง ขาดแคลน ของเก่า ความตกต่ำ","ZE":"แรงขับ ความมุ่งมั่น การเจาะจง · การอำนวยการ สร้างสรรค์ เป้าหมายระยะยาว","KR":"อำนาจตามโครงสร้าง กฎหมาย มาตรฐาน · ความสูงส่ง สิทธิอำนาจ ผู้เป็นใหญ่ รัฐ","AP":"ความสำเร็จอันยิ่งใหญ่ ชื่อเสียง การแผ่ขยาย · ความรู้ชั้นสูง วิทยาการ การค้า","AD":"ข้อจำกัดใหญ่หลวง ความสงบนิ่ง การหยุดชะงัก · ต้นตอ วัตถุดิบ การพลัดพราก ความลึกซึ้ง","VU":"พลังมวลชน ความเข้มข้น · พลังมหาศาล กำลังงาน ความเข้มข้นสูงสุด","PO":"การรู้แจ้ง ปรัชญา จิตวิญญาณ · ความสว่างทางปัญญา ความเชี่ยวชาญ แสงธรรม"},"ดวงประเทศ/เมือง":{"MC":"ทิศทางนโยบาย ภาพลักษณ์เมือง/ประเทศ","AS":"การสื่อสารและการเชื่อมต่อของพื้นที่","SU":"ศูนย์อำนาจ ผู้นำ และความเป็นตัวแทน","MO":"ประชาชน อารมณ์สาธารณะ และวิถีชีวิต","NO":"เครือข่ายการค้า ความเชื่อมโยงภายนอก","ME":"การคมนาคม ข้อมูล ข่าวสาร","VE":"วัฒนธรรม คุณค่า ความน่าอยู่","MA":"พลังการผลักดัน ความขัดแย้ง การบังคับใช้","JU":"การขยายตัว โอกาส การเติบโต","SA":"โครงสร้าง กฎหมาย ข้อจำกัด","UR":"การเปลี่ยนฉับพลัน นวัตกรรม","NE":"อุดมคติ ภาพฝัน ความคลุมเครือ","PL":"อำนาจเชิงลึก การเปลี่ยนโครงสร้าง","CU":"องค์กร เมือง ระบบชุมชน","HA":"การจัดการปัญหา วงจรฟื้นฟู","ZE":"แรงผลักด้านอุตสาหกรรม/ทหาร","KR":"อำนาจรัฐ กฎหมาย สถาบัน","AP":"การขยายตัว ชื่อเสียงสากล การค้า วิทยาการ","AD":"ข้อจำกัดเชิงโครงสร้าง ความชะงักงัน ทรัพยากรต้นทาง","VU":"พลังมวลชน ความเข้มข้นของเหตุการณ์","PO":"อุดมการณ์ชี้นำ แนวคิด/ปรัชญาของสังคม"},"ดวงบริษัท/องค์กร":{"MC":"ทิศทางองค์กร ภาพลักษณ์ แบรนด์","AS":"การสื่อสาร การตลาด การเชื่อมต่อ","SU":"ผู้นำ ผู้บริหาร ศูนย์อำนาจ","MO":"พนักงาน วัฒนธรรมองค์กร อารมณ์ทีม","NO":"เครือข่าย พันธมิตร คู่ค้า","ME":"ข้อมูล โลจิสติกส์ ระบบงาน","VE":"คุณค่าองค์กร ความพึงพอใจลูกค้า","MA":"การแข่งขัน แรงผลักดัน ความขัดแย้ง","JU":"การขยาย การลงทุน โอกาส","SA":"โครงสร้าง กฎ ระเบียบ ความเสี่ยง","UR":"นวัตกรรม การเปลี่ยนฉับพลัน","NE":"วิสัยทัศน์ ภาพฝัน ความไม่ชัดเจน","PL":"อำนาจเชิงลึก การปรับโครงสร้าง","CU":"ทีมงาน ระบบองค์กร","HA":"การแก้ปัญหา วงจรซ่อมแซม","ZE":"พลังการผลิต อุตสาหกรรม","KR":"อำนาจบริหาร การควบคุม","AP":"การเติบโตขยายกิจการ ชื่อเสียง การค้า ความสำเร็จ","AD":"ข้อจำกัด การหยุดชะงัก ต้นทุน/วัตถุดิบพื้นฐาน","VU":"พลังตลาด ความเข้มข้นการแข่งขัน","PO":"วิสัยทัศน์เชิงปรัชญา แนวคิดชี้นำ ความเชี่ยวชาญ"},"ดวงหุ้น/ตลาด":{"MC":"ทิศทางภาพใหญ่ของตลาด/หุ้นเป้าหมาย","AS":"สภาพคล่อง การไหลของข่าวและความสนใจ","SU":"หุ้นตัวหลัก ผู้นำตลาด ความมั่นใจ","MO":"อารมณ์นักลงทุน ความผันผวนระยะสั้น","NO":"เม็ดเงิน เครือข่าย และการหมุนเวียน","ME":"ข่าว ข้อมูล งบ และสัญญาณราคา","VE":"มูลค่า ความน่าถือ ความนิยม","MA":"แรงซื้อขาย ความร้อนแรง ความเสี่ยงปะทะ","JU":"การขยายตัว โอกาส การรีเรต","SA":"แนวรับ/ต้าน ข้อจำกัด กฎเกณฑ์","UR":"สวิงแรง เหตุการณ์ฉับพลัน","NE":"ความคาดหวัง ภาพฝัน ข่าวลือ","PL":"เปลี่ยนโครงสร้าง การย้ายขั้ว อำนาจทุน","CU":"กลุ่มอุตสาหกรรม/เซกเตอร์","HA":"รอบสะสม-กระจาย การฟื้นตัวหลังเสียหาย","ZE":"แรงขับเชิงอุตสาหกรรม/การผลิต","KR":"ผู้กำกับดูแล กฎหมาย โครงอำนาจ","AP":"การขยายตัวของตลาด ขาขึ้นกว้าง แรงส่งสำเร็จ","AD":"การชะงักตัว แนวรับแข็ง สภาพคล่องตัน","VU":"แรงมวลชน วอลุ่มหนาแน่น","PO":"ธีม/แนวคิดชี้นำตลาด มุมมองระยะยาว"},"ดวงทีมกีฬา":{"MC":"เป้าหมายทีม ภาพรวมฤดูกาล ชื่อเสียง","AS":"การสื่อสารในทีม จังหวะการเล่น","SU":"ผู้นำทีม ตัวหลัก ความมั่นใจ","MO":"โมเมนตัม อารมณ์ทีม แฟนบอล","NO":"การประสานงาน เครือข่าย สโมสร/ลีก","ME":"แผนเกม การอ่านเกม ข้อมูลคู่แข่ง","VE":"ความกลมกลืน ทีมเวิร์ก ความนิยม","MA":"ความดุดัน การปะทะ ความเสี่ยงฟาวล์","JU":"โอกาสชนะ การขยายศักยภาพ","SA":"วินัย ระบบ เกมรับ ความอดทน","UR":"เซอร์ไพรส์ เปลี่ยนแผนฉับพลัน","NE":"ความคาดหวัง ภาพฝัน ความลุ้น","PL":"การเปลี่ยนโครงทีม อำนาจในทีม","CU":"สโมสร องค์กรทีม โครงสร้างทีม","HA":"การฟื้นตัวหลังเจ็บ/แพ้ การแก้เกม","ZE":"แรงขับเชิงรุก ความเด็ดขาด","KR":"โค้ช/ผู้จัดการ กติกา อำนาจสั่งการ","AP":"ฟอร์มรุ่ง ชื่อเสียง เกมรุกแผ่กว้าง ความสำเร็จ","AD":"เกมตัน ตั้งรับแน่น จังหวะหน่วง","VU":"พลังมวลชน ความเข้มข้นของเกม","PO":"ปรัชญาการเล่น วิสัยทัศน์เกม การอ่านเกมลึก"}},"house_theme":{"ดวงบุคคล":{"1":"การแสดงตัวตนและการเริ่มต้น · รูปร่างบุคลิก กรรมพันธุ์ สิ่งแวดล้อมใกล้ตัว","2":"คุณค่า ทรัพยากร และการครอบครอง · การเงิน รายรับ-จ่าย การได้มา-เสียไป","3":"การสื่อสาร การเรียนรู้ และการเชื่อมต่อใกล้ตัว · พี่น้อง เพื่อนบ้าน เดินทางใกล้ เอกสาร-ข่าวสาร","4":"ฐานชีวิต ความมั่นคง และเรื่องส่วนตัว · บ้าน ที่ดิน ครอบครัวกำเนิด รากเหง้า","5":"ความคิดสร้างสรรค์ การแสดงออก และความสนุก · บุตร ความรัก การเก็งกำไร-ลงทุน","6":"งานประจำ สุขภาพ และการปรับปรุง · อุปสรรค ศัตรู หนี้สิน ผู้ใต้บังคับบัญชา งานบริการ","7":"ความสัมพันธ์ การร่วมมือ และการเจรจา · คู่ครอง หุ้นส่วน คู่สัญญา คู่กรณี","8":"การเปลี่ยนผ่าน ความเสี่ยง และการปล่อยวาง · ความตาย มรดก ความเร้นลับ เรื่องต่างชาติ","9":"ความเชื่อ วิสัยทัศน์ และการขยายขอบเขต · เดินทางไกล ต่างประเทศ ความรู้ชั้นสูง ปรัชญา-ศาสนา","10":"อาชีพ บทบาทสาธารณะ และความรับผิดชอบ · ความสูงส่งของชีวิต ตำแหน่ง กรรมเก่า","11":"เครือข่าย กลุ่ม และเป้าหมายร่วม · เพื่อนฝูง ความหวัง ลาภที่ได้มาง่าย","12":"โลกภายใน การพักฟื้น และสิ่งที่อยู่เบื้องหลัง · ความลับ ศัตรูลับ การกักขัง สูญเปล่า สันโดษ"},"ดวงประเทศ/เมือง":{"1":"อัตลักษณ์และการกำเนิดของพื้นที่","2":"ทรัพยากร งบประมาณ และการครอบครอง","3":"การคมนาคม การสื่อสาร และการศึกษา","4":"ฐานประชากร ความมั่นคงภายใน","5":"วัฒนธรรม ความบันเทิง และภาพลักษณ์","6":"แรงงาน สุขภาพสาธารณะ และบริการ","7":"ความสัมพันธ์ระหว่างเมือง/ประเทศ","8":"วิกฤต การเปลี่ยนผ่าน และความเสี่ยง","9":"ต่างประเทศ นโยบายระยะไกล","10":"รัฐบาล การบริหาร และสถานะสาธารณะ","11":"เครือข่าย กลุ่มผลประโยชน์ และสังคม","12":"พื้นที่ปิด เบื้องหลัง และปัจจัยแฝง"},"ดวงบริษัท/องค์กร":{"1":"ตัวตนและการก่อตั้งองค์กร","2":"ทรัพยากร เงินทุน และต้นทุน","3":"การสื่อสารภายใน ระบบงาน","4":"ฐานองค์กร ความมั่นคง","5":"ความคิดสร้างสรรค์ ผลิตภัณฑ์","6":"การดำเนินงาน ประสิทธิภาพ","7":"คู่ค้า ลูกค้า ความร่วมมือ","8":"วิกฤต การเงินเชิงลึก ความเสี่ยง","9":"การขยายตลาด ต่างประเทศ","10":"การบริหาร ชื่อเสียงองค์กร","11":"เครือข่าย ทีม กลุ่มผลประโยชน์","12":"งานเบื้องหลัง ความเสี่ยงแฝง"},"ดวงหุ้น/ตลาด":{"1":"ตัวตนหุ้น/ธีมและจุดเริ่มรอบ","2":"มูลค่า กระแสเงิน และฐานทุน","3":"ข่าว ข้อมูล การสื่อสารของตลาด","4":"ฐานรับ ความมั่นคง และผู้ถือยาว","5":"ความนิยม สตอรี่ และสเปคูเลชัน","6":"การดำเนินงาน ตัวเลข งบ และความสม่ำเสมอ","7":"คู่เปรียบเทียบ คู่แข่ง ความสัมพันธ์กับตลาด","8":"ความเสี่ยง หนี้ วิกฤต และการพลิกผัน","9":"การขยายโอกาส ตลาดต่างประเทศ เมกะเทรนด์","10":"ภาพใหญ่ แนวโน้มหลัก ชื่อเสียงในตลาด","11":"เซกเตอร์ เครือข่ายเม็ดเงิน และธีมร่วม","12":"ปัจจัยแฝง ข่าวเงา และความไม่ชัดเจน"},"ดวงทีมกีฬา":{"1":"ตัวตนทีมและสไตล์การเล่น","2":"ทรัพยากรทีม ความฟิต และขุมกำลัง","3":"การสื่อสาร แผนและการปรับแทคติก","4":"ฐานทีม สนามเหย้า ความมั่นคง","5":"เกมรุก ความคิดสร้างสรรค์ การทำประตู","6":"วินัย ซ้อม ระบบย่อย และงานหนัก","7":"คู่แข่ง การดวล และการอ่านกัน","8":"เกมกดดัน วิกฤต และจังหวะพลิก","9":"เกมเยือน/ต่างถิ่น การเดินทาง","10":"ความสำเร็จ ถ้วย/อันดับ และภาพลักษณ์","11":"ทีมสตาฟ แฟนบอล และแรงสนับสนุน","12":"ปัจจัยแฝง อาการบาดเจ็บ ข่าวในทีม"}},"owner_extra":{"AR":"การเริ่มต้น ตัวตน การผลักดัน"},"templates":{"noowner|ดวงบุคคล":"ภาพรวม {P} ({PDEF}) ทำงานในเรือน {H} — {HTHEME} จึงเป็นด้านที่ {P} มักแสดงออกผ่านพฤติกรรมและการตัดสินใจในชีวิตประจำวัน จุดแข็ง เมื่อใช้พลังนี้อย่างสมดุล ช่วยให้จัดการด้านนี้ได้ดีขึ้น จุดเสี่ยง ถ้าใช้มากหรือน้อยเกินไป ด้านนี้อาจกลายเป็นความกดดันหรือซ้ำรอยเดิม","owner|ดวงบุคคล":"ภาพรวม {P} ({PDEF}) อยู่ในเรือน {H} ({HTHEME}) แต่เป็น “เรือนฐาน {O}” จึงตีความในโทนของ {O} ({ODEF}) จุดแข็ง ฐาน {O} ช่วยชี้ว่าควรใช้พลังแบบไหนให้เรื่องนี้ไปต่อได้จริง จุดเสี่ยง ถ้าใช้ฐาน {O} แบบสุดโต่ง เรื่องนี้อาจเอียงไปทางนั้นเกินไปจนเกิดแรงเสียดทาน","noowner|ดวงประเทศ/เมือง":"ภาพรวม {P} ในบริบทประเทศ/เมือง สะท้อน {PDEF} ผ่านเรือน {H} — {HTHEME} จึงชี้แนวโน้มเชิงโครงสร้างและทิศทางในด้านนี้ผ่านนโยบายและเหตุการณ์สาธารณะ จุดแข็ง หากบริหารเหมาะสม ช่วยเสริมเสถียรภาพและการเติบโตด้านนี้ จุดเสี่ยง ถ้าแรงของ {P} ไม่สมดุล ด้านนี้อาจตึงเครียด ล่าช้า หรือกระทบวงกว้าง","owner|ดวงประเทศ/เมือง":"ภาพรวม {P} สะท้อน {PDEF} ผ่านเรือน {H} ({HTHEME}) แต่เป็น “เรือนฐาน {O}” จึงตีความในกรอบของ {O} ({ODEF}) จุดแข็ง ชี้กลไกเชิงระบบว่าเรื่องนี้ต้องใช้แนวทางแบบฐาน {O} จึงเดินหน้าได้ จุดเสี่ยง ถ้าฐาน {O} ทำงานแบบสุดโต่ง เรื่องนี้อาจเอียงเกินไปจนเกิดแรงต้านหรือความตึงเครียด","noowner|ดวงบริษัท/องค์กร":"ภาพรวม {P} ในเรือน {H} ขององค์กร สะท้อน {PDEF} ในเรื่อง {HTHEME} เป็นพื้นที่ที่องค์กรใช้พลัง {P} ขับเคลื่อนด้านนี้ทั้งเชิงกลยุทธ์และการบริหาร จุดแข็ง ช่วยสร้างความได้เปรียบในด้านนี้ จุดเสี่ยง ถ้าใช้พลัง {P} มากเกินไป ด้านนี้อาจตึงเกินจำเป็นหรือเกิดต้นทุนแฝง","owner|ดวงบริษัท/องค์กร":"ภาพรวม {P} ในเรือน {H} ขององค์กร แสดง {PDEF} ในเรื่อง {HTHEME} แต่กำกับด้วยฐาน {O} ({ODEF}) องค์กรจึงจัดการเรื่องนี้ด้วยวิธีแบบ {O} จุดแข็ง ทำให้การขับเคลื่อนด้านนี้มีทิศทางชัดและเข้ากับโครงสร้าง จุดเสี่ยง ถ้าฐาน {O} สุดโต่ง เรื่องนี้อาจแข็งตัว ชะงัก หรือเกิดแรงต้านภายใน","noowner|ดวงหุ้น/ตลาด":"ภาพรวม {P} ในเรือน {H} ของหุ้น/ตลาด สะท้อน {PDEF} ผ่านเรื่อง {HTHEME} มักเห็นผลผ่านพฤติกรรมราคา วอลุ่ม และการตีความข่าวในด้านนี้ จุดแข็ง ถ้าแรงของ {P} เดินดี ช่วยหนุนแนวโน้มด้านนี้ให้ชัดขึ้น จุดเสี่ยง ถ้าแรงของ {P} เกินพอดี ด้านนี้อาจผันผวนหรือตัดสินใจตามอารมณ์","owner|ดวงหุ้น/ตลาด":"ภาพรวม {P} ในเรือน {H} ของหุ้น/ตลาด แสดง {PDEF} ในเรื่อง {HTHEME} แต่กำกับด้วยฐาน {O} ({ODEF}) เรื่องนี้จึงถูกขับด้วยสไตล์ของฐาน {O} จุดแข็ง ช่วยให้แนวโน้มด้านนี้ชัดเมื่อเดินตามจังหวะของฐาน {O} จุดเสี่ยง ถ้าฐาน {O} สุดโต่ง ด้านนี้อาจผันผวนหรือหลุดกรอบ","noowner|ดวงทีมกีฬา":"ภาพรวม {P} ในเรือน {H} ของทีมกีฬา สะท้อน {PDEF} ผ่านเรื่อง {HTHEME} มักเห็นผลผ่านสไตล์การเล่น การตัดสินใจในเกม และจังหวะสำคัญในด้านนี้ จุดแข็ง เสริมศักยภาพทีมด้านนี้ให้เล่นตามแผนและรักษาโมเมนตัม จุดเสี่ยง ถ้าพลังของ {P} มากหรือน้อยเกินไป ด้านนี้อาจหลุดโฟกัสหรือเสียจังหวะในเกมสำคัญ","owner|ดวงทีมกีฬา":"ภาพรวม {P} ในเรือน {H} ของทีมกีฬา แสดง {PDEF} ผ่านเรื่อง {HTHEME} แต่กำกับด้วยฐาน {O} ({ODEF}) ทีมจึงคุมเรื่องนี้ด้วยสไตล์ของฐาน {O} จุดแข็ง ชี้ว่าควรคุมเกมแบบไหนให้ด้านนี้เดินหน้าและเพิ่มโอกาสชนะ จุดเสี่ยง ถ้าฐาน {O} สุดโต่ง เกมอาจเอียงเกินไปจนเสียสมดุลหรือพลาดจังหวะพลิกเกม"}};
 function houseDictLoad() {
-  if (AISTRO.houseDictReady()) return Promise.resolve();
-  if (!HDICT_PROMISE)
-    HDICT_PROMISE = AISTRO.loadHouseDict("house_dict.json.gz?v=urain-v88")
-      .catch((e) => { HDICT_PROMISE = null; throw e; });
-  return HDICT_PROMISE;
+  if (!AISTRO.houseDictReady()) AISTRO.initHouseDict(HOUSE_DICT_INLINE);
+  return Promise.resolve();
 }
 async function houseNeed() {
   try { await houseDictLoad(); return true; } catch (e) { return false; }
@@ -3133,7 +3337,7 @@ $("out").addEventListener("click", (e) => {
 // กดที่ใดก็ได้นอกแถวสูตร = ปิดคำแปล (ผู้ใช้ขอ — รวมถึงกดบนตัวป๊อปอัพเอง)
 document.addEventListener("click", (e) => {
   if ($("tmean").hidden) return;
-  if (e.target.closest(".frow, .calrow, .hcell, .asprow")) return;   // กดแถวอื่น = เปิดอันใหม่แทน
+  if (e.target.closest(".frow, .calrow, .hcell, .asprow, .scrow")) return;   // กดแถวอื่น = เปิดอันใหม่แทน
   tmeanClose();
 });
 

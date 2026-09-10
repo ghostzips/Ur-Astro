@@ -810,6 +810,23 @@ p.hint:empty{display:none}
   background:var(--sunk);color:var(--faint);border:1px solid var(--rule-soft)}
 @media(max-width:620px){.facgrid{grid-template-columns:1fr}}
 
+/* ── กราฟแนวโน้ม (แท็บ แนวโน้ม) ── */
+#scwrap{margin:var(--s3) 0;width:100%}
+#sccanvas{display:block;width:100%;cursor:pointer;touch-action:pan-y}
+.scsum{font-size:var(--t-sm);color:var(--dim);margin:var(--s2) 0;
+  padding-bottom:var(--s2);border-bottom:1px solid var(--rule-soft)}
+.scsum b{color:var(--ink)}
+.scrow{display:flex;align-items:center;gap:var(--s3);padding:3px var(--s2);
+  font-size:var(--t-sm);font-variant-numeric:tabular-nums;cursor:pointer;
+  border-radius:var(--r-sm)}
+.scrow:hover{background:var(--hover)}
+.scrow b{flex:1 1 auto;font-family:var(--mono);font-weight:600}
+.scdate{width:52px;color:var(--accent);font-size:var(--t-xs);text-align:right}
+.sccls{width:58px;color:var(--dim);font-size:var(--t-xs);text-align:right}
+.scorb{width:64px;color:var(--faint);font-size:var(--t-xs);text-align:right}
+.scsc{width:30px;text-align:right;font-weight:700}
+#scevbtn{margin-left:var(--s2);font-size:var(--t-xs)}
+
 /* แท็บพจนานุกรม */
 .dictlook{display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center;margin:var(--s3) 0}
 .dicth4{margin:var(--s5) 0 0;font-size:var(--t-md)}
