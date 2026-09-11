@@ -13,7 +13,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v99">
+<link rel="stylesheet" href="style.css?v=urain-v101">
 </head>
 <body>
 <div class="wrap">
@@ -467,13 +467,16 @@
   <h3>ดาวทำมุมสัมพันธ์ <span class="hint">(ร่าง)</span></h3>
   <p class="dialnote">ดาว–ดาวทำมุมกันในตระกูลมุมยูเรเนียน (แบ่งครึ่ง/แบ่งสาม) orb 1° ·
     กฎเลือกจุด+ตั้งชื่อมุมตรงเว็บ 478/478 คู่ · กดแถวดูคำแปลคู่จากตำรา
-    (A ทำมุม B ≡ A/B ตามหลัก RULES ข้อ 0)</p>
+    (A ทำมุม B ≡ A/B ตามหลัก RULES ข้อ 0) · <b>เรียงตามความสำคัญ:</b> มุมแรงก่อน (0 →
+    11.25 → 5.625 แล้วสายแบ่งสาม) · ในมุมเดียวกัน คู่ที่มีจุดเจ้าชะตามาก่อน ดาวปกติ แล้วดาว
+    ทรานส์เนปจูน · orb แน่นก่อน · จาน 360° ด้านบนค้างไว้เสมอ กดแถวแล้วจะขีดเส้นมุมให้</p>
   <div class="dictlook">
     <span class="lbl">คู่ชั้นดวง</span>
     <span class="laychips" id="aspkinds"></span>
     <button type="button" id="aspgo">คำนวณ</button>
     <b class="mrsum" id="aspcount"></b>
   </div>
+  <div id="aspwheel"></div>
   <div id="asplist"><p class="svempty">เลือกคู่ชั้นดวงแล้วกดคำนวณ</p></div>
 </section>
 </div>
@@ -542,14 +545,14 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v99"></script>
-<script src="places.js?v=urain-v99"></script>
-<script src="engine.js?v=urain-v99"></script>
-<script src="render.js?v=urain-v99"></script>
+<script src="glyphs.js?v=urain-v101"></script>
+<script src="places.js?v=urain-v101"></script>
+<script src="engine.js?v=urain-v101"></script>
+<script src="render.js?v=urain-v101"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const SW_CACHE = "urain-v99";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v101";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 let DIALMARKS = null, _markTimer = 0;   // วงเส้นประกะพริบครอบดาวของสูตร (v80)
@@ -615,6 +618,7 @@ function clearResults() {
   // ── v98: ยามกลาง (uitest หมวด 11) ไล่ทุกแท็บแล้วจับได้อีก 4 ที่ที่ไม่เคยถูกล้าง ──
   // มุมสัมพันธ์ — รายการคู่ดาว + ยอดรวม + สถานะ (ครั้งที่ 4 ของบั๊กชั้นนี้)
   ASP.rows = null; ASP.key = "";
+  $("aspwheel").innerHTML = "";            // จานมุมสัมพันธ์ (v100)
   $("asplist").innerHTML = '<p class="svempty">เลือกคู่ชั้นดวงแล้วกดคำนวณ</p>';
   $("aspcount").textContent = "";
   // ตัวเลือกเดือนของไทม์ไลน์/เทียบ — run() สร้างใหม่ทุกครั้ง แต่ถ้าไม่ล้างจะค้างเดือน+จำนวนแถว
@@ -1000,8 +1004,19 @@ $("aspkinds").addEventListener("click", (e) => {
   if (!c) return;
   ASP.on[c.dataset.ak] = !ASP.on[c.dataset.ak]; aspChips();
   if (ASP.rows) aspRun();
+  else if (TL) aspWheelDraw(null);         // ยังไม่คำนวณ → จานพื้นฐานเปลี่ยนชั้นตามชิป
 });
 $("aspgo").addEventListener("click", () => aspRun());
+// ลำดับความแรงของมุมสำหรับแท็บนี้ (ค่าที่ pairAspects ปล่อยจริง) — สายครึ่งก่อนสายแบ่งสาม
+const ASP_RANK = [0, 11.25, 5.625, 120, 60, 30, 15, 7.5];
+function aspRank(ang) { const i = ASP_RANK.indexOf(ang); return i < 0 ? ASP_RANK.length : i; }
+// กลุ่มปัจจัย: 0 จุดเจ้าชะตา · 1 ดาวปกติ · 2 ดาวทรานส์เนปจูน — คู่ใช้ค่าต่ำสุดของสองตัว
+const ASP_TNP = new Set(["CU", "HA", "ZE", "KR", "AP", "AD", "VU", "PO"]);
+const ASP_GRP_TH = ["จุดเจ้าชะตา", "ดาวปกติ", "ดาวทรานส์เนปจูน"];
+function aspFactorGroup(c) {
+  return AISTRO.FACTOR_CLASS[c] === "personal" ? 0 : ASP_TNP.has(c) ? 2 : 1;
+}
+function aspPairGroup(a, b) { return Math.min(aspFactorGroup(a), aspFactorGroup(b)); }
 function aspRun() {
   if (!TL) { $("asplist").innerHTML = '<p class="svempty">กดคำนวณดวงก่อน</p>'; return; }
   const kinds = ASP_KINDS.map(([k]) => k).filter((k) => ASP.on[k]);
@@ -1012,12 +1027,21 @@ function aspRun() {
   const kindSym = Object.fromEntries(ASP_KINDS.map(([k, sym]) => [k, sym]));
   const rows = [];
   for (const k of kinds) for (const r of res[k]) rows.push({ kind: k, ...r });
-  rows.sort((x, y) => x.orb - y.orb);   // แน่นสุด (สำคัญสุด) ก่อน
+  // ลำดับความสำคัญของคำตอบ (ผู้ใช้ขอ v100): ① มุมแรงก่อน ② คู่ที่มีจุดเจ้าชะตา → ดาวปกติ →
+  // ดาวทรานส์เนปจูน ③ orb แน่นก่อน · มุมในแท็บนี้ตั้งชื่อตามกฎเว็บ (สายครึ่ง 180/90/45 พับ
+  // เป็น 0 ทั้งหมด) จึงเรียง 0 → 11.25 → 5.625 แล้วค่อยสายแบ่งสาม 120 → 60 → 30 → 15 → 7.5
+  for (const r of rows) { r.rank = aspRank(r.ang); r.grp = aspPairGroup(r.a, r.b); }
+  rows.sort((x, y) => x.rank - y.rank || x.grp - y.grp || x.orb - y.orb);
   ASP.rows = rows;
+  aspWheelDraw(null);                      // จานพื้นฐานค้างไว้ (คู่ที่เลือกเป็นของชุดเก่า)
   const dm = (v) => v.toFixed(2);
+  let lastHead = "";
   $("asplist").innerHTML = rows.map((r, i) => {
     const angTh = ASP_TH[r.ang] ? ` ${ASP_TH[r.ang]}` : "";
-    return `<div class="asprow" data-i="${i}">` +
+    const head = `มุม ${r.ang}°${angTh}${r.ang === 0 ? " (รวม 180/90/45 ตามกฎเว็บ)" : ""}`;
+    const hh = head !== lastHead ? `<div class="scgrp">${head}</div>` : "";
+    lastHead = head;
+    return hh + `<div class="asprow" data-i="${i}" data-grp="${r.grp}" data-rank="${r.rank}">` +
       `<b class="calf">${aspGlyphCell(r.a)}${r.a} = ${aspGlyphCell(r.b)}${r.b}</b>` +
       `<span class="aspang">${r.ang}°${angTh}</span>` +
       `<span class="cala">orb ${dm(r.orb)}</span>` +
@@ -1025,9 +1049,94 @@ function aspRun() {
   }).join("") || '<p class="svempty">ไม่มีคู่ที่ทำมุมในช่วง orb</p>';
   $("aspcount").textContent = `${rows.length} คู่`;
 }
+// ── จานมุมสัมพันธ์ (v100 · ผู้ใช้ขอ "เอาจานเข้าไปในโหมดมุมสัมพันธ์ กดสมการแล้วระบุดาว
+// และขีดเส้นเหมือนแอปวิเคราะห์") — วง 360° ตามธรรมเนียมจานดวง: 0° อยู่ซ้าย เดินทวนเข็ม
+// วงนอก = ชั้นดวงตัวแรกของคู่ · วงใน = ชั้นดวงตัวที่สอง (ชั้นเดียวกันใช้วงเดียว)
+// ตำแหน่งดาวมาจาก layerPositions ตัวเดียวกับที่ pairAspects ใช้ — ไม่คำนวณใหม่เอง
+const ASP_LAY_TH = { r: "กำเนิด", t: "จร", v1: "โค้ง+", v2: "โค้ง−", l1: "จันทร์+", l2: "จันทร์−",
+  p: "โปรเกรส", tp1: "Tertiary", tp2: "Minor" };
+// ชั้นดวงของจานพื้นฐาน = คู่ชั้นแรกที่เปิดอยู่ (ค่าตั้งต้น r=r)
+function aspBaseKind() {
+  const k = ASP_KINDS.map(([x]) => x).find((x) => ASP.on[x]);
+  return k || "r-r";
+}
+// row = null → จานพื้นฐานค้างไว้ตลอด (ผู้ใช้ขอ "มีจาน 360 อยู่ด้วย ค้างไว้ข้างนอกเลย")
+// row = แถวที่กด → เพิ่มไฮไลต์คู่ดาว + เส้นจากศูนย์กลาง + เส้นเชื่อม + ป้ายมุม
+// วงของจาน (v101 · ผู้ใช้ขอ "เริ่มต้นเป็น R กับ T เหมือนหน้าจานหมุน แล้วถ้ากด r=v1 ค่อยปรับ"):
+// วงนอก = ชั้นแรกของคู่ · วงใน = ชั้นที่สอง · ถ้าคู่เป็นชั้นเดียวกัน (r=r, t=t …) วงในเป็น
+// "จร" (หรือ "กำเนิด" ถ้าคู่นั้นคือจร×จร) จะได้เห็นสองชั้นเสมอเหมือนจานหมุน
+function aspWheelLayers(kind) {
+  const [la, lb] = kind.split("-");
+  return { la, lb, ringIn: la === lb ? (la === "t" ? "r" : "t") : lb };
+}
+function aspWheelDraw(row) {
+  const box = $("aspwheel");
+  if (!TL) { box.innerHTML = ""; return; }
+  const { la, lb, ringIn } = aspWheelLayers(row ? row.kind : aspBaseKind());
+  const pos = {};
+  for (const L of new Set([la, ringIn]))
+    pos[L] = AISTRO.layerPositions(TL.R, TL.jd, TL.jdT, L, TL.lat, TL.lon, TZ);
+  const cx = 200, cy = 200, rOut = 190, rIn = 112, r1 = 166, r2 = 136;
+  const P = (r, lon) => [cx - r * Math.cos(lon * Math.PI / 180),
+                         cy + r * Math.sin(lon * Math.PI / 180)];
+  let s = `<svg viewBox="0 0 400 400" class="awsvg" xmlns="http://www.w3.org/2000/svg">`;
+  s += `<circle cx="${cx}" cy="${cy}" r="${rOut}" class="awring"/>` +
+       `<circle cx="${cx}" cy="${cy}" r="${rIn}" class="awring"/>`;
+  for (let d = 0; d < 360; d += 10) {
+    const big = d % 30 === 0;
+    const [x0, y0] = P(rOut, d), [x1, y1] = P(rOut - (big ? 10 : 5), d);
+    s += `<line class="awtick${big ? " big" : ""}" x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}"/>`;
+    if (big) { const [xt, yt] = P(rOut - 21, d);
+      s += `<text class="awdeg" x="${xt.toFixed(1)}" y="${yt.toFixed(1)}">${d}</text>`; }
+  }
+  const same = la === lb;                   // คู่ชั้นเดียวกัน → ทั้งสองดาวอยู่วงนอก
+  const rings = [[la, r1], [ringIn, r2]];   // สองวงเสมอ
+  const isHi = (L, c) => !!row && L === la && (c === row.a || (same && c === row.b)) ||
+                         !!row && !same && L === lb && c === row.b;
+  // ดาวทุกดวงของแต่ละชั้น (จาง) — คู่ที่เลือกวาดทีหลังให้อยู่บนสุด
+  const late = [];
+  for (const [L, rr] of rings) for (const c of AISTRO.CODE_ORDER) {
+    if (pos[L][c] === undefined) continue;
+    const [x, y] = P(rr, pos[L][c]);
+    const g = (hi) => `<g class="awp${hi ? " awhi" : (row ? " awdim" : "")}" data-c="${c}" data-l="${L}"` +
+      ` data-lon="${pos[L][c].toFixed(6)}" data-x="${x.toFixed(2)}" data-y="${y.toFixed(2)}">` +
+      (hi ? `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="15" class="awhalo"/>` : "") +
+      svgGlyph(c, x, y, hi ? 22 : (row ? 13 : 16), "f-" + AISTRO.FACTOR_CLASS[c]) + `</g>`;
+    if (isHi(L, c)) late.push(g(true)); else s += g(false);
+  }
+  if (row) {
+    // เส้นจากศูนย์กลางถึงดาวทั้งสอง + เส้นเชื่อมระหว่างดาว + ป้ายมุม
+    const [ax, ay] = P(r1, pos[la][row.a]), [bx, by] = P(same ? r1 : r2, pos[lb][row.b]);
+    s += `<line class="awspoke" x1="${cx}" y1="${cy}" x2="${ax.toFixed(2)}" y2="${ay.toFixed(2)}"/>` +
+         `<line class="awspoke" x1="${cx}" y1="${cy}" x2="${bx.toFixed(2)}" y2="${by.toFixed(2)}"/>` +
+         `<line class="awline" x1="${ax.toFixed(2)}" y1="${ay.toFixed(2)}" x2="${bx.toFixed(2)}" y2="${by.toFixed(2)}"/>`;
+    s += late.join("");
+    // ป้ายมุม: ดึงจากกึ่งกลางเส้นเชื่อมเข้าหาศูนย์กลาง 30 หน่วย — คู่ที่มุมแคบ (7.5°) ดาวสองดวง
+    // อยู่ชิดกัน ป้ายจะไปทับวงไฮไลต์ถ้าวางบนเส้นพอดี (เห็นจากภาพจริง)
+    let mx = (ax + bx) / 2, my = (ay + by) / 2;
+    { const dx = cx - mx, dy = cy - my, dl = Math.hypot(dx, dy) || 1;
+      mx += dx / dl * 30; my += dy / dl * 30; }
+    s += `<text class="awlab" x="${mx.toFixed(1)}" y="${my.toFixed(1)}">${row.ang}°</text>`;
+    s += `<text class="awc" x="${cx}" y="${cy - 6}">${row.a}<tspan class="lay">${la}</tspan> = ${row.b}<tspan class="lay">${lb}</tspan></text>` +
+         `<text class="awc sm" x="${cx}" y="${cy + 12}">orb ${row.orb.toFixed(2)}°</text>`;
+  } else {
+    s += `<text class="awc sm" x="${cx}" y="${cy - 2}">จาน 360°</text>` +
+         `<text class="awc sm" x="${cx}" y="${cy + 14}">กดแถวด้านล่างเพื่อดูมุม</text>`;
+  }
+  s += `</svg>`;
+  const leg = `วงนอก = ${ASP_LAY_TH[la] || la} · วงใน = ${ASP_LAY_TH[ringIn] || ringIn}` +
+    (same ? ` (คู่ ${la}=${lb} อยู่วงนอกทั้งคู่)` : "");
+  box.innerHTML = s + `<div class="awleg">${leg} · 0° อยู่ซ้าย เดินทวนเข็ม` +
+    (row ? ` · เส้นเชื่อม = มุมจริง ${row.ang}°${ASP_TH[row.ang] ? " " + ASP_TH[row.ang] : ""}` : "") +
+    `</div>`;
+}
 $("asplist").addEventListener("click", async (e) => {
   const row = e.target.closest(".asprow");
   if (!row || !ASP.rows) return;
+  // วาดจานก่อนเสมอ (แม้กดซ้ำเพื่อปิดคำแปล จานยังค้างคู่นั้นไว้ให้ดู)
+  aspWheelDraw(ASP.rows[+row.dataset.i]);
+  $("asplist").querySelectorAll(".asprow.on").forEach((x) => x.classList.remove("on"));
+  row.classList.add("on");
   if (tmeanToggle(row)) return;              // กดซ้ำแถวเดิม = ปิด
   const r = ASP.rows[+row.dataset.i];
   const box = $("tmean");
@@ -1728,6 +1837,8 @@ mrSum();
 
 const PANEL_DRAW = {};
 PANEL_DRAW.pfac = renderFactors;   // แท็บความหมายปัจจัย — วาดตอนเปิดครั้งแรก
+// มุมสัมพันธ์: เปิดแท็บแล้วต้องเห็นจาน 360° ทันทีแม้ยังไม่กดคำนวณ (v100 · ผู้ใช้ขอค้างไว้)
+PANEL_DRAW.pasp = () => { if (TL && !$("aspwheel").querySelector("svg")) aspWheelDraw(null); };
 PANEL_DRAW.pscore = renderScore;   // แท็บแนวโน้ม — วาดกราฟตอนเปิด
 let CUR_PANEL = "pdial";
 
@@ -3209,7 +3320,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v99")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v101")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }

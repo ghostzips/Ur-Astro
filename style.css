@@ -1115,3 +1115,27 @@ p.hint:empty{display:none}
 .mbox .mnote,.mbox .mtext,.mbox .mwitte,.ctrmean .mnote,.ctrmean .mtext,.ctrmean .mwitte{white-space:normal}
 .mbox .mwrow{flex-wrap:wrap}
 .mbox .mwrow span{min-width:0}
+
+/* v100: จานมุมสัมพันธ์ — วง 360° ในแท็บมุมสัมพันธ์ กดแถวแล้วไฮไลต์คู่ดาว + เส้นเชื่อม */
+#aspwheel:empty{display:none}
+#aspwheel{margin:var(--s3) auto 0;max-width:400px}
+.awsvg{width:100%;display:block}
+.awring{fill:none;stroke:var(--rule);stroke-width:1.2}
+.awtick{stroke:var(--rule-soft);stroke-width:1}
+.awtick.big{stroke:var(--rule);stroke-width:1.5}
+.awdeg{font-size:9px;fill:var(--faint);text-anchor:middle;dominant-baseline:middle;font-family:var(--mono)}
+.awp.awdim{opacity:.38}
+.awhalo{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.5}
+.awspoke{stroke:var(--accent);stroke-width:1;stroke-dasharray:3 3;opacity:.7}
+.awline{stroke:var(--accent);stroke-width:2.5;stroke-linecap:round}
+.awlab{font-size:13px;font-weight:700;fill:var(--accent);text-anchor:middle;dominant-baseline:middle;
+  paint-order:stroke;stroke:var(--panel);stroke-width:5px;stroke-linejoin:round;font-family:var(--mono)}
+.awc{font-size:14px;font-weight:700;fill:var(--ink);text-anchor:middle;font-family:var(--mono)}
+.awc .lay{font-size:9px;fill:var(--dim)}
+.awc.sm{font-size:10px;font-weight:400;fill:var(--dim)}
+.awleg{text-align:center;font-size:var(--t-xs);color:var(--dim);margin-top:var(--s1)}
+.asprow.on{background:var(--sunk);outline:1px solid var(--f-personal)}
+@media (max-width:620px){
+  /* จอแคบ: จานติดขอบบนขณะเลื่อนรายการ จะได้กดแถวแล้วเห็นเส้นทันทีโดยไม่ต้องเลื่อนกลับ */
+  #aspwheel{position:sticky;top:0;z-index:3;background:var(--panel);max-width:280px;padding:var(--s1) 0}
+}
