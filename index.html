@@ -13,7 +13,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v97">
+<link rel="stylesheet" href="style.css?v=urain-v99">
 </head>
 <body>
 <div class="wrap">
@@ -424,6 +424,8 @@
     กับเว็บแล้ว · <b>ลำดับความแรง: ดาวเดียว &gt; ศูนย์รังสี &gt; จุดอิทธิพล</b> —
     ค่าตั้งต้นจึงเปิดเฉพาะชนิดคู่ดาว เปิดชนิดอื่นเพิ่มได้ (ระวังกองทัพจุด) ·
     <b>All=V</b> เปิดทุกชนิดพร้อมกันแล้วรวมสมการที่เป็นภาพเดียวกันคนละสัญกรณ์เป็นแถวเดียว
+    · <b>ALL=V แบบแอป</b> เปิดเฉพาะ 3 ชนิดสองปัจจัยที่แท็บ ALL=V ของแอปวิเคราะห์ใช้ (ไม่มี Xv1=Yv2
+    และไม่มีสามปัจจัย) ผลจะเทียบกับแอปนั้นได้แถวต่อแถว
     · จุด ●●● คือชั้นความแรง · คอลัมน์ท้ายคือมุมจริงบนวง 360° และคลาสของปัจจัยในภาพ</p>
   <div class="dictlook">
     <span class="lbl">ช่วง</span>
@@ -432,6 +434,7 @@
     <span class="lbl">ชนิดสมการ</span>
     <span class="laychips" id="calkinds"></span>
     <button type="button" id="calallv" title="เปิดทุกชนิดพร้อมกัน แล้วรวมสมการที่ซ้ำ">All=V</button>
+    <button type="button" id="calapp" title="เปิดเฉพาะ 3 ชนิดเดียวกับแท็บ ALL=V ของแอปวิเคราะห์ (Xr=Yv · Xr/Yr=Yv · Xr=Yr/Yv) ให้เทียบกันได้ทันที">ALL=V แบบแอป</button>
     <button type="button" id="calgo">คำนวณ</button>
     <b class="mrsum" id="calcount"></b>
   </div>
@@ -539,14 +542,14 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v97"></script>
-<script src="places.js?v=urain-v97"></script>
-<script src="engine.js?v=urain-v97"></script>
-<script src="render.js?v=urain-v97"></script>
+<script src="glyphs.js?v=urain-v99"></script>
+<script src="places.js?v=urain-v99"></script>
+<script src="engine.js?v=urain-v99"></script>
+<script src="render.js?v=urain-v99"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const SW_CACHE = "urain-v97";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v99";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 let DIALMARKS = null, _markTimer = 0;   // วงเส้นประกะพริบครอบดาวของสูตร (v80)
@@ -609,6 +612,20 @@ function clearResults() {
   $("calday").innerHTML = "";
   $("callist").innerHTML = '<p class="svempty">เลือกชนิดสมการแล้วกดคำนวณ</p>';
   $("calcount").textContent = "";
+  // ── v98: ยามกลาง (uitest หมวด 11) ไล่ทุกแท็บแล้วจับได้อีก 4 ที่ที่ไม่เคยถูกล้าง ──
+  // มุมสัมพันธ์ — รายการคู่ดาว + ยอดรวม + สถานะ (ครั้งที่ 4 ของบั๊กชั้นนี้)
+  ASP.rows = null; ASP.key = "";
+  $("asplist").innerHTML = '<p class="svempty">เลือกคู่ชั้นดวงแล้วกดคำนวณ</p>';
+  $("aspcount").textContent = "";
+  // ตัวเลือกเดือนของไทม์ไลน์/เทียบ — run() สร้างใหม่ทุกครั้ง แต่ถ้าไม่ล้างจะค้างเดือน+จำนวนแถว
+  // ของดวงเก่าให้เลือกได้ทั้งที่ไม่มีดวง
+  $("tlmonth").innerHTML = ""; $("cmpmonth").innerHTML = "";
+  // ป้ายมุมจาน (ชื่อ/วันเวลา/อายุ) — drawDial เขียนใหม่ตอนวาด แต่ระหว่างไม่มีดวงต้องว่าง
+  for (const id of ["dlTL", "dlTR", "dlBL"]) $(id).innerHTML = "";
+  // สรุปไทม์ไลน์ "N ช่วง · แถบ = …" — ตัวเลขเป็นของดวงเก่า (ยามรอบสองจับได้)
+  $("tlcount").textContent = "";
+  // ผลอ่านเข็มจาน "เข็มที่ X° — …" เป็นตำแหน่งของดวงเก่า (ยามรอบสองจับได้)
+  $("dlhandout").innerHTML = "";
   $("gwrap").innerHTML = "";
   $("lifewrap").innerHTML = "";
   $("lfcount").textContent = "";
@@ -3192,7 +3209,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v97")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v99")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
@@ -3693,7 +3710,13 @@ function calChips() {
     ` data-k="${k}" title="${th}">${k.replace(/-/g, "−")}</button>`).join("");
   const all = CAL_KIND_TH.every(([k]) => CAL.on[k]);
   $("calallv").classList.toggle("on", all);
+  const onSet = CAL_KIND_TH.map(([k]) => k).filter((k) => CAL.on[k]);
+  $("calapp").classList.toggle("on",
+    onSet.length === CAL_APP_KINDS.length && CAL_APP_KINDS.every((k) => CAL.on[k]));
 }
+// ชุดชนิดที่แท็บ ALL=V ของแอปวิเคราะห์ (ภาพผู้ใช้ 11 ก.ย. 2026) แสดง — เทียบแล้วตรงกัน
+// แถวต่อแถว 21/23 ในช่วง 6 เดือน ส่วนต่างคือศูนย์รังสีทางอ้อม (แอปนับ เราไม่นับ) กับฐาน MC
+const CAL_APP_KINDS = ["Ar=Bv", "Ar/Br=Bv", "Ar=Br/Bv"];
 calChips();
 $("calwin").addEventListener("click", (e) => {
   const c = e.target.closest("[data-w]");
@@ -3713,6 +3736,13 @@ $("calallv").addEventListener("click", () => {
   CAL.on = {};
   if (all) { CAL.on["Ar=Bv"] = true; CAL.on["Av1=Bv2"] = true; }
   else for (const [k] of CAL_KIND_TH) CAL.on[k] = true;
+  calChips();
+  calRun();
+});
+// ALL=V แบบแอป — ตั้งชุดชนิดให้ตรงกับแอปวิเคราะห์เป๊ะ (ไม่ใช่ปุ่มสลับ กดแล้วได้ชุดนี้เสมอ)
+$("calapp").addEventListener("click", () => {
+  CAL.on = {};
+  for (const k of CAL_APP_KINDS) CAL.on[k] = true;
   calChips();
   calRun();
 });
