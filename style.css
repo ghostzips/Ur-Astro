@@ -27,6 +27,7 @@
   --ink:#141a23; --dim:#586274; --faint:#8a94a4;
   --accent:#1560c4; --accent-ink:#ffffff;
   --accent-soft:rgba(21,96,196,.11); --accent-line:rgba(21,96,196,.42);
+  --awb1:#fdf6d5; --awb2:#dde8f7;
   --warn-soft:rgba(196,124,20,.14); --warn-line:rgba(196,124,20,.45);
   --warn-ink:#a5660f;
   --hover:rgba(20,26,35,.045);
@@ -45,6 +46,7 @@
     --ink:#e0e7ef; --dim:#96a1b0; --faint:#6e7887;
     --accent:#6cb0f8; --accent-ink:#0d1117;
     --accent-soft:rgba(108,176,248,.15); --accent-line:rgba(108,176,248,.46);
+    --awb1:rgba(253,230,150,.10); --awb2:rgba(120,170,240,.13);
     --warn-soft:rgba(240,167,66,.15); --warn-line:rgba(240,167,66,.45);
     --warn-ink:#f0a742;
     --hover:rgba(224,231,239,.055);
@@ -62,6 +64,7 @@
   --ink:#e0e7ef; --dim:#96a1b0; --faint:#6e7887;
   --accent:#6cb0f8; --accent-ink:#0d1117;
   --accent-soft:rgba(108,176,248,.15); --accent-line:rgba(108,176,248,.46);
+  --awb1:rgba(253,230,150,.10); --awb2:rgba(120,170,240,.13);
   --warn-soft:rgba(240,167,66,.15); --warn-line:rgba(240,167,66,.45);
   --warn-ink:#f0a742;
   --hover:rgba(224,231,239,.055);
@@ -1121,6 +1124,14 @@ p.hint:empty{display:none}
 #aspwheel{margin:var(--s3) auto 0;max-width:400px}
 .awsvg{width:100%;display:block}
 .awring{fill:none;stroke:var(--rule);stroke-width:1.2}
+.awring.mid{stroke:var(--rule);stroke-width:1.6}
+/* v102: แถบวงสองชั้น (สีตามจานหมุน: นอกเหลือง ในฟ้า · โทนมืดจางลง) */
+.awband{fill:none}
+.awb1{stroke:var(--awb1)}
+.awb2{stroke:var(--awb2)}
+.awsw{display:inline-block;width:.8em;height:.8em;border-radius:2px;vertical-align:-1px;margin-right:.3em;border:1px solid var(--rule)}
+.awsw.b1{background:var(--awb1)}
+.awsw.b2{background:var(--awb2)}
 .awtick{stroke:var(--rule-soft);stroke-width:1}
 .awtick.big{stroke:var(--rule);stroke-width:1.5}
 .awdeg{font-size:9px;fill:var(--faint);text-anchor:middle;dominant-baseline:middle;font-family:var(--mono)}
@@ -1135,6 +1146,7 @@ p.hint:empty{display:none}
 .awc.sm{font-size:10px;font-weight:400;fill:var(--dim)}
 .awleg{text-align:center;font-size:var(--t-xs);color:var(--dim);margin-top:var(--s1)}
 .asprow.on{background:var(--sunk);outline:1px solid var(--f-personal)}
+.scgrp .lay{font-weight:400;color:var(--dim);font-size:var(--t-xs);margin-left:var(--s1)}
 @media (max-width:620px){
   /* จอแคบ: จานติดขอบบนขณะเลื่อนรายการ จะได้กดแถวแล้วเห็นเส้นทันทีโดยไม่ต้องเลื่อนกลับ */
   #aspwheel{position:sticky;top:0;z-index:3;background:var(--panel);max-width:280px;padding:var(--s1) 0}

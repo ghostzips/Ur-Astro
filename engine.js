@@ -1387,18 +1387,23 @@ function aspectName(point, nameOrder) {
   }
   return null;
 }
-// คืน {ang, orb} หรือ null — delta = ผลต่างองศาดิบ (bฝั่ง − aฝั่ง)
-function aspectInFamilies(delta, orb, select, nameOrder) {
+// v103: ขั้น "เลือกจุด" แยกออกมา — คืน {pt, orb, fam} (pt = จุดมุมจริง 0..360 · fam = 2 สายแบ่งครึ่ง /
+// 3 สายแบ่งสาม) เพื่อให้หน้าเว็บแสดง "มุมจริง" ได้โดยไม่ต้องคำนวณซ้ำเอง · กฎเลือกจุดเดิมทุกประการ
+function aspectSelect(delta, orb, select) {
   orb = orb === undefined ? 1.0 : orb;
   select = select || [ASPECT_FAMILY_2, ASPECT_FAMILY_3];
   for (const family of select) {
     const [o, pt] = nearestAspectPoint(delta, family);
-    if (o <= orb) {
-      const nm = aspectName(pt, nameOrder);
-      return nm === null ? null : { ang: nm, orb: o };
-    }
+    if (o <= orb) return { pt: ((pt % 360) + 360) % 360, orb: o, fam: family === ASPECT_FAMILY_3 ? 3 : 2 };
   }
   return null;
+}
+// คืน {ang, orb, pt, fam} หรือ null — delta = ผลต่างองศาดิบ (bฝั่ง − aฝั่ง) · ang = ชื่อตามกฎเว็บ
+function aspectInFamilies(delta, orb, select, nameOrder) {
+  const s = aspectSelect(delta, orb, select);
+  if (!s) return null;
+  const nm = aspectName(s.pt, nameOrder);
+  return nm === null ? null : { ang: nm, orb: s.orb, pt: s.pt, fam: s.fam };
 }
 // ตารางดาว–ดาวทำมุมสัมพันธ์ · kinds = ["r-r","r-t","t-t",...] คู่ชั้นดวง
 // คืน { "r-r": [{a,b,ang,orb},...], ... } — คู่ชั้นเดียวกันไม่ซ้ำ (a<b ตาม CODE_ORDER)
@@ -1424,7 +1429,7 @@ function pairAspects(radix, jdBirth, jdTransit, opt) {
         const b = CODE_ORDER[j];
         if (!(b in pos[lb])) continue;
         const r = aspectInFamilies(pos[lb][b] - pos[la][a], orb);
-        if (r) rows.push({ a, b, ang: r.ang, orb: r.orb });
+        if (r) rows.push({ a, b, ang: r.ang, orb: r.orb, pt: r.pt, fam: r.fam });
       }
     }
     out[kind] = rows;
@@ -1566,7 +1571,7 @@ const AISTRO = {
   loadDict, initDict, dictInfo, lookupMeaning, dictKey2,
   uranianAxis, uranianHouses, houseOf, houseCusps,
   loadHouseDict, initHouseDict, houseDictReady, houseMeaning,
-  pairAspects, aspectInFamilies, aspectName, ASPECT_FAMILY_2, ASPECT_FAMILY_3,
+  pairAspects, aspectInFamilies, aspectSelect, aspectName, ASPECT_FAMILY_2, ASPECT_FAMILY_3,
   scoreDay, aspectClass, aspectScore, SCORE_WEIGHT,
   pictureClass, arcEventSides, arcEventAspect,
   arcEventShift,
