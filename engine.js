@@ -444,6 +444,84 @@ function solveArcDate(jdBirth, target, jdHint, period, tz) {
   return best - extra;
 }
 
+// ── ดวงวรรษ (Phase C · พอร์ตตรงจาก src/aistro.py ที่สอบเทียบหน้าเว็บไว้แล้ว) ──────
+// กติกาที่ยืนยันในฝั่ง Python (ห้ามเปลี่ยน — สอบเทียบ /solar-return /minor-solar-return
+// /lunar-return เมื่อ 25 ส.ค. 2569):
+//   สุริยวรรษ   = อาทิตย์จรกลับมากุมอาทิตย์กำเนิด (ลองจิจูดสมผุส tropical แบบเดียวกับ
+//                 ทุกชั้นในแอปนี้ — เว็บ solve หยาบราว ±90 วินาที ของเราแม่นกว่า)
+//   อนุสุริยวรรษ = อาทิตย์จรทำมุม 0/±22.5/±45/±90/180 กับอาทิตย์กำเนิด (8 ครั้ง/ปี)
+//                 ⚠ หน้าเว็บแสดงเวลาเพี้ยน +TZ ชั่วโมงอย่างเป็นระบบ (บั๊ก clock-as-UT)
+//                 เวลาจากฟังก์ชันนี้คือเวลาที่ถูก — test_return ยืนยันส่วนต่าง +7 ชม.
+//   จันทรวรรษ   = จันทร์จรกลับมากุมจันทร์กำเนิด (เว็บตรง ±0.001° แต่ลิสต์เว็บค้นรอบ
+//                 ถัดไปจาก "+28 วัน" ทำให้ข้ามรอบราว 2 ครั้ง/ปี — ของเราเดิน +27.32)
+const RET_RATE = { SU: 0.9856, MO: 13.176 };   // °/วัน (ค่าเดียวกับ Python _solve_body)
+const RET_ASPECTS = [0.0, 22.5, 45.0, 90.0, 180.0];
+// นิวตันหาวันที่ดาวถึงลองจิจูดเป้า · ใช้ยามแบบ solveArcDate (เก็บ residual ต่ำสุดแล้วหยุด
+// เมื่อไม่ดีขึ้น) เพราะ Chebyshev มีพื้นความละเอียด เกณฑ์ 1e-9 อาจไม่เป็นจริงและวนครบ 80 รอบ
+// คืน null เมื่อคำตอบหลุดช่วงข้อมูล (1900–2100) — ไม่โยน RangeError ใส่หน้าเว็บ
+function solveBodyLon(jd0, code, target, rate) {
+  const rt = rate || RET_RATE[code];
+  let jd = jd0, best = null, bestD = Infinity;
+  for (let i = 0; i < 80; i++) {
+    if (!(jd >= _JD0 && jd <= _JD1)) return null;
+    const d = wrapHalf(calc(code, jd) - target, 360);
+    const ad = Math.abs(d);
+    if (ad >= bestD) break;
+    bestD = ad; best = jd;
+    if (ad < 1e-10) break;
+    jd -= d / rt;
+  }
+  return best;
+}
+// jd (UT) ของสุริยวรรษปี ค.ศ. year · hint = เที่ยง UT ของวัน-เดือนเกิด (ตาม Python)
+function solarReturnJd(jdBirth, year) {
+  const suB = calc("SU", jdBirth);
+  const p = revjul(jdBirth);
+  const hint = julday(year, p[1], p[2], 12.0);
+  if (!(hint >= _JD0 && hint <= _JD1)) return null;
+  return solveBodyLon(hint, "SU", suB, RET_RATE.SU);
+}
+// [{jd, ang, asp}] ของอนุสุริยวรรษทุกมุมในช่วง jdFrom..jdTo (เรียงตามเวลา)
+// ang = มุมจริงที่อาทิตย์จรห่างอาทิตย์กำเนิด (0..337.5) · asp = ชื่อมุมพับ (0/22.5/45/90/180)
+function minorSolarReturnJds(jdBirth, jdFrom, jdTo, aspects) {
+  const asps = aspects || RET_ASPECTS;
+  const suB = calc("SU", jdBirth);
+  const out = [];
+  for (let k = 0; k < 16; k++) {
+    const ang = k * 22.5;
+    let asp = null;
+    for (const a of asps)
+      if (Math.abs(wrapHalf(ang - a, 360)) < 1e-9 || Math.abs(wrapHalf(ang + a, 360)) < 1e-9)
+        if (asp === null || a < asp) asp = a;
+    if (asp === null) continue;
+    let jd = jdFrom;
+    while (jd < jdTo) {
+      const hit = solveBodyLon(jd + 1.0, "SU", mod360(suB + ang), RET_RATE.SU);
+      if (hit === null) break;
+      if (hit >= jdFrom && hit <= jdTo) out.push({ jd: hit, ang, asp });
+      jd = hit + 300.0;                  // อาทิตย์กลับมามุมเดิม ~365 วัน
+    }
+  }
+  out.sort((a, b) => a.jd - b.jd);
+  return out;
+}
+// jd ของจันทรวรรษ n รอบถัดจาก jdFrom — เดินต่อจากรอบก่อน +27.32 วัน (ไม่ข้ามรอบแบบเว็บ)
+function lunarReturnJds(jdBirth, jdFrom, n) {
+  if (n === undefined) n = 13;
+  const moB = calc("MO", jdBirth);
+  const out = [];
+  let jd = solveBodyLon(jdFrom, "MO", moB, RET_RATE.MO);
+  if (jd !== null && jd < jdFrom) jd = solveBodyLon(jd + 27.32, "MO", moB, RET_RATE.MO);
+  if (jd === null) return out;
+  out.push(jd);
+  for (let i = 1; i < n; i++) {
+    jd = solveBodyLon(jd + 27.32, "MO", moB, RET_RATE.MO);
+    if (jd === null) break;
+    out.push(jd);
+  }
+  return out;
+}
+
 // กริดดาวจรของเดือนหนึ่ง คิดครั้งเดียวแล้วใช้ซ้ำทุกแถว — ไม่งั้นช้าเป็นสิบเท่า
 let _grid = null;
 function transitGrid(jdRef, span, step) {
@@ -1575,6 +1653,7 @@ const AISTRO = {
   scoreDay, aspectClass, aspectScore, SCORE_WEIGHT,
   pictureClass, arcEventSides, arcEventAspect,
   arcEventShift,
+  solveBodyLon, solarReturnJd, minorSolarReturnJds, lunarReturnJds, RET_ASPECTS, RET_RATE,
   CODE_ORDER, FACTOR_CLASS, MONTH_TABLE_TRANSITS,
   DIAL_DEFAULT, ORB_RT, SIDEREAL_YEAR, TROPICAL_MONTH,
 };

@@ -838,6 +838,10 @@ p.hint:empty{display:none}
   .calrow .calang{grid-area:ang;width:auto;text-align:left}
   .calrow .calcls{grid-area:cls;width:auto;text-align:left}
   .calrow button{grid-area:b;justify-self:end}
+  /* กาลชะตา: ล้างกริดของปฏิทินโค้งทิ้ง แล้วเรียงเป็นบรรทัด สูตรขึ้นก่อนเสมอ */
+  .calrow.horrow{display:flex;grid-template-areas:none;grid-template-columns:none}
+  .calrow.horrow .calf{grid-area:auto;flex-basis:100%}
+  .calrow.horrow .cala{grid-area:auto}
 }
 
 /* แท็บกาลชะตา */
@@ -1146,6 +1150,42 @@ p.hint:empty{display:none}
 .awc.sm{font-size:10px;font-weight:400;fill:var(--dim)}
 .awleg{text-align:center;font-size:var(--t-xs);color:var(--dim);margin-top:var(--s1)}
 .asprow.on{background:var(--sunk);outline:1px solid var(--f-personal)}
+/* v105: กาลชะตา — ป้ายบอกเหตุผลความแรง + แถวภาพ 3 ดวง */
+.horang{font:600 var(--t-xs)/1 var(--mono);color:var(--accent);white-space:nowrap}
+.horself{font:600 var(--t-xs)/1 var(--sans);color:var(--f-personal);
+  border:1px solid var(--accent-line);border-radius:3px;padding:1px 4px;white-space:nowrap}
+/* แถวกาลชะตามี 4 ช่อง (สูตร · มุม · จุดเจ้าชะตา · orb) คนละชุดกับปฏิทินโค้ง
+   ถ้าไม่กำหนดเอง จอแคบจะไปกินกริด .calrow ของปฏิทิน แล้วสูตรเด้งไปอยู่ขวาสุด (เห็นจากภาพ) */
+.calrow.horrow{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s1) var(--s2)}
+.calrow.horrow .calf{order:0;flex:1 1 auto;min-width:0}
+.calrow.horrow .horang{order:1}
+.calrow.horrow .horself{order:2}
+.calrow.horrow .hor3a{order:3;flex-basis:100%}
+.calrow.horrow .cala{order:4;color:var(--dim)}
+.calrow.horrow .horhit{order:5}
+.calrow.hor3 .calf{font-weight:700}
+.hor3a{font:400 var(--t-xs)/1 var(--mono);color:var(--faint);white-space:nowrap}
+.calrow.hor3{background:var(--sunk)}
+.calrow.hor3.on{outline:1px solid var(--f-personal)}
+#tmean .horm{margin-top:var(--s2)}
+
+/* v104: แท็บดวงวรรษ — แถวรายการรอบ (โครงเดียวกับ .asprow ให้อ่านเหมือนกันทั้งแอป) */
+#retwheel:empty{display:none}
+#retwheel{margin:var(--s3) auto 0;max-width:400px}
+.retrow{display:grid;grid-template-columns:1fr auto auto auto;gap:var(--s2);align-items:center;
+  padding:var(--s2) var(--s2);border-bottom:1px solid var(--rule-soft);cursor:pointer}
+.retrow:hover{background:var(--hover)}
+.retrow.on{background:var(--sunk);outline:1px solid var(--f-personal)}
+.retrow .calhm{font:400 var(--t-sm)/1 var(--mono);color:var(--dim)}
+#retyear{width:5.5em;text-align:center;font-family:var(--mono)}
+@media (max-width:620px){
+  #retwheel{position:sticky;top:0;z-index:3;background:var(--panel);max-width:280px;padding:var(--s1) 0}
+  .retrow{grid-template-columns:1fr auto;grid-template-areas:"d t" "a k";row-gap:2px}
+  .retrow .calf{grid-area:d}
+  .retrow .calhm{grid-area:t}
+  .retrow .aspang{grid-area:a}
+  .retrow .aspkind{grid-area:k;text-align:right}
+}
 .scgrp .lay{font-weight:400;color:var(--dim);font-size:var(--t-xs);margin-left:var(--s1)}
 @media (max-width:620px){
   /* จอแคบ: จานติดขอบบนขณะเลื่อนรายการ จะได้กดแถวแล้วเห็นเส้นทันทีโดยไม่ต้องเลื่อนกลับ */
