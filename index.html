@@ -13,7 +13,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v105">
+<link rel="stylesheet" href="style.css?v=urain-v106">
 </head>
 <body>
 <div class="wrap">
@@ -573,14 +573,14 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v105"></script>
-<script src="places.js?v=urain-v105"></script>
-<script src="engine.js?v=urain-v105"></script>
-<script src="render.js?v=urain-v105"></script>
+<script src="glyphs.js?v=urain-v106"></script>
+<script src="places.js?v=urain-v106"></script>
+<script src="engine.js?v=urain-v106"></script>
+<script src="render.js?v=urain-v106"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const SW_CACHE = "urain-v105";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v106";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 let DIALMARKS = null, _markTimer = 0;   // วงเส้นประกะพริบครอบดาวของสูตร (v80)
@@ -2446,16 +2446,25 @@ function recalcKeepingSel() {
 // เขียนวันเวลาลงช่องดวงจรจากเลขวันจูเลียน (เวลาท้องถิ่นตาม TZ ที่กรอก)
 // แล้วคำนวณใหม่โดยคงดาวที่เลือก — ใช้ทั้งตอนเดินอัตโนมัติและตอนกดผลค้นหา
 function gotoJd(jd) {
-  const [y, m, d, h] = AISTRO.revjul(jd + TZ / 24);
+  // v106: ปัดเป็นนาทีบน "เส้นเวลา" ก่อน แล้วค่อยแยกเป็นวัน/เวลา
+  // เดิมแยกวันก่อนแล้วค่อยปัดนาที → เวลา 23:59:30–23:59:59 กลายเป็น "24:00" ของ "วันเดิม"
+  // → parseTime ปฏิเสธ (ชั่วโมง > 23) → คำนวณล้ม ขึ้น "วัน-เวลาดวงจรไม่ถูกต้อง" และล้างผล
+  // ทุกแท็บ · ยืนยันจริงในหน้าเว็บ (ตั้งไป 19/9/2026 23:59:45 ได้ช่องเวลา "24:00") ·
+  // เกิดได้กับทุกปุ่มที่พาไปวันเวลา: เลื่อน ±1 วัน · ไทม์ไลน์ · แผนที่ชีวิต · ปฏิทินโค้ง ·
+  // กาลชะตา "เปิดจาน ณ เวลาถาม" · ดวงวรรษ "ตั้งเป็นดวงจร"
+  // ยังปัด "ใกล้สุด" เหมือนเดิมทุกกรณี — แก้แค่ให้ขอบเที่ยงคืนเลื่อนไปวันถัดไปถูกต้อง
+  const loc = Math.round((jd + TZ / 24) * 1440) / 1440;
+  // +1e-8 วัน (0.86 มิลลิวินาที) กันทศนิยมของ revjul ตกข้ามขอบนาที/เที่ยงคืนกลับไปวันก่อน
+  const [y, m, d, h] = AISTRO.revjul(loc + 1e-8);
   if (y < 1900 || y > 2099)
     return `วันที่ได้ (ค.ศ. ${y}) เลยช่วงข้อมูล 1900–2099`;
   const wasBE = parseInt($("ty").value, 10) >= 2300;
-  const hh = Math.floor(h), mm = Math.round((h - hh) * 60);
+  const tot = Math.floor(h * 60 + 1e-6);   // loc อยู่บนขอบนาทีพอดี → 0..1439 เสมอ
+  const hh = Math.floor(tot / 60), mm = tot % 60;
   $("td").value = String(d);
   $("tm").value = String(m);
   $("ty").value = String(wasBE ? y + 543 : y);
-  $("tt").value = String(mm === 60 ? hh + 1 : hh).padStart(2, "0") + ":" +
-                  String(mm === 60 ? 0 : mm).padStart(2, "0");
+  $("tt").value = String(hh).padStart(2, "0") + ":" + String(mm).padStart(2, "0");
   return recalcKeepingSel();
 }
 
@@ -3582,7 +3591,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v105")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v106")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
