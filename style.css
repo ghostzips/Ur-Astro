@@ -27,7 +27,7 @@
   --ink:#141a23; --dim:#586274; --faint:#8a94a4;
   --accent:#1560c4; --accent-ink:#ffffff;
   --accent-soft:rgba(21,96,196,.11); --accent-line:rgba(21,96,196,.42);
-  --awb1:#fdf6d5; --awb2:#dde8f7;
+  --awb1:#fdf6d5; --awb2:#dde8f7; --awb3:#e3f1e0;
   --warn-soft:rgba(196,124,20,.14); --warn-line:rgba(196,124,20,.45);
   --warn-ink:#a5660f;
   --hover:rgba(20,26,35,.045);
@@ -46,7 +46,7 @@
     --ink:#e0e7ef; --dim:#96a1b0; --faint:#6e7887;
     --accent:#6cb0f8; --accent-ink:#0d1117;
     --accent-soft:rgba(108,176,248,.15); --accent-line:rgba(108,176,248,.46);
-    --awb1:rgba(253,230,150,.10); --awb2:rgba(120,170,240,.13);
+    --awb1:rgba(253,230,150,.10); --awb2:rgba(120,170,240,.13); --awb3:rgba(120,210,140,.11);
     --warn-soft:rgba(240,167,66,.15); --warn-line:rgba(240,167,66,.45);
     --warn-ink:#f0a742;
     --hover:rgba(224,231,239,.055);
@@ -64,7 +64,7 @@
   --ink:#e0e7ef; --dim:#96a1b0; --faint:#6e7887;
   --accent:#6cb0f8; --accent-ink:#0d1117;
   --accent-soft:rgba(108,176,248,.15); --accent-line:rgba(108,176,248,.46);
-  --awb1:rgba(253,230,150,.10); --awb2:rgba(120,170,240,.13);
+  --awb1:rgba(253,230,150,.10); --awb2:rgba(120,170,240,.13); --awb3:rgba(120,210,140,.11);
   --warn-soft:rgba(240,167,66,.15); --warn-line:rgba(240,167,66,.45);
   --warn-ink:#f0a742;
   --hover:rgba(224,231,239,.055);
@@ -1133,9 +1133,11 @@ p.hint:empty{display:none}
 .awband{fill:none}
 .awb1{stroke:var(--awb1)}
 .awb2{stroke:var(--awb2)}
+.awb3{stroke:var(--awb3)}
 .awsw{display:inline-block;width:.8em;height:.8em;border-radius:2px;vertical-align:-1px;margin-right:.3em;border:1px solid var(--rule)}
 .awsw.b1{background:var(--awb1)}
 .awsw.b2{background:var(--awb2)}
+.awsw.b3{background:var(--awb3)}
 .awtick{stroke:var(--rule-soft);stroke-width:1}
 .awtick.big{stroke:var(--rule);stroke-width:1.5}
 .awdeg{font-size:9px;fill:var(--faint);text-anchor:middle;dominant-baseline:middle;font-family:var(--mono)}
@@ -1168,6 +1170,16 @@ p.hint:empty{display:none}
 .calrow.hor3{background:var(--sunk)}
 .calrow.hor3.on{outline:1px solid var(--f-personal)}
 #tmean .horm{margin-top:var(--s2)}
+
+/* v108: แท็บความสมพงษ์ — จาน 3 วงโครงเดียวกับจานมุมสัมพันธ์/ดวงวรรษ · แถวใช้ .horrow ของกาลชะตา */
+#synwheel:empty{display:none}
+#synwheel{margin:var(--s3) auto 0;max-width:420px}
+.synform{flex-wrap:wrap;row-gap:var(--s1)}
+.synrow.on{outline:1px solid var(--f-personal);background:var(--sunk)}
+#synA{font-weight:600}
+@media (max-width:620px){
+  #synwheel{position:sticky;top:0;z-index:3;background:var(--panel);max-width:300px;padding:var(--s1) 0}
+}
 
 /* v104: แท็บดวงวรรษ — แถวรายการรอบ (โครงเดียวกับ .asprow ให้อ่านเหมือนกันทั้งแอป) */
 #retwheel:empty{display:none}

@@ -13,7 +13,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v106">
+<link rel="stylesheet" href="style.css?v=urain-v108">
 </head>
 <body>
 <div class="wrap">
@@ -59,7 +59,9 @@
     </div></div>
   <div class="fg"><label>เวลาดวงจร</label>
     <div style="display:flex;gap:5px;align-items:center">
-      <input id="tt" style="width:84px">
+      <!-- v107: flex:0 0 auto — ตั้งถึงวินาทีแล้ว HH:MM:SS ต้องการพื้นที่ ~69px แต่ flex บีบช่องเหลือ 55px
+           บนจอ 375px ตัวเลขถูกตัดเหลือ "19:15:" (เห็นจากภาพจริง) · inline ตามกติกากันแคช CSS เก่า -->
+      <input id="tt" style="width:84px;flex:0 0 auto">
       <button type="button" id="tnow" class="tnow"
         title="เซตวัน-เวลาดวงจรเป็นปัจจุบัน แล้วคำนวณใหม่">ตอนนี้</button>
     </div></div>
@@ -84,6 +86,7 @@
   <button type="button" class="tab" data-p="phouse">เรือนชะตา</button>
   <button type="button" class="tab" data-p="pasp">มุมสัมพันธ์</button>
   <button type="button" class="tab" data-p="pret">ดวงวรรษ</button>
+  <button type="button" class="tab" data-p="psyn">ความสมพงษ์</button>
   <button type="button" class="tab" data-p="ppos">ตำแหน่งดาว</button>
   <button type="button" class="tab" data-p="ptl">ไทม์ไลน์</button>
   <button type="button" class="tab" data-p="plife">แผนที่ชีวิต</button>
@@ -509,6 +512,45 @@
 </section>
 </div>
 
+<div class="panel" id="psyn">
+<section class="legend" id="synbox">
+  <h3>ความสมพงษ์</h3>
+  <p class="dialnote">วางดวงกำเนิดของสองคนบนจานเดียว แล้วดู 3 ชั้นตามวิธียูเรเนียน ·
+    <b>①</b> ดาวของสองคนทำมุมกัน · <b>②</b> ศูนย์รังสีของคนหนึ่งตกดาวของอีกคน ·
+    <b>③</b> วงที่ 3 <b>คอมโพสิต</b> = จุดกึ่งกลางของปัจจัยเดียวกันของสองคน (Townley 1973 · Hand 1975)
+    บนจาน 22.5 จุดกึ่งกลางด้านใกล้กับด้านไกลตกจุดเดียวกัน วงที่ 3 จึงไม่กำกวม ·
+    ใช้กฎมุมและ orb 1° ชุดเดียวกับจานหมุน/ศูนย์รังสีที่สอบเทียบเว็บแล้ว · เรียงจากแรงไปเบา
+    (มุม 0 → 180 → 90 → 45 → 135 → ตระกูล 22.5 · แตะจุดเจ้าชะตาก่อน · orb แน่นก่อน) ·
+    ตัดแถวที่ AR ของคนหนึ่งเป็นดาวฝั่งข้ามดวง (AR ของทุกคนอยู่ 0° เท่ากัน แถวแบบนี้จึงเป็นเรื่องของคนเดียว) ·
+    <b>ข้อจำกัด:</b> คำแปลมาจากตำราบริบทบุคคล (ตำราไม่มีบริบทคู่) · ไม่มีคะแนนความเข้ากัน ·
+    ยังไม่มีเว็บอ้างอิงให้เทียบ ตรวจด้วยการคำนวณซ้ำจากศูนย์</p>
+  <div class="dictlook">
+    <span class="lbl">คนที่ 1</span>
+    <b id="synA">กดคำนวณดวงก่อน</b>
+  </div>
+  <div class="dictlook">
+    <span class="lbl">คนที่ 2</span>
+    <select id="synpick"></select>
+    <button type="button" id="syngo">คำนวณความสมพงษ์</button>
+    <b class="mrsum" id="syncount"></b>
+  </div>
+  <div class="dictlook synform" id="synform" hidden>
+    <span class="lbl">เกิด</span>
+    <input class="num" id="synbd" inputmode="numeric" placeholder="วัน" style="width:52px">
+    <input class="num" id="synbm" inputmode="numeric" placeholder="เดือน" style="width:52px">
+    <input class="num" id="synby" inputmode="numeric" placeholder="ปี" style="width:72px">
+    <input id="synbt" placeholder="เวลา" inputmode="numeric" style="width:84px;flex:0 0 auto">
+    <span class="lbl">เขตเวลา</span>
+    <input class="num" id="syntz" inputmode="decimal" value="7" style="width:56px">
+    <select id="synpcountry"><option value="th">ไทย</option><option value="intl">ต่างประเทศ</option></select>
+    <select id="synplace"></select>
+    <input id="synll" placeholder="lat, lon" style="width:150px" hidden>
+  </div>
+  <div id="synwheel"></div>
+  <div id="synlist"><p class="svempty">เลือกดวงคนที่สองแล้วกดคำนวณความสมพงษ์</p></div>
+</section>
+</div>
+
 <div class="panel" id="phouse">
 <section class="legend" id="housebox">
   <h3>เรือนชะตายูเรเนียน</h3>
@@ -573,14 +615,14 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v106"></script>
-<script src="places.js?v=urain-v106"></script>
-<script src="engine.js?v=urain-v106"></script>
-<script src="render.js?v=urain-v106"></script>
+<script src="glyphs.js?v=urain-v108"></script>
+<script src="places.js?v=urain-v108"></script>
+<script src="engine.js?v=urain-v108"></script>
+<script src="render.js?v=urain-v108"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const SW_CACHE = "urain-v106";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v108";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 let DIALMARKS = null, _markTimer = 0;   // วงเส้นประกะพริบครอบดาวของสูตร (v80)
@@ -645,7 +687,7 @@ function clearResults() {
   $("calcount").textContent = "";
   // ── v98: ยามกลาง (uitest หมวด 11) ไล่ทุกแท็บแล้วจับได้อีก 4 ที่ที่ไม่เคยถูกล้าง ──
   // มุมสัมพันธ์ — รายการคู่ดาว + ยอดรวม + สถานะ (ครั้งที่ 4 ของบั๊กชั้นนี้)
-  ASP.rows = null; ASP.key = "";
+  ASP.rows = null; ASP.key = ""; ASP.sel = -1;
   $("aspwheel").innerHTML = "";            // จานมุมสัมพันธ์ (v100)
   $("asplist").innerHTML = '<p class="svempty">เลือกคู่ชั้นดวงแล้วกดคำนวณ</p>';
   $("aspcount").textContent = "";
@@ -653,6 +695,12 @@ function clearResults() {
   // ตั้งใจ "ไม่" ล้าง HOR ที่นี่ — run() เรียก clearResults ทุกครั้งที่คำนวณใหม่ และปุ่ม
   // "เปิดจาน ณ เวลาถาม" ทำงานด้วยการ gotoJd (= คำนวณใหม่) แล้วยังต้องใช้ HOR.ans ต่อ
   // (v105 เคยเผลอล้าง แล้วเทสต์ 4.98 ฟ้องทันที) · ดวงคำถามเป็นดวงของมันเอง ไม่ใช่ผลของดวงกำเนิด
+  // ความสมพงษ์ (v108) — ผลขึ้นกับดวงคนที่ 1 จึงต้องล้าง · ค่าที่ผู้ใช้เลือก/กรอกของคนที่สองคงไว้
+  SYN.data = null; SYN.sel = null;
+  $("synwheel").innerHTML = "";
+  $("synlist").innerHTML = '<p class="svempty">เลือกดวงคนที่สองแล้วกดคำนวณความสมพงษ์</p>';
+  $("syncount").textContent = "";
+  $("synA").textContent = "กดคำนวณดวงก่อน";
   RET.rows = null; RET.sel = -1; RET.year = null;
   $("retwheel").innerHTML = "";
   $("retlist").innerHTML = '<p class="svempty">กดคำนวณดวงก่อน แล้วเลือกปี</p>';
@@ -1027,7 +1075,7 @@ const ASP_KINDS = [
 const ASP_TH = { 0: "กุม", 180: "เล็ง", 120: "ตรีโกณ", 90: "ฉาก", 60: "ฉกฉาก",
   45: "กึ่งฉาก", 30: "กึ่งฉกฉาก" };
 // sort: rank | planet · view: "u" = มุมจริงสาย 22.5 อย่างเดียว (ค่าเริ่มต้น v103 ผู้ใช้เลือก) / "web" = ทุกมุม ชื่อตามกฎเว็บ
-let ASP = { on: { "r-r": true }, rows: null, key: "", sort: "rank", view: "u" };
+let ASP = { on: { "r-r": true }, rows: null, key: "", sort: "rank", view: "u", sel: -1 };
 // ลำดับความแรงของมุมจริงสาย 22.5: 0 → 180 → 90 → 45/135 → 22.5-ตระกูล (ฮาร์มอนิก 1,2,4,8,16)
 const ASP_URANK = [0, 180, 90, 45, 135, 22.5, 67.5, 112.5, 157.5];
 function aspTrue(r) { const t = r.pt > 180 ? 360 - r.pt : r.pt; return Math.round(t * 1e6) / 1e6; }
@@ -1076,6 +1124,7 @@ function aspRun() {
   for (const r of rows) { r.rank = aspRank(r.ang); r.grp = aspPairGroup(r.a, r.b); }
   rows.sort((x, y) => x.rank - y.rank || x.grp - y.grp || x.orb - y.orb);
   ASP.rows = rows;
+  ASP.sel = -1;                            // ชุดใหม่ ดัชนีเก่าชี้ผิดคู่
   aspWheelDraw(null);                      // จานพื้นฐานค้างไว้ (คู่ที่เลือกเป็นของชุดเก่า)
   aspRender();
 }
@@ -1121,6 +1170,14 @@ function aspRender() {
                               : '<p class="svempty">ไม่มีคู่ที่ทำมุมในช่วง orb</p>');
   const hidden = rows.length - idx.length;
   $("aspcount").textContent = `${idx.length} คู่` + (hidden ? ` · ซ่อนมุมละเอียด/แบ่งสาม ${hidden}` : "");
+  // v107 (รีวิว ChatGPT รอบ 3): เดิมสลับ "แบบเว็บ" แล้วแถวเขียน 60° แต่จานยังเขียน 180° และคู่ที่ถูกซ่อน
+  // ยังค้างบนจาน (ยืนยันในหน้าจริง) · คู่ที่เลือกยังอยู่ในรายการ → วาดจานใหม่ด้วยป้ายของโหมดปัจจุบัน
+  // ไม่อยู่แล้ว → คืนจานพื้นฐานและล้างการเลือก
+  if (ASP.sel >= 0) {
+    const el = $("asplist").querySelector(`.asprow[data-i="${ASP.sel}"]`);
+    if (el && ASP.rows[ASP.sel]) { el.classList.add("on"); aspWheelDraw(ASP.rows[ASP.sel]); }
+    else { ASP.sel = -1; aspWheelDraw(null); }
+  }
 }
 $("aspview").addEventListener("click", () => {
   ASP.view = ASP.view === "web" ? "u" : "web";
@@ -1224,6 +1281,7 @@ $("asplist").addEventListener("click", async (e) => {
   const row = e.target.closest(".asprow");
   if (!row || !ASP.rows) return;
   // วาดจานก่อนเสมอ (แม้กดซ้ำเพื่อปิดคำแปล จานยังค้างคู่นั้นไว้ให้ดู)
+  ASP.sel = +row.dataset.i;                // v107: จำไว้ให้ aspRender วาดจานคืนหลังสลับโหมด
   aspWheelDraw(ASP.rows[+row.dataset.i]);
   $("asplist").querySelectorAll(".asprow.on").forEach((x) => x.classList.remove("on"));
   row.classList.add("on");
@@ -1937,10 +1995,9 @@ let RET = { year: null, rows: null, sel: -1 };
 const RET_ASP_TH = { 0: "กุม", 22.5: "", 45: "กึ่งฉาก", 90: "ฉาก", 180: "เล็ง" };
 const RET_KIND_TH = { sr: "สุริยวรรษ", msr: "อนุสุริยวรรษ", lr: "จันทรวรรษ" };
 function retHM(jd) {
-  // ตัดเศษนาทีไม่ปัด — เหมือน calHM (ปัดแล้ววันที่กับเวลาอาจไม่สอดคล้องกัน)
-  const c = AISTRO.revjul(jd + TZ / 24);
-  const tot = Math.floor(c[3] * 60 + 1e-9);
-  return `${String(Math.floor(tot / 60) % 24).padStart(2, "0")}:${String(tot % 60).padStart(2, "0")}`;
+  // ตัวแปลงเดียวกับ calHM/gotoJd (v107) — เวลาที่แถวแสดงคือต้นเวลาที่ "ตั้งเป็นดวงจร" จะเขียนลงช่อง
+  const p = jdLocalParts(jd);
+  return `${pad2(p.hh)}:${pad2(p.mm)}`;
 }
 function retYearNow() {
   if (RET.year !== null) return RET.year;
@@ -2087,11 +2144,17 @@ $("retnext").addEventListener("click", () => {
 $("retapply").addEventListener("click", () => {
   if (!RET.rows || RET.sel < 0) return;
   const r = RET.rows[RET.sel];
-  const err = gotoJd(r.jd);
+  // v107 (รีวิว ChatGPT รอบ 3): ต้องเก็บ "ปีของรายการต้นทาง" ไว้ก่อน gotoJd เพราะ gotoJd → run() →
+  // clearResults() ล้าง RET.year แล้ว showPanel วาดแท็บนี้ใหม่ด้วย "ปีของดวงจรใหม่" · อนุสุริยวรรษ
+  // ไล่หนึ่งรอบนับจากสุริยวรรษจึงข้ามปีได้ — เลือก 17 มี.ค. 2570 จากรายการปี 2026 แล้วรายการกระโดด
+  // ไปปี 2027 ซึ่งไม่มีรอบนั้น การเลือก/จาน/ปุ่มหายหมด (ยืนยันในหน้าจริงก่อนแก้)
+  const year = RET.year, kind = r.kind, jdSel = r.jd;
+  const err = gotoJd(jdSel);
   if (err) { $("retcount").textContent = err; return; }
-  $("retyear").value = String(RET.year);
+  $("retyear").value = String(year);
   retRun();
-  const again = (RET.rows || []).findIndex((x) => Math.abs(x.jd - r.jd) < 1e-9);
+  // ดวงกำเนิดไม่เปลี่ยน รายการปีเดิมจึงคำนวณได้ jd เดิมทุกบิต (เลือกกลับด้วยชนิด + jd)
+  const again = (RET.rows || []).findIndex((x) => x.kind === kind && Math.abs(x.jd - jdSel) < 1e-9);
   if (again >= 0) {
     RET.sel = again;
     const el = $("retlist").querySelector(`.retrow[data-i="${again}"]`);
@@ -2445,26 +2508,29 @@ function recalcKeepingSel() {
 
 // เขียนวันเวลาลงช่องดวงจรจากเลขวันจูเลียน (เวลาท้องถิ่นตาม TZ ที่กรอก)
 // แล้วคำนวณใหม่โดยคงดาวที่เลือก — ใช้ทั้งตอนเดินอัตโนมัติและตอนกดผลค้นหา
+// v107: วัน-เวลาท้องถิ่นตาม TZ — ตัวเดียวกันทั้ง "แสดงบนแถว" และ "ตั้งเป็นดวงจร"
+// (รีวิว ChatGPT รอบ 3: แถวแสดงแบบตัดเศษนาทีแต่ปุ่มตั้งแบบปัดใกล้สุด → 21:32:40 แถวเขียน 21:32
+//  แต่ตั้งได้ 21:33 · ผู้ใช้เลือก "ตั้งถึงวินาที") · วันที่มาจาก revjul(jd + TZ/24) เหมือนป้ายวันทุกที่
+// เวลาเป็นวินาทีแบบตัดเศษ · +1 ms กันทศนิยมของ jd (ความละเอียด ~40 µs ที่ jd ระดับ 2.46 ล้าน) ที่ทำให้
+// 12:00:00 หล่นเป็น 11:59:59 ตอนเลื่อนทีละวัน · หนีบไม่เกิน 23:59:59 ของวันเดียวกัน จึงไม่มีทางได้
+// "24:00" หรือวันไม่ตรงกับป้ายวัน (บั๊ก v106)
+function jdLocalParts(jd) {
+  const c = AISTRO.revjul(jd + TZ / 24);
+  const tot = Math.min(86399, Math.max(0, Math.floor(c[3] * 3600 + 1e-3)));
+  return { y: c[0], m: c[1], d: c[2],
+           hh: Math.floor(tot / 3600), mm: Math.floor(tot / 60) % 60, ss: tot % 60 };
+}
+function pad2(n) { return String(n).padStart(2, "0"); }   // function (hoist) — retHM อยู่เหนือบรรทัดนี้
 function gotoJd(jd) {
-  // v106: ปัดเป็นนาทีบน "เส้นเวลา" ก่อน แล้วค่อยแยกเป็นวัน/เวลา
-  // เดิมแยกวันก่อนแล้วค่อยปัดนาที → เวลา 23:59:30–23:59:59 กลายเป็น "24:00" ของ "วันเดิม"
-  // → parseTime ปฏิเสธ (ชั่วโมง > 23) → คำนวณล้ม ขึ้น "วัน-เวลาดวงจรไม่ถูกต้อง" และล้างผล
-  // ทุกแท็บ · ยืนยันจริงในหน้าเว็บ (ตั้งไป 19/9/2026 23:59:45 ได้ช่องเวลา "24:00") ·
-  // เกิดได้กับทุกปุ่มที่พาไปวันเวลา: เลื่อน ±1 วัน · ไทม์ไลน์ · แผนที่ชีวิต · ปฏิทินโค้ง ·
-  // กาลชะตา "เปิดจาน ณ เวลาถาม" · ดวงวรรษ "ตั้งเป็นดวงจร"
-  // ยังปัด "ใกล้สุด" เหมือนเดิมทุกกรณี — แก้แค่ให้ขอบเที่ยงคืนเลื่อนไปวันถัดไปถูกต้อง
-  const loc = Math.round((jd + TZ / 24) * 1440) / 1440;
-  // +1e-8 วัน (0.86 มิลลิวินาที) กันทศนิยมของ revjul ตกข้ามขอบนาที/เที่ยงคืนกลับไปวันก่อน
-  const [y, m, d, h] = AISTRO.revjul(loc + 1e-8);
-  if (y < 1900 || y > 2099)
-    return `วันที่ได้ (ค.ศ. ${y}) เลยช่วงข้อมูล 1900–2099`;
+  const p = jdLocalParts(jd);
+  if (p.y < 1900 || p.y > 2099)
+    return `วันที่ได้ (ค.ศ. ${p.y}) เลยช่วงข้อมูล 1900–2099`;
   const wasBE = parseInt($("ty").value, 10) >= 2300;
-  const tot = Math.floor(h * 60 + 1e-6);   // loc อยู่บนขอบนาทีพอดี → 0..1439 เสมอ
-  const hh = Math.floor(tot / 60), mm = tot % 60;
-  $("td").value = String(d);
-  $("tm").value = String(m);
-  $("ty").value = String(wasBE ? y + 543 : y);
-  $("tt").value = String(hh).padStart(2, "0") + ":" + String(mm).padStart(2, "0");
+  $("td").value = String(p.d);
+  $("tm").value = String(p.m);
+  $("ty").value = String(wasBE ? p.y + 543 : p.y);
+  // ถึงวินาที — parseTime รับ HH:MM:SS อยู่แล้ว · ต้นเวลา HH:MM ตรงกับที่แถวแสดงทุกตัวอักษร
+  $("tt").value = `${pad2(p.hh)}:${pad2(p.mm)}:${pad2(p.ss)}`;
   return recalcKeepingSel();
 }
 
@@ -3591,7 +3657,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v106")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v108")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
@@ -4353,11 +4419,9 @@ function calArcFmt(arc) {
 // เวลาไทย HH:MM ของสมการ (ใช้ทั้งรายการยาวและแผงทั้งวัน)
 function calHM(e) {
   // ตัดเศษนาที ไม่ปัด — ปัดแล้ว 23:59:40 จะกลายเป็น 00:00 ทั้งที่วันที่ยังเป็นวันเดิม
-  // (ChatGPT จับได้) · ตัดเศษทำให้เวลากับวันที่ (ซึ่งมาจาก jd เดียวกัน) สอดคล้องเสมอ
-  const c = AISTRO.revjul(e.jd + TZ / 24);
-  const tot = Math.floor(c[3] * 60 + 1e-9);        // +1e-9 กัน 59.99999 → 59
-  const h = Math.floor(tot / 60) % 24, m = tot % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  // (ChatGPT รอบ 2) · v107 ใช้ jdLocalParts ตัวเดียวกับ gotoJd (รอบ 3) ต้นเวลาจึงตรงกับที่ปุ่มตั้งเสมอ
+  const p = jdLocalParts(e.jd);
+  return `${pad2(p.hh)}:${pad2(p.mm)}`;
 }
 // เวลาไทยของสมการ + ป้ายความคลาด (คิดจาก r.shift ที่วัดมาแล้ว)
 function calTimeHTML(e) {
@@ -4571,8 +4635,10 @@ $("hortopics").addEventListener("click", (e) => {
 //   ② แตะจุดเจ้าชะตา (AR/MC/AS/SU/MO/NO) มาก่อน
 //   ③ orb แน่นกว่ามาก่อน
 const HOR_URANK = [0, 180, 90, 45, 135, 22.5, 67.5, 112.5, 157.5];
-// มุมจริงบนวงกลม พับเป็น 0..180 แล้วสแนปเข้าพหุคูณ 22.5 (คู่พวกนี้อยู่ในกลุ่มจาน 22.5
-// อยู่แล้ว จึงห่างจากพหุคูณไม่เกิน orb ของกลุ่ม)
+// มุมจริงบนวงกลม พับเป็น 0..180 แล้วสแนปเข้าพหุคูณ 22.5 ที่ใกล้สุด
+// ⚠ ไม่ได้แปลว่าคู่นั้นเข้า orb: กลุ่มบนจานเป็นลูกโซ่ (ต่อกันทีละ ≤1.2°) ดาวหัว–ท้ายห่างกันได้
+// ถึง (n−1)×1.2° คู่ที่ห่างมากจะสแนปเข้ามุมที่ไม่มีความหมาย orb จริงของคู่ดูจาก gap/worst
+// (คอมเมนต์เดิมเขียนว่า "ห่างไม่เกิน orb ของกลุ่ม" ซึ่งไม่จริง — ChatGPT รอบ 3 ชี้)
 function horTrueAng(R, a, b) {
   let d = Math.abs(AISTRO.mod360(R[a] - R[b]));
   if (d > 180) d = 360 - d;
@@ -4605,11 +4671,12 @@ async function horAsk() {
   }
   if (!hits.length) HOR.on["ทั่วไป"] = true;
   horChips();
-  // ดวงคำถาม = เวลาเครื่อง ณ วินาทีนี้ ตีเป็นเวลาท้องถิ่นตามเขตเวลาที่ตั้งไว้
-  const n = new Date();
-  const hr = n.getHours() + n.getMinutes() / 60 + n.getSeconds() / 3600;
-  const { R, jd } = AISTRO.buildRadix(n.getFullYear(), n.getMonth() + 1,
-    n.getDate(), hr, TZ, TL.lat, TL.lon);
+  // v107 (รีวิว ChatGPT รอบ 3 · ผู้ใช้เลือก): ดวงคำถาม = "วินาทีที่กดจริง" บนเวลาสากล
+  // เดิมเอาชั่วโมงของนาฬิกาเครื่องไปตีเป็นเวลาท้องถิ่นตาม TZ ในฟอร์ม → เครื่อง UTC+7 แต่ฟอร์ม TZ=0
+  // ดวงคำถามล่วงหน้าไป 7.000 ชม. พอดี (ยืนยันในหน้าจริง) · Date.now() เป็นเวลาสากลเสมอ ไม่ขึ้นกับ
+  // เขตเวลาเครื่อง · สถานที่ยังเป็นสถานที่เกิดเหมือนเดิม · หัวคำตอบแสดงตามเขตเวลาในฟอร์มพร้อมป้าย UTC
+  const jd = Date.now() / 86400000 + 2440587.5;
+  const R = AISTRO.chartAt(jd, TL.lat, TL.lon);
   // กฎลูกโซ่แตกทุกคู่ — วิธีเดียวกับหน้า "AI ดูดวงกำเนิด" ที่สอบเทียบ 20/20
   // (v105: ชุดคู่ "เท่าเดิมทุกแถว" ผู้ใช้เลือกให้เพิ่มภาพ 3 ดวงเป็นชั้นใหม่ ไม่ใช่แทนของเดิม)
   const pairs = [], tris = [];
@@ -4628,11 +4695,12 @@ async function horAsk() {
                              horGap(R[m[j]], R[m[k]])] });
   }
   pairs.sort((p, w) => p.gap - w.gap);
-  HOR.ans = { R, jd, q, hits, pairs, tris,
-    when: `${n.getDate()}/${n.getMonth() + 1}/${n.getFullYear() + 543} ` +
-      `${String(n.getHours()).padStart(2, "0")}:` +
-      `${String(n.getMinutes()).padStart(2, "0")}:` +
-      `${String(n.getSeconds()).padStart(2, "0")}` };
+  const wp = jdLocalParts(jd);
+  const tzTxt = `UTC${TZ >= 0 ? "+" : "−"}${Math.abs(TZ)}`;
+  // เก็บพิกัด/เขตเวลา ณ ตอนถามไว้กับคำตอบ — คำตอบกาลชะตาตั้งใจไม่ถูกล้างเมื่อคำนวณดวงใหม่
+  // (ปุ่มเปิดจานพาไปด้วย gotoJd = คำนวณใหม่) จึงต้องพกบริบทของตัวเองไว้ครบ
+  HOR.ans = { R, jd, q, hits, pairs, tris, lat: TL.lat, lon: TL.lon, tz: TZ,
+    when: `${wp.d}/${wp.m}/${wp.y + 543} ${pad2(wp.hh)}:${pad2(wp.mm)}:${pad2(wp.ss)} (${tzTxt})` };
   out.innerHTML = '<div class="mnone">กำลังโหลดพจนานุกรม …</div>';
   await dictNeed();                  // โหลดไม่ได้ก็ยังแสดงสูตร (แถวกดซ้ำได้)
   horRender();
@@ -4808,6 +4876,261 @@ $("horout").addEventListener("click", async (e) => {
     meanHTML({ type: "A", p: p.a, axis: p.b });
   tmeanPlace(row);
 });
+
+// ── แท็บความสมพงษ์ (v108 · ผู้ใช้เลือก: แท็บใหม่ · วงที่ 3 = คอมโพสิต · ดวงคนที่สองเลือก/กรอกได้) ──
+// ทุกตัวเลขมาจากเอนจิน (compositeChart / crossPairs / chartPairs / midpointHits ที่ห่อ axisPictures)
+// หน้านี้แค่รับดวงคนที่สอง จัดอันดับ วาดจาน และเปิดคำแปลตำรา · ไม่มีคะแนนความเข้ากันที่เครื่องคิดเอง
+let SYN = { data: null, sel: null };
+const SYN_SHOW = 15;                       // แสดงต่อกลุ่ม (ศูนย์รังสีข้ามดวงได้หลายร้อยภาพ — วัดจริง 894)
+const SYN_SUP = { p1: "¹", p2: "²", c: "ᶜ" };
+function synPickHTML(keep) {
+  const esc = AISTRO_RENDER.esc;
+  const names = Object.keys(chAll()).sort((a, b) => a.localeCompare(b, "th"));
+  let h = '<option value="">— เลือกดวงคนที่สอง —</option>';
+  if (names.length) {
+    h += '<optgroup label="ดวงที่บันทึกไว้">';
+    for (const n of names) h += `<option value="s:${esc(n)}">${esc(n)}</option>`;
+    h += "</optgroup>";
+  }
+  h += '<option value="manual">กรอกเอง…</option>';
+  return h;
+}
+function synFillPick() {
+  const cur = $("synpick").value;
+  $("synpick").innerHTML = synPickHTML();
+  if ([...$("synpick").options].some((o) => o.value === cur)) $("synpick").value = cur;
+  $("synform").hidden = $("synpick").value !== "manual";
+}
+function synFillPlaces(keep) {
+  $("synplace").innerHTML = placesHTML($("synpcountry").value);
+  if (keep) $("synplace").value = keep;
+  if (!$("synplace").value) $("synplace").selectedIndex = 0;
+  synPlaceChange();
+}
+function synPlaceChange() {
+  const v = $("synplace").value;
+  $("synll").hidden = v !== "custom";
+  const p = v.split(",");
+  if (v !== "custom") $("syntz").value = p.length >= 3 ? String(Number(p[2])) : "7";
+}
+// อ่านดวงคนที่สอง — กติกาตรวจค่าชุดเดียวกับฟอร์มหลัก (run) · โยน Error พร้อมข้อความที่ผู้ใช้อ่านเข้าใจ
+function synParseB() {
+  const v = $("synpick").value;
+  let c, label;
+  if (v.startsWith("s:")) {
+    const name = v.slice(2), rec = chAll()[name];
+    if (!chValid(rec)) throw new Error(`ดวงที่บันทึกไว้ "${name}" ข้อมูลไม่ครบ`);
+    c = { bd: rec.bd, bm: rec.bm, by: rec.by, bt: rec.bt || "12:00", tz: rec.tz,
+          place: rec.place, ll: rec.ll };
+    label = name;
+  } else if (v === "manual") {
+    c = { bd: $("synbd").value, bm: $("synbm").value, by: $("synby").value, bt: $("synbt").value,
+          tz: $("syntz").value, place: $("synplace").value, ll: $("synll").value };
+    label = "คนที่ 2";
+  } else throw new Error("เลือกดวงคนที่สอง (จากดวงที่บันทึกไว้ หรือกรอกเอง)");
+  const by = ceYear(c.by), bm = +c.bm, bd = +c.bd, bh = parseTime(c.bt);
+  const dim = [31, (by % 4 === 0 && by % 100 !== 0) || by % 400 === 0 ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  if (!by || !(bm >= 1 && bm <= 12) || !(bd >= 1 && bd <= dim[bm - 1]) || bh === null)
+    throw new Error("วัน-เวลาเกิดของคนที่สองไม่ถูกต้อง");
+  if (by < 1900 || by > 2099) throw new Error("คนที่สอง: รองรับ ค.ศ. 1900–2099 (พ.ศ. 2443–2642) เท่านั้น");
+  const tz = parseFloat(c.tz);
+  if (!isFinite(tz) || tz < -12 || tz > 14) throw new Error("คนที่สอง: เขตเวลาต้องอยู่ระหว่าง −12 ถึง +14");
+  let lat, lon;
+  if (c.place === "custom" || !c.place) {
+    const q = String(c.ll || "").split(",");
+    const num = (t) => (t !== undefined && t.trim() !== "" ? Number(t) : NaN);
+    lat = num(q[0]); lon = num(q[1]);
+    if (q.length !== 2 || !isFinite(lat) || !isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180)
+      throw new Error("คนที่สอง: lat/lon ไม่ถูกต้อง — ตัวเลขสองค่าคั่นด้วยจุลภาค เช่น 13.7563, 100.5018");
+  } else {
+    const p = String(c.place).split(",").map(Number);
+    lat = p[0]; lon = p[1];
+  }
+  const { R, jd } = AISTRO.buildRadix(by, bm, bd, bh, tz, lat, lon);
+  return { R, jd, tz, lat, lon, label, when: `${bd}/${bm}/${by + 543} ${c.bt}` };
+}
+// จัดอันดับด้วยข้อเท็จจริงชุดเดียวกับกาลชะตา/มุมสัมพันธ์: มุมจริง → แตะจุดเจ้าชะตา → orb
+function synSort(list, factorsOf) {
+  for (const r of list) { r.rank = horRank(r.ang); r.self = factorsOf(r).some(horIsSelf); }
+  list.sort((x, y) => x.rank - y.rank || (y.self ? 1 : 0) - (x.self ? 1 : 0) || x.orb - y.orb);
+  return list;
+}
+function synRun() {
+  if (!TL) { $("synlist").innerHTML = '<p class="svempty">กดคำนวณดวงก่อน (คนที่ 1 คือดวงในฟอร์มหลัก)</p>'; return; }
+  let B;
+  try { B = synParseB(); }
+  catch (e) {
+    SYN.data = null; SYN.sel = null; $("synwheel").innerHTML = ""; $("syncount").textContent = "";
+    $("synlist").innerHTML = `<p class="svempty">${AISTRO_RENDER.esc(e.message)}</p>`;
+    return;
+  }
+  const A = AISTRO;
+  const C = A.compositeChart(TL.R, B.R);
+  const L2 = { p1: TL.R, p2: B.R };
+  const f2 = (r) => [r.a, r.b], f3 = (r) => [r.a, r.b, r.x];
+  // AR ของทุกดวงอยู่ที่ 0° เท่ากัน → แถวที่ "AR ของคนหนึ่ง" ทำหน้าที่เป็นดาวเดี่ยวฝั่งข้ามดวง ลดรูปเป็น
+  // ข้อเท็จจริงของอีกคนคนเดียว ไม่ใช่ความสมพงษ์ (พิสูจน์ในหน้าจริง: เปลี่ยนคนที่ 1 ทั้งดวงแล้วแถว AR¹ = X²
+  // ได้ชุดเดิมทุกบิต · และ AR¹ = AR² ขึ้นอันดับหนึ่งด้วย orb 0.00° ทุกคู่) → ตัดสองแบบนี้ออก:
+  //   คู่ข้ามดวงที่มี AR ฝั่งใดฝั่งหนึ่ง · ศูนย์รังสีที่ตก AR ของอีกคน
+  // เก็บไว้: AR ในคู่ศูนย์รังสี (AR¹/Y¹ = Z²) เพราะขึ้นกับดาว Z ของอีกคนจริง · และ AR ในวงคอมโพสิต
+  const cross = synSort(A.crossPairs(TL.R, B.R).filter((r) => r.a !== "AR" && r.b !== "AR")
+    .map((r) => Object.assign(r, { kind: "cross" })), f2);
+  const mp = synSort(A.midpointHits(L2, "p2", "p1").concat(A.midpointHits(L2, "p1", "p2"))
+    .filter((r) => r.x !== "AR")
+    .map((r) => Object.assign(r, { kind: "mp" })), f3);
+  const cpair = synSort(A.chartPairs(C).map((r) => Object.assign(r, { kind: "cpair" })), f2);
+  const chit = synSort(A.midpointHits({ c: C }, "c", "c").map((r) => Object.assign(r, { kind: "chit" })), f3);
+  SYN.data = { B, C, lists: { cross, mp, cpair, chit } };
+  SYN.sel = null;
+  const nameA = $("cname").value.trim() || "ดวงในฟอร์มหลัก";
+  $("synA").textContent = `${nameA} · เกิด ${$("bd").value}/${$("bm").value}/${$("by").value} ${$("bt").value}`;
+  synWheelDraw(null);
+  synRender();
+}
+function synLabel(r) {
+  const S = SYN_SUP;
+  if (r.kind === "cross") return `${r.a}${S.p1} = ${r.b}${S.p2}`;
+  if (r.kind === "cpair") return `${r.a}${S.c} = ${r.b}${S.c}`;
+  return `${r.a}${S[r.src]}/${r.b}${S[r.src]} = ${r.x}${S[r.xsrc]}`;
+}
+function synRender() {
+  const D = SYN.data;
+  if (!D) return;
+  const groups = [
+    ["cross", "① ดาวของสองคนทำมุมกัน", "ดาว¹ ของคนที่ 1 กับดาว² ของคนที่ 2"],
+    ["mp", "② ศูนย์รังสีของคนหนึ่ง ตกดาวของอีกคน", "เช่น SU¹/MO¹ = VE² คือ VE ของคนที่ 2 ตกศูนย์รังสี SU/MO ของคนที่ 1"],
+    ["cpair", "③ วงที่ 3 คอมโพสิต · คู่ดาวทำมุมกัน", "ดาวᶜ = จุดกึ่งกลางของดาวเดียวกันของสองคน"],
+    ["chit", "③ วงที่ 3 คอมโพสิต · ภาพศูนย์รังสี", "ศูนย์รังสีในวงคอมโพสิตตกดาวในวงเดียวกัน"],
+  ];
+  let h = "", total = 0, shown = 0;
+  for (const [kind, head, sub] of groups) {
+    const list = D.lists[kind];
+    total += list.length;
+    h += `<div class="scgrp" data-g="${kind}">${head} <span class="lay">${list.length} รายการ · ${sub}</span></div>`;
+    if (!list.length) { h += '<p class="svempty">ไม่มีในช่วง orb 1°</p>'; continue; }
+    h += list.slice(0, SYN_SHOW).map((r, i) => {
+      shown++;
+      return `<div class="calrow horrow synrow" data-k="${kind}" data-i="${i}">` +
+        `<b class="calf">${synLabel(r)}</b>` + horWhyHTML(r.ang, r.self) +
+        `<span class="cala">orb ${r.orb.toFixed(2)}°</span></div>`;
+    }).join("");
+    if (list.length > SYN_SHOW)
+      h += `<p class="hordisc">แสดง ${SYN_SHOW} อันดับแรกจาก ${list.length} (เรียงตามความแรงแล้ว ที่เหลือเบากว่านี้)</p>`;
+  }
+  $("synlist").innerHTML = h;
+  $("syncount").textContent = `${D.B.label} · ${total} รายการ (แสดง ${shown})`;
+}
+// จาน 3 วง: นอก = คนที่ 1 · กลาง = คนที่ 2 · ใน = คอมโพสิต — โครงเดียวกับจานมุมสัมพันธ์/ดวงวรรษ
+function synWheelDraw(row) {
+  const box = $("synwheel"), D = SYN.data;
+  if (!TL || !D) { box.innerHTML = ""; return; }
+  const cx = 200, cy = 200, rOut = 196, rScale = 170, rAB = 146, rBC = 122, rIn = 98;
+  const rA = (rScale + rAB) / 2, rB = (rAB + rBC) / 2, rC = (rBC + rIn) / 2;
+  const P = (r, lon) => [cx - r * Math.cos(lon * Math.PI / 180), cy + r * Math.sin(lon * Math.PI / 180)];
+  let s = `<svg viewBox="0 0 400 400" class="awsvg" xmlns="http://www.w3.org/2000/svg">`;
+  s += `<circle cx="${cx}" cy="${cy}" r="${rA}" class="awband awb1" stroke-width="${rScale - rAB}"/>` +
+       `<circle cx="${cx}" cy="${cy}" r="${rB}" class="awband awb2" stroke-width="${rAB - rBC}"/>` +
+       `<circle cx="${cx}" cy="${cy}" r="${rC}" class="awband awb3" stroke-width="${rBC - rIn}"/>`;
+  for (const r of [rOut, rScale, rAB, rBC, rIn])
+    s += `<circle cx="${cx}" cy="${cy}" r="${r}" class="awring${r === rAB || r === rBC ? " mid" : ""}"/>`;
+  for (let d = 0; d < 360; d += 10) {
+    const big = d % 30 === 0;
+    const [x0, y0] = P(rOut, d), [x1, y1] = P(rOut - (big ? 9 : 5), d);
+    s += `<line class="awtick${big ? " big" : ""}" x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}"/>`;
+    if (big) { const [xt, yt] = P(rOut - 17, d); s += `<text class="awdeg" x="${xt.toFixed(1)}" y="${yt.toFixed(1)}">${d}</text>`; }
+  }
+  const rings = { p1: [TL.R, rA], p2: [D.B.R, rB], c: [D.C, rC] };
+  // ดาวที่ต้องไฮไลต์ตามชนิดแถว [ชั้น, ดาว]
+  let hi = [];
+  if (row) {
+    if (row.kind === "cross") hi = [["p1", row.a], ["p2", row.b]];
+    else if (row.kind === "cpair") hi = [["c", row.a], ["c", row.b]];
+    else hi = [[row.src, row.a], [row.src, row.b], [row.xsrc, row.x]];
+  }
+  const isHi = (L, c) => hi.some(([l, k]) => l === L && k === c);
+  const late = [];
+  for (const L of ["p1", "p2", "c"]) {
+    const [pos, rr] = rings[L];
+    for (const c of AISTRO.CODE_ORDER) {
+      if (pos[c] === undefined) continue;
+      const [x, y] = P(rr, pos[c]);
+      const h1 = isHi(L, c);
+      const g = `<g class="awp${h1 ? " awhi" : (row ? " awdim" : "")}" data-c="${c}" data-l="${L}"` +
+        ` data-lon="${AISTRO.mod360(pos[c]).toFixed(6)}">` +
+        (h1 ? `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="12" class="awhalo"/>` : "") +
+        svgGlyph(c, x, y, h1 ? 18 : (row ? 11 : 13), "f-" + AISTRO.FACTOR_CLASS[c]) + `</g>`;
+      if (h1) late.push(g); else s += g;
+    }
+  }
+  if (row) {
+    const pts = hi.map(([L, c]) => P(rings[L][1], rings[L][0][c]));
+    for (const [x, y] of pts)
+      s += `<line class="awspoke" x1="${cx}" y1="${cy}" x2="${x.toFixed(2)}" y2="${y.toFixed(2)}"/>`;
+    if (pts.length === 2)
+      s += `<line class="awline" x1="${pts[0][0].toFixed(2)}" y1="${pts[0][1].toFixed(2)}" x2="${pts[1][0].toFixed(2)}" y2="${pts[1][1].toFixed(2)}"/>`;
+    s += late.join("");
+    s += `<text class="awc" x="${cx}" y="${cy - 6}">${AISTRO_RENDER.esc(synLabel(row))}</text>` +
+         `<text class="awc sm" x="${cx}" y="${cy + 12}">มุม ${row.ang}° · orb ${row.orb.toFixed(2)}°</text>`;
+  } else {
+    s += `<text class="awc sm" x="${cx}" y="${cy - 2}">ความสมพงษ์</text>` +
+         `<text class="awc sm" x="${cx}" y="${cy + 14}">กดแถวด้านล่างเพื่อดูมุม</text>`;
+  }
+  s += `</svg>`;
+  const esc = AISTRO_RENDER.esc;
+  const nameA = $("cname").value.trim() || "คนที่ 1";
+  box.innerHTML = s + `<div class="awleg"><i class="awsw b1"></i>วงนอก = ${esc(nameA)}¹ · ` +
+    `<i class="awsw b2"></i>วงกลาง = ${esc(D.B.label)}² · <i class="awsw b3"></i>วงใน = คอมโพสิตᶜ · 0° อยู่ซ้าย เดินทวนเข็ม</div>`;
+}
+$("synpick").addEventListener("change", () => {
+  $("synform").hidden = $("synpick").value !== "manual";
+  if ($("synpick").value !== "manual" && $("synpick").value && TL) synRun();
+});
+$("synpcountry").addEventListener("change", () =>
+  synFillPlaces($("synpcountry").value === "th" ? "13.7563,100.5018" : null));
+$("synplace").addEventListener("change", synPlaceChange);
+$("syngo").addEventListener("click", () => synRun());
+$("synlist").addEventListener("click", async (e) => {
+  const row = e.target.closest(".synrow");
+  if (!row || !SYN.data) return;
+  const r = SYN.data.lists[row.dataset.k][+row.dataset.i];
+  SYN.sel = { k: row.dataset.k, i: +row.dataset.i };
+  synWheelDraw(r);
+  $("synlist").querySelectorAll(".synrow.on").forEach((x) => x.classList.remove("on"));
+  row.classList.add("on");
+  if (tmeanToggle(row)) return;
+  const box = $("tmean");
+  box.hidden = false;
+  box.innerHTML = '<div class="mnone">กำลังโหลดพจนานุกรม …</div>';
+  tmeanPlace(row);
+  if (!await dictNeed()) {
+    const errHtml = await dictErrHTML(new Error("โหลดไม่สำเร็จ"));
+    if (TMEAN_ROW === row) box.innerHTML = errHtml;
+    return;
+  }
+  if (TMEAN_ROW !== row) return;
+  const esc = AISTRO_RENDER.esc;
+  let body;
+  // คีย์ตำราตามหลัก RULES ข้อ 0 · ดาวซ้ำกัน (SU¹ = SU² · SU¹/MO¹ = SU²) ตำราไม่มีคีย์ → บอกตรง ๆ ไม่แต่ง
+  if (r.kind === "cross" || r.kind === "cpair") {
+    body = r.a === r.b
+      ? `<div class="mnone">ตำราไม่มีคำแปลของดาวเดียวกันสองดวง (${esc(r.a)} = ${esc(r.b)})</div>`
+      : meanHTML({ type: "A", p: r.a, axis: r.b });
+  } else {
+    body = (r.x === r.a || r.x === r.b)
+      ? `<div class="mnone">ตำราไม่มีคำแปลสามปัจจัยที่ดาวซ้ำกัน (${esc(r.a)}/${esc(r.b)} = ${esc(r.x)})</div>`
+      : meanHTML({ type: "AB", a: r.a, b: r.b, axis: r.x });
+  }
+  box.innerHTML = `<div class="mnote">${esc(synLabel(r))} · มุม ${r.ang}° · orb ${r.orb.toFixed(2)}° · ` +
+    `คำแปลตำราบริบทบุคคล (ตำราไม่มีบริบทคู่)</div>` + body;
+  tmeanPlace(row);
+});
+PANEL_DRAW.psyn = () => {
+  synFillPick();
+  if (TL && !SYN.data)
+    $("synA").textContent = `${$("cname").value.trim() || "ดวงในฟอร์มหลัก"} · เกิด ${$("bd").value}/${$("bm").value}/${$("by").value} ${$("bt").value}`;
+  if (!$("synplace").options.length) synFillPlaces("13.7563,100.5018");
+  if (TL && !SYN.data && $("synpick").value && $("synpick").value !== "manual") synRun();
+};
 
 function drawGlyphKey() {
   const cv = $("dlkey"), ctx = cv.getContext("2d");

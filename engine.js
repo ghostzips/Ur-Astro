@@ -1210,6 +1210,60 @@ function axisPictures(layers, axLab, axSrc, opt) {
 }
 
 
+// ── ความสมพงษ์ (v108 · ผู้ใช้เลือก: แท็บใหม่ · วงที่ 3 = คอมโพสิต · ดวงคนที่สองเลือก/กรอกได้) ──────
+// ไม่มีสูตร ไม่มี orb ใหม่ — ห่อ midpointShort / sepCircle / aspectTrue / axisPictures ตัวเดิมที่สอบเทียบแล้ว
+// วิธีตามแหล่งสอนยูเรเนียน 3 ชั้น: ① ดาวของสองคนตรงกันบนจาน ② ศูนย์รังสีของคนหนึ่งตกดาวอีกคน
+// ③ วงที่ 3 = คอมโพสิต (Townley 1973 · Hand 1975) จุดกึ่งกลางของ "ปัจจัยเดียวกัน" ของสองคน
+// บนจาน 22.5 จุดกึ่งกลางด้านใกล้กับด้านไกลห่างกัน 180° = 8×22.5 จึงพับตกจุดเดียวกันเสมอ —
+// ปัญหาคลาสสิกของคอมโพสิตเรื่องเลือกด้านจึงไม่มีผลบนจาน (test_synastry พิสูจน์ครบทุกปัจจัย)
+function compositeChart(R1, R2) {
+  const C = {};
+  for (const k of CODE_ORDER)
+    if (R1[k] !== undefined && R2[k] !== undefined) C[k] = midpointShort(R1[k], R2[k]);
+  return C;
+}
+// คู่ดาวข้ามดวง: ดาว a ของดวง P กับดาว b ของดวง Q ทุกคู่ (รวม a === b เช่น SU ของสองคน)
+// เกณฑ์เดียวกับรายการดาวเดี่ยวของ axisPictures: sepCircle → aspectTrue → orb ≤ 1° (มุมจริงสาย 22.5)
+function crossPairs(P, Q, opt) {
+  const orb = opt && opt.orb !== undefined ? opt.orb : 1.0;
+  const out = [];
+  for (const a of CODE_ORDER) for (const b of CODE_ORDER) {
+    if (P[a] === undefined || Q[b] === undefined) continue;
+    const f = aspectTrue(sepCircle(P[a], Q[b]));
+    if (f.orb <= orb) out.push({ a, b, ang: f.ang, orb: f.orb });
+  }
+  return out;
+}
+// คู่ดาวภายในดวงเดียว (ใช้กับวงคอมโพสิต) — เกณฑ์เดียวกับ crossPairs ไม่นับคู่ซ้ำ
+function chartPairs(R, opt) {
+  const orb = opt && opt.orb !== undefined ? opt.orb : 1.0;
+  const out = [];
+  for (let i = 0; i < CODE_ORDER.length; i++) for (let j = i + 1; j < CODE_ORDER.length; j++) {
+    const a = CODE_ORDER[i], b = CODE_ORDER[j];
+    if (R[a] === undefined || R[b] === undefined) continue;
+    const f = aspectTrue(sepCircle(R[a], R[b]));
+    if (f.orb <= orb) out.push({ a, b, ang: f.ang, orb: f.orb });
+  }
+  return out;
+}
+// ภาพศูนย์รังสี: จุดกึ่งกลางคู่ดาวในชั้น abSrc ตกดาวแต่ละดวงของชั้น axSrc — เรียก axisPictures ตัวเดิม
+// (เข็มชี้ดาว x ของ axSrc · layersA ว่าง · layersAB = [abSrc] · trueAngle)
+// ชั้นเดียวกันแล้วดาวแกนอยู่ในคู่เอง (x/y = x) เป็นภาพเสื่อม ตัดทิ้ง · ข้ามชั้นเก็บไว้
+// (เช่น SU/MO ของคนที่ 1 ตก SU ของคนที่ 2 เป็นภาพสมพงษ์ที่มีความหมาย แม้ตำราไม่มีคีย์ดาวซ้ำ)
+function midpointHits(layers, axSrc, abSrc, opt) {
+  const orb = opt && opt.orb !== undefined ? opt.orb : 1.0;
+  const out = [];
+  for (const x of CODE_ORDER) {
+    if (!layers[axSrc] || layers[axSrc][x] === undefined) continue;
+    const r = axisPictures(layers, x, axSrc, { layersA: [], layersAB: [abSrc], trueAngle: true, orbAB: orb });
+    for (const p of r.AB) {
+      if (axSrc === abSrc && (p.a === x || p.b === x)) continue;
+      out.push({ a: p.a, b: p.b, src: abSrc, x, xsrc: axSrc, ang: p.ang, orb: p.orb });
+    }
+  }
+  return out;
+}
+
 // สูตรสามดาว A+B−C ตกแกน (พระเคราะห์สนธิ 4 ปัจจัย: A+B = C+แกน)
 // สอบเทียบเลข A+B−C กับโหมดตั้งแกน "A+B-C" ของเว็บ 12 สูตร ตรงทุกค่า
 // (export_axis/site_sum_11_ABC.json — เว็บแสดงองศาช้าไป 1 จังหวะ เลื่อนกลับแล้ว)
@@ -1654,6 +1708,7 @@ const AISTRO = {
   pictureClass, arcEventSides, arcEventAspect,
   arcEventShift,
   solveBodyLon, solarReturnJd, minorSolarReturnJds, lunarReturnJds, RET_ASPECTS, RET_RATE,
+  compositeChart, crossPairs, chartPairs, midpointHits,
   CODE_ORDER, FACTOR_CLASS, MONTH_TABLE_TRANSITS,
   DIAL_DEFAULT, ORB_RT, SIDEREAL_YEAR, TROPICAL_MONTH,
 };
