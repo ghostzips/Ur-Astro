@@ -13,7 +13,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v108">
+<link rel="stylesheet" href="style.css?v=urain-v110">
 </head>
 <body>
 <div class="wrap">
@@ -615,14 +615,14 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v108"></script>
-<script src="places.js?v=urain-v108"></script>
-<script src="engine.js?v=urain-v108"></script>
-<script src="render.js?v=urain-v108"></script>
+<script src="glyphs.js?v=urain-v110"></script>
+<script src="places.js?v=urain-v110"></script>
+<script src="engine.js?v=urain-v110"></script>
+<script src="render.js?v=urain-v110"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const SW_CACHE = "urain-v108";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v110";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 let DIALMARKS = null, _markTimer = 0;   // วงเส้นประกะพริบครอบดาวของสูตร (v80)
@@ -696,7 +696,7 @@ function clearResults() {
   // "เปิดจาน ณ เวลาถาม" ทำงานด้วยการ gotoJd (= คำนวณใหม่) แล้วยังต้องใช้ HOR.ans ต่อ
   // (v105 เคยเผลอล้าง แล้วเทสต์ 4.98 ฟ้องทันที) · ดวงคำถามเป็นดวงของมันเอง ไม่ใช่ผลของดวงกำเนิด
   // ความสมพงษ์ (v108) — ผลขึ้นกับดวงคนที่ 1 จึงต้องล้าง · ค่าที่ผู้ใช้เลือก/กรอกของคนที่สองคงไว้
-  SYN.data = null; SYN.sel = null;
+  SYN.data = null; SYN.sel = null; SYN.row = null; SYN.pick = null;
   $("synwheel").innerHTML = "";
   $("synlist").innerHTML = '<p class="svempty">เลือกดวงคนที่สองแล้วกดคำนวณความสมพงษ์</p>';
   $("syncount").textContent = "";
@@ -2514,8 +2514,8 @@ function recalcKeepingSel() {
 // เวลาเป็นวินาทีแบบตัดเศษ · +1 ms กันทศนิยมของ jd (ความละเอียด ~40 µs ที่ jd ระดับ 2.46 ล้าน) ที่ทำให้
 // 12:00:00 หล่นเป็น 11:59:59 ตอนเลื่อนทีละวัน · หนีบไม่เกิน 23:59:59 ของวันเดียวกัน จึงไม่มีทางได้
 // "24:00" หรือวันไม่ตรงกับป้ายวัน (บั๊ก v106)
-function jdLocalParts(jd) {
-  const c = AISTRO.revjul(jd + TZ / 24);
+function jdLocalParts(jd, tz) {                // tz ปริยาย = TZ ของฟอร์มหลัก (v109 ใช้กับดวงคนที่ 2 ด้วย)
+  const c = AISTRO.revjul(jd + (tz === undefined ? TZ : tz) / 24);
   const tot = Math.min(86399, Math.max(0, Math.floor(c[3] * 3600 + 1e-3)));
   return { y: c[0], m: c[1], d: c[2],
            hh: Math.floor(tot / 3600), mm: Math.floor(tot / 60) % 60, ss: tot % 60 };
@@ -3657,7 +3657,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v108")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v110")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
@@ -4880,7 +4880,7 @@ $("horout").addEventListener("click", async (e) => {
 // ── แท็บความสมพงษ์ (v108 · ผู้ใช้เลือก: แท็บใหม่ · วงที่ 3 = คอมโพสิต · ดวงคนที่สองเลือก/กรอกได้) ──
 // ทุกตัวเลขมาจากเอนจิน (compositeChart / crossPairs / chartPairs / midpointHits ที่ห่อ axisPictures)
 // หน้านี้แค่รับดวงคนที่สอง จัดอันดับ วาดจาน และเปิดคำแปลตำรา · ไม่มีคะแนนความเข้ากันที่เครื่องคิดเอง
-let SYN = { data: null, sel: null };
+let SYN = { data: null, sel: null, row: null, pick: null };   // row = แถวที่กด · pick = ดาวที่แตะบนจาน
 const SYN_SHOW = 15;                       // แสดงต่อกลุ่ม (ศูนย์รังสีข้ามดวงได้หลายร้อยภาพ — วัดจริง 894)
 const SYN_SUP = { p1: "¹", p2: "²", c: "ᶜ" };
 function synPickHTML(keep) {
@@ -4947,7 +4947,7 @@ function synParseB() {
     lat = p[0]; lon = p[1];
   }
   const { R, jd } = AISTRO.buildRadix(by, bm, bd, bh, tz, lat, lon);
-  return { R, jd, tz, lat, lon, label, when: `${bd}/${bm}/${by + 543} ${c.bt}` };
+  return { R, jd, tz, lat, lon, label, place: synPlaceName(c.place), when: `${bd}/${bm}/${by + 543} ${c.bt}` };
 }
 // จัดอันดับด้วยข้อเท็จจริงชุดเดียวกับกาลชะตา/มุมสัมพันธ์: มุมจริง → แตะจุดเจ้าชะตา → orb
 function synSort(list, factorsOf) {
@@ -4960,7 +4960,7 @@ function synRun() {
   let B;
   try { B = synParseB(); }
   catch (e) {
-    SYN.data = null; SYN.sel = null; $("synwheel").innerHTML = ""; $("syncount").textContent = "";
+    SYN.data = null; SYN.sel = null; SYN.row = null; SYN.pick = null; $("synwheel").innerHTML = ""; $("syncount").textContent = "";
     $("synlist").innerHTML = `<p class="svempty">${AISTRO_RENDER.esc(e.message)}</p>`;
     return;
   }
@@ -4981,7 +4981,7 @@ function synRun() {
   const cpair = synSort(A.chartPairs(C).map((r) => Object.assign(r, { kind: "cpair" })), f2);
   const chit = synSort(A.midpointHits({ c: C }, "c", "c").map((r) => Object.assign(r, { kind: "chit" })), f3);
   SYN.data = { B, C, lists: { cross, mp, cpair, chit } };
-  SYN.sel = null;
+  SYN.sel = null; SYN.pick = null;
   const nameA = $("cname").value.trim() || "ดวงในฟอร์มหลัก";
   $("synA").textContent = `${nameA} · เกิด ${$("bd").value}/${$("bm").value}/${$("by").value} ${$("bt").value}`;
   synWheelDraw(null);
@@ -5020,66 +5020,204 @@ function synRender() {
   $("synlist").innerHTML = h;
   $("syncount").textContent = `${D.B.label} · ${total} รายการ (แสดง ${shown})`;
 }
-// จาน 3 วง: นอก = คนที่ 1 · กลาง = คนที่ 2 · ใน = คอมโพสิต — โครงเดียวกับจานมุมสัมพันธ์/ดวงวรรษ
+// v109 (ผู้ใช้ขอ "ทำหน้าตาคล้ายจานอ้างอิง · ลักษณะอ้างอิงแท็บจานหมุน"):
+// จาน 360° สีและโครงแบบแท็บจานหมุน · พื้นขาวแถบสีโทนสว่างคงที่ทุกธีม (เหมือน canvas จานหมุน)
+// v110: **0° อยู่บน เดินทวนเข็ม** — v109 เดินตามเข็ม (ลอกทิศจาก canvas จานหมุน) ทำให้ราศีเรียงกลับด้าน
+//   ผู้ใช้จับได้จากภาพแอป Uranian Astro: จาน 360° ของแอปนั้น 0 บน 90 ซ้าย · วงราศี ♈→♉→♊ ทวนเข็ม
+//   ตรงกับจานดวงมาตรฐาน และตรงจานมุมสัมพันธ์/ดวงวรรษของเราเอง (0° ซ้าย ทวนเข็ม)
+//   วงฟ้า = คนที่ 1 · วงเหลือง = คนที่ 2 · วงเขียวนอกสุด = คอมโพสิต (วงที่ 3 อยู่นอกสุดแบบวงที่ 3 ของจานหมุน)
+//   ดาวทุกดวง: จุดที่ขอบในของแถบ = องศาจริง · ขีดโยงไปสัญลักษณ์ · ดาวชิดกันเยื้องสัญลักษณ์ออกจนไม่ทับ (จุดยังอยู่องศาจริง)
+//   สเกล 360° เป็นขีดล้วน (1° · 5° · 10° · ไม่มีตัวเลข v110 ผู้ใช้ขอให้หน้าจานสะอาด) · เส้นแบ่งทุก 30° ผ่านทุกวง ·
+//   วงในเป็นราศีระบายสีตามธาตุ + เรือนราศีธรรมชาติ (เมษ = 1 · ผู้ใช้เลือก)
+//   4 มุม: บนซ้ายคนที่ 1 · บนขวาคนที่ 2 · ล่างซ้ายตำแหน่ง/สูตรที่เลือก · ล่างขวาประเภทจาน
+// ทั้งหมดเป็นการแสดงผล — ตำแหน่งดาวมาจาก TL.R / B.R / compositeChart เท่านั้น ไม่มีการคำนวณใหม่
+const SW = {
+  cx: 200, cy: 200,
+  band: { p1: [102, 134], p2: [134, 166], c: [166, 198] },   // [ขอบใน, ขอบนอก] — จุดองศาจริงอยู่ขอบใน
+  gsize: 15,                                                // ความสูงสัญลักษณ์ (หน่วย viewBox)
+  rScale: 90, rSign: 64, rHouse: 44,
+  ELEM: ["#f8d4d2", "#d6ecd0", "#f5eebf", "#d9ddf3"],     // ไฟ ดิน ลม น้ำ (โทนแบบวงราศีของภาพอ้างอิง)
+  FACE: "#fdfdfa", BAND: { p1: "#dde8f7", p2: "#fdf6d5", c: "#e7f3e3" },
+  LINE: "#8b9099", LINE2: "#cbced4", TXT: "#23262b", PINK: "#e0157a", RED: "#e01010",
+  CLS: { personal: "#1558c0", good: "#12803f", bad: "#c0261b", booster: "#b8770d", neutral: "#4d545d" },
+  NAME: { p1: "คนที่ 1", p2: "คนที่ 2", c: "คอมโพสิต" },
+};
+const SW_SIGNS = ["♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐", "♑", "♒", "♓"];
+// 0° บนสุด เดินทวนเข็มนาฬิกา (ลำดับราศีมาตรฐาน: ♈ บน → ♉ ถัดไปทางซ้าย … 90° อยู่ซ้าย)
+function swXY(r, lon) {
+  const a = lon * Math.PI / 180;
+  return [SW.cx - r * Math.sin(a), SW.cy - r * Math.cos(a)];
+}
+// จัดสัญลักษณ์ไม่ให้ทับกัน: ดันคู่ที่ชิดกว่า minSep ออกจากกันจนนิ่ง (วงกลม ปิดหัวท้าย)
+// 22 ดวง × ~5° ≈ 110° < 360° จึงหาตำแหน่งไม่ทับได้เสมอ · คืน {c: องศาที่วางสัญลักษณ์}
+function swSpread(pos, minSep) {
+  const it = AISTRO.CODE_ORDER.filter((c) => pos[c] !== undefined)
+    .map((c) => ({ c, d: AISTRO.mod360(pos[c]) })).sort((a, b) => a.d - b.d);
+  for (const x of it) x.dd = x.d;
+  const n = it.length;
+  for (let pass = 0; pass < 400; pass++) {
+    let moved = false;
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n;
+      let gap = it[j].dd - it[i].dd;
+      if (j === 0) gap += 360;
+      if (gap < minSep - 1e-6) {
+        const push = (minSep - gap) / 2 + 1e-4;
+        it[i].dd -= push; it[j].dd += push; moved = true;
+      }
+    }
+    if (!moved) break;
+  }
+  const out = {};
+  for (const x of it) out[x.c] = x.dd;
+  return out;
+}
+function swTime(jd, tz) {
+  const p = jdLocalParts(jd, tz);
+  return `${pad2(p.d)}/${pad2(p.m)}/${p.y} ${pad2(p.hh)}:${pad2(p.mm)}:${pad2(p.ss)}`;
+}
+function swGmt(tz) {
+  const a = Math.abs(tz), h = Math.floor(a), m = Math.round((a - h) * 60);
+  return `GMT ${tz < 0 ? "-" : ""}${h}:${pad2(m)}`;
+}
+function synPlaceName(v) {
+  const P = globalThis.URAN_PLACES;
+  if (!P || !v || v === "custom") return "";
+  for (const [prov, la, lo] of P.th) if (`${la},${lo}` === v) return prov;
+  for (const [, cities] of P.intl) for (const [city, la, lo, tz] of cities) if (`${la},${lo},${tz}` === v) return city;
+  return "";
+}
+// ข้อความตำแหน่งดาวหนึ่งดวง: องศา 360 · องศาในราศี · เรือนราศี (เมษ = 1)
+function swPosLine(c, L, lon) {
+  const d = AISTRO.mod360(lon);
+  return `<span class="swpos"><b class="f-${AISTRO.FACTOR_CLASS[c]}">${c}${SYN_SUP[L]}</b> ` +
+    `${dms(d, ":")} · ${zodStr(d)} · เรือน ${Math.floor(d / 30) + 1}</span>`;
+}
 function synWheelDraw(row) {
   const box = $("synwheel"), D = SYN.data;
   if (!TL || !D) { box.innerHTML = ""; return; }
-  const cx = 200, cy = 200, rOut = 196, rScale = 170, rAB = 146, rBC = 122, rIn = 98;
-  const rA = (rScale + rAB) / 2, rB = (rAB + rBC) / 2, rC = (rBC + rIn) / 2;
-  const P = (r, lon) => [cx - r * Math.cos(lon * Math.PI / 180), cy + r * Math.sin(lon * Math.PI / 180)];
-  let s = `<svg viewBox="0 0 400 400" class="awsvg" xmlns="http://www.w3.org/2000/svg">`;
-  s += `<circle cx="${cx}" cy="${cy}" r="${rA}" class="awband awb1" stroke-width="${rScale - rAB}"/>` +
-       `<circle cx="${cx}" cy="${cy}" r="${rB}" class="awband awb2" stroke-width="${rAB - rBC}"/>` +
-       `<circle cx="${cx}" cy="${cy}" r="${rC}" class="awband awb3" stroke-width="${rBC - rIn}"/>`;
-  for (const r of [rOut, rScale, rAB, rBC, rIn])
-    s += `<circle cx="${cx}" cy="${cy}" r="${r}" class="awring${r === rAB || r === rBC ? " mid" : ""}"/>`;
-  for (let d = 0; d < 360; d += 10) {
-    const big = d % 30 === 0;
-    const [x0, y0] = P(rOut, d), [x1, y1] = P(rOut - (big ? 9 : 5), d);
-    s += `<line class="awtick${big ? " big" : ""}" x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}"/>`;
-    if (big) { const [xt, yt] = P(rOut - 17, d); s += `<text class="awdeg" x="${xt.toFixed(1)}" y="${yt.toFixed(1)}">${d}</text>`; }
-  }
-  const rings = { p1: [TL.R, rA], p2: [D.B.R, rB], c: [D.C, rC] };
-  // ดาวที่ต้องไฮไลต์ตามชนิดแถว [ชั้น, ดาว]
+  if (row !== undefined) SYN.row = row;
+  row = SYN.row || null;
+  const esc = AISTRO_RENDER.esc, f = (v) => v.toFixed(2);
+  const { cx, cy } = SW;
+  const pos = { p1: TL.R, p2: D.B.R, c: D.C };
   let hi = [];
   if (row) {
     if (row.kind === "cross") hi = [["p1", row.a], ["p2", row.b]];
     else if (row.kind === "cpair") hi = [["c", row.a], ["c", row.b]];
     else hi = [[row.src, row.a], [row.src, row.b], [row.xsrc, row.x]];
   }
+  const pick = SYN.pick && pos[SYN.pick.l] && pos[SYN.pick.l][SYN.pick.c] !== undefined ? SYN.pick : null;
   const isHi = (L, c) => hi.some(([l, k]) => l === L && k === c);
-  const late = [];
+  const circ = (r, fill, stroke, sw) =>
+    `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}"${stroke ? ` stroke="${stroke}" stroke-width="${sw || 1}"` : ""}/>`;
+  const ln = (r0, r1, lon, col, w, extra) => {   // extra = แอตทริบิวต์เพิ่ม (class/data-*)
+    const [x0, y0] = swXY(r0, lon), [x1, y1] = swXY(r1, lon);
+    return `<line x1="${f(x0)}" y1="${f(y0)}" x2="${f(x1)}" y2="${f(y1)}" stroke="${col}" stroke-width="${w}"${extra || ""}/>`;
+  };
+  let s = `<svg viewBox="0 0 400 400" class="swsvg" xmlns="http://www.w3.org/2000/svg">`;
+  // ── แถบสี (วาดจากนอกเข้าใน เป็นแผ่นทึบ) ──
+  s += `<circle class="swband" data-l="c" data-rin="${SW.band.c[0]}" cx="${cx}" cy="${cy}" r="${SW.band.c[1]}" fill="${SW.BAND.c}"/>`;
+  s += `<circle class="swband" data-l="p2" data-rin="${SW.band.p2[0]}" cx="${cx}" cy="${cy}" r="${SW.band.p2[1]}" fill="${SW.BAND.p2}"/>`;
+  s += `<circle class="swband" data-l="p1" data-rin="${SW.band.p1[0]}" cx="${cx}" cy="${cy}" r="${SW.band.p1[1]}" fill="${SW.BAND.p1}"/>`;
+  s += circ(SW.band.p1[0], SW.FACE);
+  // ── เส้นแบ่งทุก 30° ผ่านทุกวง + ขีดองศาที่ขอบในทุกแถบและขอบนอกสุด ──
+  for (let d = 0; d < 360; d += 30) s += ln(SW.rSign, SW.band.c[1], d, SW.LINE2, 0.7);
   for (const L of ["p1", "p2", "c"]) {
-    const [pos, rr] = rings[L];
+    const r0 = SW.band[L][0];
+    for (let d = 0; d < 360; d += 5) s += ln(r0, r0 + (d % 10 === 0 ? 4 : 2.2), d, SW.LINE, 0.6);
+  }
+  for (let d = 0; d < 360; d += 5) s += ln(SW.band.c[1], SW.band.c[1] - (d % 10 === 0 ? 4 : 2.2), d, SW.LINE, 0.6);
+  // ── สเกล 360° ขีดล้วน: 1° สั้น · 5° กลาง · 10° ยาว (ไม่มีตัวเลข) ──
+  for (let d = 0; d < 360; d++) {
+    const big = d % 10 === 0, mid = d % 5 === 0;
+    s += ln(SW.band.p1[0], SW.band.p1[0] - (big ? 9 : mid ? 6 : 3.2), d,
+            big ? SW.TXT : mid ? SW.LINE : SW.LINE2, big ? 1 : mid ? 0.8 : 0.5,
+            ` class="swtk" data-d="${d}"`);
+  }
+  // ── วงราศีระบายสีตามธาตุ + เรือนราศีธรรมชาติ (เมษ = 1) ──
+  s += `<g class="swzod">`;
+  for (let i = 0; i < 12; i++) {
+    const a0 = i * 30, a1 = a0 + 30, mid = a0 + 15, R1 = SW.rScale, R0 = SW.rSign;
+    const [o0x, o0y] = swXY(R1, a0), [o1x, o1y] = swXY(R1, a1), [i1x, i1y] = swXY(R0, a1), [i0x, i0y] = swXY(R0, a0);
+    // องศาเพิ่ม = ทวนเข็มบนจอ → ส่วนโค้งนอก sweep 0 · ส่วนโค้งในย้อนกลับ sweep 1
+    s += `<path class="swsec" data-i="${i}" fill="${SW.ELEM[i % 4]}" d="M${f(o0x)},${f(o0y)} A${R1},${R1} 0 0 0 ${f(o1x)},${f(o1y)} ` +
+      `L${f(i1x)},${f(i1y)} A${R0},${R0} 0 0 1 ${f(i0x)},${f(i0y)} Z"/>`;
+    const [gx, gy] = swXY((SW.rScale + SW.rSign) / 2, mid);
+    const [hx, hy] = swXY((SW.rSign + SW.rHouse) / 2, mid);
+    s += `<text class="swsign" data-i="${i}" x="${f(gx)}" y="${f(gy)}" fill="${SW.TXT}">${SW_SIGNS[i]}\uFE0E</text>` +
+      `<text class="swhouse" data-i="${i}" x="${f(hx)}" y="${f(hy)}" fill="${SW.LINE}">${i + 1}</text>`;
+  }
+  s += `</g>`;
+  for (let d = 0; d < 360; d += 30) s += ln(SW.rHouse, SW.rSign, d, SW.LINE2, 0.7);
+  for (const r of [SW.band.c[1], SW.band.c[0], SW.band.p2[0], SW.band.p1[0], SW.rScale, SW.rSign, SW.rHouse])
+    s += circ(r, "none", SW.LINE, r === SW.band.c[1] ? 1.2 : 0.8);
+  // ── ดาว 3 วง ──
+  const late = [];
+  const gs = SW.gsize;
+  for (const L of ["p1", "p2", "c"]) {
+    const [r0] = SW.band[L], rG = r0 + 18;
+    const minSep = (gs * 1.05) / rG * 180 / Math.PI;
+    const dd = swSpread(pos[L], minSep);
     for (const c of AISTRO.CODE_ORDER) {
-      if (pos[c] === undefined) continue;
-      const [x, y] = P(rr, pos[c]);
-      const h1 = isHi(L, c);
-      const g = `<g class="awp${h1 ? " awhi" : (row ? " awdim" : "")}" data-c="${c}" data-l="${L}"` +
-        ` data-lon="${AISTRO.mod360(pos[c]).toFixed(6)}">` +
-        (h1 ? `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="12" class="awhalo"/>` : "") +
-        svgGlyph(c, x, y, h1 ? 18 : (row ? 11 : 13), "f-" + AISTRO.FACTOR_CLASS[c]) + `</g>`;
-      if (h1) late.push(g); else s += g;
+      if (pos[L][c] === undefined) continue;
+      const lon = AISTRO.mod360(pos[L][c]);
+      const col = SW.CLS[AISTRO.FACTOR_CLASS[c]] || SW.TXT;
+      const h1 = isHi(L, c), pk = !!pick && pick.l === L && pick.c === c;
+      const [dx, dy] = swXY(r0, lon), [sx, sy] = swXY(rG - gs * 0.62, dd[c]), [gx, gy] = swXY(rG, dd[c]);
+      const glyph = svgGlyph(c, f(gx), f(gy), h1 || pk ? gs * 1.15 : gs, "swg");
+      let g = `<g class="awp${h1 ? " awhi" : ""}${pk ? " swpick" : ""}${row && !h1 && !pk ? " awdim" : ""}" ` +
+        `data-c="${c}" data-l="${L}" data-lon="${lon.toFixed(6)}" data-dd="${AISTRO.mod360(dd[c]).toFixed(6)}" style="fill:${col}">`;
+      if (h1) g += `<circle cx="${f(gx)}" cy="${f(gy)}" r="${gs * 0.8}" fill="rgba(70,130,240,0.18)" stroke="rgba(70,130,240,0.85)" stroke-width="1.2"/>`;
+      if (pk) g += `<circle cx="${f(gx)}" cy="${f(gy)}" r="${gs * 0.9}" fill="none" stroke="${SW.PINK}" stroke-width="1.5" stroke-dasharray="3 2"/>`;
+      g += `<line class="swstick" x1="${f(dx)}" y1="${f(dy)}" x2="${f(sx)}" y2="${f(sy)}" stroke="${col}" stroke-width="${h1 || pk ? 1.4 : 0.9}"/>` +
+        `<circle class="swdot" cx="${f(dx)}" cy="${f(dy)}" r="${h1 || pk ? 2.4 : 1.7}" fill="${col}"/>` +
+        glyph +
+        `<circle class="swhit" cx="${f(gx)}" cy="${f(gy)}" r="${gs * 0.75}" fill="transparent" style="pointer-events:auto;cursor:pointer"/>` +
+        `</g>`;
+      if (h1 || pk) late.push(g); else s += g;
     }
   }
+  // ── เส้นชี้องศาจริงของดาวที่เลือก (จากวงเรือนออกไปถึงจุด) + ป้ายมุมกลางจาน ──
+  const spokes = hi.slice();
+  if (pick && !isHi(pick.l, pick.c)) spokes.push([pick.l, pick.c]);
+  for (const [L, c] of spokes)
+    s += ln(SW.rHouse, SW.band[L][0], AISTRO.mod360(pos[L][c]), SW.RED, 1.1, ` class="swspoke" opacity="0.8"`);
+  s += late.join("");
+  s += circ(SW.rHouse, SW.FACE, SW.LINE, 0.8);
   if (row) {
-    const pts = hi.map(([L, c]) => P(rings[L][1], rings[L][0][c]));
-    for (const [x, y] of pts)
-      s += `<line class="awspoke" x1="${cx}" y1="${cy}" x2="${x.toFixed(2)}" y2="${y.toFixed(2)}"/>`;
-    if (pts.length === 2)
-      s += `<line class="awline" x1="${pts[0][0].toFixed(2)}" y1="${pts[0][1].toFixed(2)}" x2="${pts[1][0].toFixed(2)}" y2="${pts[1][1].toFixed(2)}"/>`;
-    s += late.join("");
-    s += `<text class="awc" x="${cx}" y="${cy - 6}">${AISTRO_RENDER.esc(synLabel(row))}</text>` +
-         `<text class="awc sm" x="${cx}" y="${cy + 12}">มุม ${row.ang}° · orb ${row.orb.toFixed(2)}°</text>`;
-  } else {
-    s += `<text class="awc sm" x="${cx}" y="${cy - 2}">ความสมพงษ์</text>` +
-         `<text class="awc sm" x="${cx}" y="${cy + 14}">กดแถวด้านล่างเพื่อดูมุม</text>`;
-  }
+    s += `<text class="swctr" x="${cx}" y="${cy - 3}" fill="${SW.RED}">${row.ang}°</text>` +
+      `<text class="swctr sm" x="${cx}" y="${cy + 11}" fill="${SW.LINE}">orb ${row.orb.toFixed(2)}°</text>`;
+  }   // ไม่เลือกอะไร = กลางจานว่าง (v110 หน้าจานสะอาด · ประเภทจานอยู่มุมล่างขวาแล้ว)
   s += `</svg>`;
-  const esc = AISTRO_RENDER.esc;
+
+  // ── 4 มุม ──
   const nameA = $("cname").value.trim() || "คนที่ 1";
-  box.innerHTML = s + `<div class="awleg"><i class="awsw b1"></i>วงนอก = ${esc(nameA)}¹ · ` +
-    `<i class="awsw b2"></i>วงกลาง = ${esc(D.B.label)}² · <i class="awsw b3"></i>วงใน = คอมโพสิตᶜ · 0° อยู่ซ้าย เดินทวนเข็ม</div>`;
+  const sw = (L) => `<i class="swsw" style="background:${SW.BAND[L]}"></i>`;
+  const tl = `<b>${sw("p1")}${esc(nameA)}¹</b><span>${swTime(TL.jd, TZ)}</span>` +
+    `<span class="sx">${esc(TL.place || "")}</span><span class="sx">${coordStr(TL.lat, TL.lon)}</span>` +
+    `<span class="sx">${swGmt(TZ)}</span>`;
+  const tr = `<b>${esc(D.B.label)}²${sw("p2")}</b><span>${swTime(D.B.jd, D.B.tz)}</span>` +
+    `<span class="sx">${esc(D.B.place || "")}</span><span class="sx">${coordStr(D.B.lat, D.B.lon)}</span>` +
+    `<span class="sx">${swGmt(D.B.tz)}</span>`;
+  let bl;
+  if (row) {
+    const fac = row.kind === "cross" ? [["p1", row.a], ["p2", row.b]]
+      : row.kind === "cpair" ? [["c", row.a], ["c", row.b]]
+      : [[row.src, row.a], [row.src, row.b], [row.xsrc, row.x]];
+    bl = `<b class="swform">${esc(synLabel(row))} <span class="swsub">· มุม ${row.ang}° · orb ${row.orb.toFixed(2)}°</span></b>` +
+      fac.map(([L, c]) => swPosLine(c, L, pos[L][c])).join("");
+  } else if (pick) {
+    bl = `<b>${SW.NAME[pick.l]}</b>` + swPosLine(pick.c, pick.l, pos[pick.l][pick.c]);
+  } else {
+    bl = `<b>— ยังไม่ได้เลือก</b><span>กดแถวด้านล่าง หรือแตะดาวบนจาน</span>`;
+  }
+  if (row && pick && !isHi(pick.l, pick.c)) bl += swPosLine(pick.c, pick.l, pos[pick.l][pick.c]);
+  const br = `<b>360° Dial</b><span class="sx">จานความสมพงษ์</span>` +
+    `<span>${sw("c")}วงนอก = คอมโพสิต</span><span class="sx">เรือนราศี เมษ = 1 · สีช่องราศี = ธาตุ</span>` +
+    `<span class="sx">Tropical Zodiac</span>`;
+  box.innerHTML = `<div class="swwrap">${s}<div class="swi swtl">${tl}</div><div class="swi swtr">${tr}</div>` +
+    `<div class="swi swbl">${bl}</div><div class="swi swbr">${br}</div></div>`;
 }
 $("synpick").addEventListener("change", () => {
   $("synform").hidden = $("synpick").value !== "manual";
@@ -5089,6 +5227,14 @@ $("synpcountry").addEventListener("change", () =>
   synFillPlaces($("synpcountry").value === "th" ? "13.7563,100.5018" : null));
 $("synplace").addEventListener("change", synPlaceChange);
 $("syngo").addEventListener("click", () => synRun());
+// แตะดาวบนจาน → มุมล่างซ้ายบอกตำแหน่ง (แตะซ้ำ = เลิกเลือก)
+$("synwheel").addEventListener("click", (e) => {
+  const g = e.target.closest(".awp");
+  if (!g || !SYN.data) return;
+  const same = SYN.pick && SYN.pick.l === g.dataset.l && SYN.pick.c === g.dataset.c;
+  SYN.pick = same ? null : { l: g.dataset.l, c: g.dataset.c };
+  synWheelDraw();
+});
 $("synlist").addEventListener("click", async (e) => {
   const row = e.target.closest(".synrow");
   if (!row || !SYN.data) return;

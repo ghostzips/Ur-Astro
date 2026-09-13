@@ -1173,12 +1173,50 @@ p.hint:empty{display:none}
 
 /* v108: แท็บความสมพงษ์ — จาน 3 วงโครงเดียวกับจานมุมสัมพันธ์/ดวงวรรษ · แถวใช้ .horrow ของกาลชะตา */
 #synwheel:empty{display:none}
-#synwheel{margin:var(--s3) auto 0;max-width:420px}
+#synwheel{margin:var(--s3) auto 0;max-width:940px}
 .synform{flex-wrap:wrap;row-gap:var(--s1)}
 .synrow.on{outline:1px solid var(--f-personal);background:var(--sunk)}
 #synA{font-weight:600}
+/* v109: จานความสมพงษ์แบบแท็บจานหมุน — 4 มุมอยู่ "นอกวง" เสมอด้วย grid (กติกา v78: ข้อความห้ามบังจาน)
+   พื้นจานเป็นสีสว่างคงที่ใส่ใน SVG เอง (แบบ canvas จานหมุน) · ตัวหนังสือมุมใช้ token ตามธีม */
+.swwrap{display:grid;grid-template-columns:1fr minmax(0,440px) 1fr;
+  grid-template-areas:"tl cv tr" "bl cv br";gap:var(--s2) var(--s3);align-items:start;line-height:1.45}
+.swsvg{grid-area:cv;width:100%;height:auto;display:block;border-radius:50%}
+.swi{min-width:0;font-size:var(--t-xs);color:var(--dim);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.swi b{display:block;color:var(--ink);font-size:var(--t-sm);font-weight:700}
+.swi span{display:block}
+.swtl{grid-area:tl}
+.swtr{grid-area:tr;text-align:right}
+.swbl{grid-area:bl;align-self:end}
+.swbr{grid-area:br;align-self:end;text-align:right}
+.swbr b,.swbr span{color:var(--f-personal)}
+.swbl .swform{font-family:var(--mono);color:var(--f-personal)}
+.swpos{font-family:var(--mono);font-size:10.5px}
+.swi .swpos b{display:inline;font-size:inherit}
+.swi .swsub{display:inline}
+.swsw{display:inline-block;width:.8em;height:.8em;border-radius:2px;vertical-align:-1px;margin:0 .3em;border:1px solid var(--faint)}
+.swsign{font-family:"Apple Symbols","Segoe UI Symbol","Noto Sans Symbols 2",system-ui,sans-serif;font-size:15px;
+  text-anchor:middle;dominant-baseline:central}
+.swhouse{font:600 9.5px/1 var(--mono);text-anchor:middle;dominant-baseline:central}
+.swctr{font:700 13px/1 var(--mono);text-anchor:middle;dominant-baseline:central}
+.swctr.sm{font-size:7px;font-weight:400}
+.swsvg .awp.awdim{opacity:.35}
+@media (max-width:720px){
+  /* จอแคบ: มุมบนสองมุมอยู่เหนือจาน มุมล่างอยู่ใต้จาน */
+  .swwrap{grid-template-columns:1fr 1fr;grid-template-areas:"tl tr" "cv cv" "bl br"}
+  .swsvg{justify-self:center;max-width:440px}
+  .swbl,.swbr{align-self:start}
+}
 @media (max-width:620px){
-  #synwheel{position:sticky;top:0;z-index:3;background:var(--panel);max-width:300px;padding:var(--s1) 0}
+  /* ค้างจานไว้ด้านบนตอนเลื่อนดูรายการ — ซ่อนบรรทัดรอง (สถานที่/พิกัด/GMT) ให้กินจอน้อยลง */
+  #synwheel{position:sticky;top:0;z-index:3;background:var(--panel);padding:var(--s1) 0}
+  .swsvg{max-width:270px}
+  .swi .sx{display:none}
+  /* มุมล่างซ้าย (สูตร + ตำแหน่งดาว) ยาว → ใช้เต็มแถว · มุมล่างขวาเหลือบรรทัดเดียว */
+  .swwrap{gap:2px var(--s2);grid-template-areas:"tl tr" "cv cv" "bl bl" "br br"}
+  .swbr{align-self:start}
+  .swbr span{display:inline}
+  .swbr b{display:inline;margin-right:.4em}
 }
 
 /* v104: แท็บดวงวรรษ — แถวรายการรอบ (โครงเดียวกับ .asprow ให้อ่านเหมือนกันทั้งแอป) */
