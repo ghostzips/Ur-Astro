@@ -13,7 +13,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v113">
+<link rel="stylesheet" href="style.css?v=urain-v114">
 </head>
 <body>
 <div class="wrap">
@@ -615,14 +615,14 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v113"></script>
-<script src="places.js?v=urain-v113"></script>
-<script src="engine.js?v=urain-v113"></script>
-<script src="render.js?v=urain-v113"></script>
+<script src="glyphs.js?v=urain-v114"></script>
+<script src="places.js?v=urain-v114"></script>
+<script src="engine.js?v=urain-v114"></script>
+<script src="render.js?v=urain-v114"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const SW_CACHE = "urain-v113";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v114";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 let DIALMARKS = null, _markTimer = 0;   // วงเส้นประกะพริบครอบดาวของสูตร (v80)
@@ -644,8 +644,29 @@ let TZ = 7.0;
                   String(now.getMinutes()).padStart(2, "0");
 })();
 
+// v114 (รีวิว ChatGPT รอบ 4): ตรวจ "ทั้งค่า" ไม่อ่านแค่ส่วนต้น — เดิม +"3.5" ผ่านเป็นวันที่ 3.5 ·
+// parseInt("2515x") = 2515 · parseFloat("7,5") = 7 เงียบ ๆ ผู้ใช้ไม่รู้ว่าคำนวณจากค่าที่ไม่ได้ตั้งใจ
+// ใช้ร่วมกันทั้งฟอร์มหลัก (run) และดวงคนที่สองของความสมพงษ์ (synParseB)
+function intStrict(v) {                       // จำนวนเต็มไม่ติดลบเท่านั้น · อื่น ๆ = NaN
+  const t = String(v === undefined || v === null ? "" : v).trim();
+  return /^\d+$/.test(t) ? Number(t) : NaN;
+}
+function tzStrict(v) {                        // เช่น 7 · +7 · -3 · 5.5 · 5.75 (ไม่รับจุลภาค)
+  const t = String(v === undefined || v === null ? "" : v).trim();
+  return /^[+-]?\d{1,2}(\.\d+)?$/.test(t) ? Number(t) : NaN;
+}
+// ค่าสถานที่จากรายการ "lat,lon" (ไทย) หรือ "lat,lon,tz" (ต่างประเทศ) · คืน null ถ้าว่าง/ไม่ใช่ตัวเลข/นอกพิสัย
+function placeLatLon(v) {
+  const q = String(v === undefined || v === null ? "" : v).split(",").map((t) => t.trim());
+  if (q.length < 2 || q.length > 3) return null;
+  const num = /^[+-]?\d+(\.\d+)?$/;
+  if (!num.test(q[0]) || !num.test(q[1]) || (q.length === 3 && !num.test(q[2]))) return null;
+  const lat = Number(q[0]), lon = Number(q[1]);
+  if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return null;
+  return { lat, lon, tz: q.length === 3 ? Number(q[2]) : null };
+}
 function ceYear(v) {
-  const y = parseInt(v, 10);
+  const y = intStrict(v);
   return y >= 2300 ? y - 543 : y;   // พ.ศ. -> ค.ศ.
 }
 function parseTime(v) {
@@ -745,9 +766,9 @@ function run() {
   const st = $("status");
   clearResults();
   try {
-    const by = ceYear($("by").value), bm = +$("bm").value, bd = +$("bd").value;
+    const by = ceYear($("by").value), bm = intStrict($("bm").value), bd = intStrict($("bd").value);
     const bh = parseTime($("bt").value);
-    const ty = ceYear($("ty").value), tm = +$("tm").value, td = +$("td").value;
+    const ty = ceYear($("ty").value), tm = intStrict($("tm").value), td = intStrict($("td").value);
     const th = parseTime($("tt").value);
     const okDate = (y, m, d) => {
       if (!y || !(m >= 1 && m <= 12) || !(d >= 1 && d <= 31)) return false;
@@ -760,7 +781,7 @@ function run() {
     if (by < 1900 || by > 2099 || ty < 1900 || ty > 2099) {
       throw new Error("รองรับ ค.ศ. 1900–2099 (พ.ศ. 2443–2642) เท่านั้น");
     }
-    const tzv = parseFloat($("tz").value);
+    const tzv = tzStrict($("tz").value);
     if (!isFinite(tzv) || tzv < -12 || tzv > 14) {
       throw new Error("เขตเวลาต้องอยู่ระหว่าง −12 ถึง +14");
     }
@@ -778,8 +799,9 @@ function run() {
         throw new Error(`lat/lon นอกพิสัย — ละติจูดต้องอยู่ −90…90 (ได้ ${lat}) ` +
                         `ลองจิจูด −180…180 (ได้ ${lon})`);
     } else {
-      const p = $("place").value.split(",").map(Number);
-      lat = p[0]; lon = p[1];
+      const p = placeLatLon($("place").value);
+      if (!p) throw new Error("สถานที่เกิดไม่ถูกต้อง — เลือกจากรายการใหม่ หรือกำหนด lat/lon เอง");
+      lat = p.lat; lon = p.lon;
     }
     const t0 = performance.now();
     const { R, jd } = AISTRO.buildRadix(by, bm, bd, bh, TZ, lat, lon);
@@ -1110,6 +1132,7 @@ function aspFactorGroup(c) {
 }
 function aspPairGroup(a, b) { return Math.min(aspFactorGroup(a), aspFactorGroup(b)); }
 function aspRun() {
+  if (TMEAN_ROW && TMEAN_ROW.classList.contains("asprow")) tmeanClose();   // v114 เหตุผลเดียวกับ synRun
   if (!TL) { $("asplist").innerHTML = '<p class="svempty">กดคำนวณดวงก่อน</p>'; return; }
   const kinds = ASP_KINDS.map(([k]) => k).filter((k) => ASP.on[k]);
   if (!kinds.length) { $("asplist").innerHTML =
@@ -3670,7 +3693,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v113")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v114")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
@@ -4946,13 +4969,13 @@ function synParseB() {
           tz: $("syntz").value, place: $("synplace").value, ll: $("synll").value };
     label = "คนที่ 2";
   } else throw new Error("เลือกดวงคนที่สอง (จากดวงที่บันทึกไว้ หรือกรอกเอง)");
-  const by = ceYear(c.by), bm = +c.bm, bd = +c.bd, bh = parseTime(c.bt);
+  const by = ceYear(c.by), bm = intStrict(c.bm), bd = intStrict(c.bd), bh = parseTime(c.bt);
   const dim = [31, (by % 4 === 0 && by % 100 !== 0) || by % 400 === 0 ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
   if (!by || !(bm >= 1 && bm <= 12) || !(bd >= 1 && bd <= dim[bm - 1]) || bh === null)
     throw new Error("วัน-เวลาเกิดของคนที่สองไม่ถูกต้อง");
   if (by < 1900 || by > 2099) throw new Error("คนที่สอง: รองรับ ค.ศ. 1900–2099 (พ.ศ. 2443–2642) เท่านั้น");
-  const tz = parseFloat(c.tz);
-  if (!isFinite(tz) || tz < -12 || tz > 14) throw new Error("คนที่สอง: เขตเวลาต้องอยู่ระหว่าง −12 ถึง +14");
+  const tz = tzStrict(c.tz);
+  if (!isFinite(tz) || tz < -12 || tz > 14) throw new Error("คนที่สอง: เขตเวลาต้องเป็นตัวเลขระหว่าง −12 ถึง +14 (เช่น 7 หรือ 5.5)");
   let lat, lon;
   if (c.place === "custom" || !c.place) {
     const q = String(c.ll || "").split(",");
@@ -4961,8 +4984,9 @@ function synParseB() {
     if (q.length !== 2 || !isFinite(lat) || !isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180)
       throw new Error("คนที่สอง: lat/lon ไม่ถูกต้อง — ตัวเลขสองค่าคั่นด้วยจุลภาค เช่น 13.7563, 100.5018");
   } else {
-    const p = String(c.place).split(",").map(Number);
-    lat = p[0]; lon = p[1];
+    const p = placeLatLon(c.place);             // v114: "," เคยกลายเป็น lat 0 lon 0 เงียบ ๆ
+    if (!p) throw new Error("คนที่สอง: สถานที่เกิดในข้อมูลไม่ถูกต้อง — แก้ดวงที่บันทึกไว้ หรือกรอกเอง");
+    lat = p.lat; lon = p.lon;
   }
   const { R, jd } = AISTRO.buildRadix(by, bm, bd, bh, tz, lat, lon);
   return { R, jd, tz, lat, lon, label, place: synPlaceName(c.place), when: `${bd}/${bm}/${by + 543} ${c.bt}` };
@@ -4974,6 +4998,10 @@ function synSort(list, factorsOf) {
   return list;
 }
 function synRun() {
+  // v114 (รีวิว ChatGPT รอบ 4): เปลี่ยนคนที่สองด้วยคีย์บอร์ด (change ไม่มี click) → ผล/จานเป็นคู่ใหม่ แต่คำแปลคู่เก่ายังเปิด
+  // และถ้าพจนานุกรมกำลังโหลด แถวเก่ายังเขียนคำแปลเก่าต่อได้ · ปิดก่อนเปลี่ยนข้อมูลเสมอ (tmeanClose ตั้ง TMEAN_ROW = null
+  // ทำให้ยาม `TMEAN_ROW !== row` หลัง await ตัดการเขียน)
+  if (TMEAN_ROW && TMEAN_ROW.classList.contains("synrow")) tmeanClose();
   if (!TL) { $("synlist").innerHTML = '<p class="svempty">กดคำนวณดวงก่อน (คนที่ 1 คือดวงในฟอร์มหลัก)</p>'; return; }
   let B;
   try { B = synParseB(); }
@@ -5073,7 +5101,7 @@ function swSpread(pos, minSep) {
     .map((c) => ({ c, d: AISTRO.mod360(pos[c]) })).sort((a, b) => a.d - b.d);
   for (const x of it) x.dd = x.d;
   const n = it.length;
-  for (let pass = 0; pass < 400; pass++) {
+  for (let pass = 0; pass < 5000; pass++) {   // v114: กองทับกันทั้ง 22 ดวง 400 รอบยังขาด minSep ~0.002° (รีวิวรอบ 4) · ลู่เข้าแล้ว break
     let moved = false;
     for (let i = 0; i < n; i++) {
       const j = (i + 1) % n;
@@ -5098,11 +5126,15 @@ function swGmt(tz) {
   const a = Math.abs(tz), h = Math.floor(a), m = Math.round((a - h) * 60);
   return `GMT ${tz < 0 ? "-" : ""}${h}:${pad2(m)}`;
 }
+// v114: เทียบเป็นตัวเลข ไม่ใช่ข้อความ — ดวงที่นำเข้าเก็บ "13.756300,100.501800" ชื่อเคยหาย
+// สองค่า = รายการไทย · สามค่า = รายการต่างประเทศ (ต้องตรง tz ด้วย)
 function synPlaceName(v) {
-  const P = globalThis.URAN_PLACES;
-  if (!P || !v || v === "custom") return "";
-  for (const [prov, la, lo] of P.th) if (`${la},${lo}` === v) return prov;
-  for (const [, cities] of P.intl) for (const [city, la, lo, tz] of cities) if (`${la},${lo},${tz}` === v) return city;
+  const P = globalThis.URAN_PLACES, p = placeLatLon(v);
+  if (!P || !p) return "";
+  const eq = (a, b) => Math.abs(Number(a) - b) < 1e-9;
+  if (p.tz === null) { for (const [prov, la, lo] of P.th) if (eq(la, p.lat) && eq(lo, p.lon)) return prov; }
+  else for (const [, cities] of P.intl) for (const [city, la, lo, tz] of cities)
+    if (eq(la, p.lat) && eq(lo, p.lon) && eq(tz, p.tz)) return city;
   return "";
 }
 // ข้อความตำแหน่งดาวหนึ่งดวง: องศา 360 · องศาในราศี · เรือนราศี (เมษ = 1)
