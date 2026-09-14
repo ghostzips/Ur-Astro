@@ -13,7 +13,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v112">
+<link rel="stylesheet" href="style.css?v=urain-v113">
 </head>
 <body>
 <div class="wrap">
@@ -615,14 +615,14 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v112"></script>
-<script src="places.js?v=urain-v112"></script>
-<script src="engine.js?v=urain-v112"></script>
-<script src="render.js?v=urain-v112"></script>
+<script src="glyphs.js?v=urain-v113"></script>
+<script src="places.js?v=urain-v113"></script>
+<script src="engine.js?v=urain-v113"></script>
+<script src="render.js?v=urain-v113"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const SW_CACHE = "urain-v112";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v113";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 let DIALMARKS = null, _markTimer = 0;   // วงเส้นประกะพริบครอบดาวของสูตร (v80)
@@ -1179,6 +1179,11 @@ function aspRender() {
     else { ASP.sel = -1; aspWheelDraw(null); }
   }
 }
+function aspClearSel() {
+  $("asplist").querySelectorAll(".asprow.on").forEach((x) => x.classList.remove("on"));
+  ASP.sel = -1;
+  if (ASP.rows) aspWheelDraw(null);
+}
 $("aspview").addEventListener("click", () => {
   ASP.view = ASP.view === "web" ? "u" : "web";
   if (ASP.rows) aspRender(); else $("aspview").classList.toggle("on", ASP.view === "web");
@@ -1280,7 +1285,7 @@ function aspWheelDraw(row) {
 $("asplist").addEventListener("click", async (e) => {
   const row = e.target.closest(".asprow");
   if (!row || !ASP.rows) return;
-  // วาดจานก่อนเสมอ (แม้กดซ้ำเพื่อปิดคำแปล จานยังค้างคู่นั้นไว้ให้ดู)
+  // วาดจานก่อน · กดซ้ำเพื่อปิดคำแปล → tmeanClose เลิกเลือกให้ (v113 · เดิมจานค้างคู่นั้นไว้ ผู้ใช้สับสน)
   ASP.sel = +row.dataset.i;                // v107: จำไว้ให้ aspRender วาดจานคืนหลังสลับโหมด
   aspWheelDraw(ASP.rows[+row.dataset.i]);
   $("asplist").querySelectorAll(".asprow.on").forEach((x) => x.classList.remove("on"));
@@ -2120,6 +2125,14 @@ function retRender() {
 $("retlist").addEventListener("click", (e) => {
   const row = e.target.closest(".retrow");
   if (!row || !RET.rows) return;
+  // v113 (ผู้ใช้: ดวงวรรษค้างแบบเดียวกับความสมพงษ์) — กดแถวที่เลือกอยู่ซ้ำ = เลิกเลือก จานกลับพื้นฐาน ปุ่มตั้งดวงจรปิด
+  if (row.classList.contains("on") && RET.sel === +row.dataset.i) {
+    row.classList.remove("on");
+    RET.sel = -1;
+    $("retapply").disabled = true;
+    retWheelDraw(null);
+    return;
+  }
   RET.sel = +row.dataset.i;
   $("retlist").querySelectorAll(".retrow.on").forEach((x) => x.classList.remove("on"));
   row.classList.add("on");
@@ -3657,7 +3670,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v112")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v113")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
@@ -3911,6 +3924,8 @@ function tmeanClose() {
   // v112 (ผู้ใช้: "กดสูตรด้านล่างแล้วมันค้าง ทำให้สับสน") — แท็บความสมพงษ์: ป๊อปอัพปิด = เลิกเลือกแถวด้วย
   // เดิมปิดแค่ป๊อปอัพ แถวยังกรอบฟ้า จานยังไฮไลต์ + เส้นแดง + มุมล่างซ้ายยังโชว์สูตรเก่า ดูเหมือนยังเลือกอยู่
   if (TMEAN_ROW && TMEAN_ROW.classList.contains("synrow")) synClearSel();
+  // v113 (ผู้ใช้ยืนยันว่ามุมสัมพันธ์ค้างแบบเดียวกัน) — ปิดคำแปล = เลิกเลือกคู่ + จานกลับพื้นฐาน
+  if (TMEAN_ROW && TMEAN_ROW.classList.contains("asprow")) aspClearSel();
   TMEAN_ROW = null;
   $("tmean").hidden = true; $("tmean").innerHTML = "";
 }
