@@ -13,7 +13,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v110">
+<link rel="stylesheet" href="style.css?v=urain-v112">
 </head>
 <body>
 <div class="wrap">
@@ -615,14 +615,14 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v110"></script>
-<script src="places.js?v=urain-v110"></script>
-<script src="engine.js?v=urain-v110"></script>
-<script src="render.js?v=urain-v110"></script>
+<script src="glyphs.js?v=urain-v112"></script>
+<script src="places.js?v=urain-v112"></script>
+<script src="engine.js?v=urain-v112"></script>
+<script src="render.js?v=urain-v112"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const SW_CACHE = "urain-v110";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v112";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 let DIALMARKS = null, _markTimer = 0;   // วงเส้นประกะพริบครอบดาวของสูตร (v80)
@@ -3657,7 +3657,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v110")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v112")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
@@ -3908,6 +3908,9 @@ $("tmean").addEventListener("click", (e) => {
 let TMEAN_ROW = null;
 function tmeanClose() {
   for (const r of $("out").querySelectorAll(".frow.on")) r.classList.remove("on");
+  // v112 (ผู้ใช้: "กดสูตรด้านล่างแล้วมันค้าง ทำให้สับสน") — แท็บความสมพงษ์: ป๊อปอัพปิด = เลิกเลือกแถวด้วย
+  // เดิมปิดแค่ป๊อปอัพ แถวยังกรอบฟ้า จานยังไฮไลต์ + เส้นแดง + มุมล่างซ้ายยังโชว์สูตรเก่า ดูเหมือนยังเลือกอยู่
+  if (TMEAN_ROW && TMEAN_ROW.classList.contains("synrow")) synClearSel();
   TMEAN_ROW = null;
   $("tmean").hidden = true; $("tmean").innerHTML = "";
 }
@@ -5034,7 +5037,7 @@ function synRender() {
 const SW = {
   cx: 200, cy: 200,
   band: { p1: [102, 134], p2: [134, 166], c: [166, 198] },   // [ขอบใน, ขอบนอก] — จุดองศาจริงอยู่ขอบใน
-  gsize: 15,                                                // ความสูงสัญลักษณ์ (หน่วย viewBox)
+  gsize: 12,                                                // ความสูงสัญลักษณ์ (หน่วย viewBox) · v111 ย่อจาก 15 ผู้ใช้ขอให้สะอาดตา
   rScale: 90, rSign: 64, rHouse: 44,
   ELEM: ["#f8d4d2", "#d6ecd0", "#f5eebf", "#d9ddf3"],     // ไฟ ดิน ลม น้ำ (โทนแบบวงราศีของภาพอ้างอิง)
   FACE: "#fdfdfa", BAND: { p1: "#dde8f7", p2: "#fdf6d5", c: "#e7f3e3" },
@@ -5131,7 +5134,7 @@ function synWheelDraw(row) {
   // ── สเกล 360° ขีดล้วน: 1° สั้น · 5° กลาง · 10° ยาว (ไม่มีตัวเลข) ──
   for (let d = 0; d < 360; d++) {
     const big = d % 10 === 0, mid = d % 5 === 0;
-    s += ln(SW.band.p1[0], SW.band.p1[0] - (big ? 9 : mid ? 6 : 3.2), d,
+    s += ln(SW.band.p1[0], SW.band.p1[0] - (big ? 6 : mid ? 4 : 2), d,     // v111 สั้นลง (เดิม 9/6/3.2)
             big ? SW.TXT : mid ? SW.LINE : SW.LINE2, big ? 1 : mid ? 0.8 : 0.5,
             ` class="swtk" data-d="${d}"`);
   }
@@ -5270,6 +5273,11 @@ $("synlist").addEventListener("click", async (e) => {
     `คำแปลตำราบริบทบุคคล (ตำราไม่มีบริบทคู่)</div>` + body;
   tmeanPlace(row);
 });
+function synClearSel() {
+  $("synlist").querySelectorAll(".synrow.on").forEach((x) => x.classList.remove("on"));
+  SYN.sel = null;
+  if (SYN.data) synWheelDraw(null);          // จานกลับสภาพไม่เลือก (ดาวที่แตะบนจานยังคงอยู่ถ้ามี)
+}
 PANEL_DRAW.psyn = () => {
   synFillPick();
   if (TL && !SYN.data)
