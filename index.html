@@ -13,7 +13,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v117">
+<link rel="stylesheet" href="style.css?v=urain-v118">
 </head>
 <body>
 <div class="wrap">
@@ -51,6 +51,7 @@
   <div class="fg" id="latlon" style="display:none"><label>lat, lon</label>
     <input id="ll" value="13.7563, 100.5018" style="width:150px"></div>
   <p class="tznote" id="tznote" hidden></p>
+  <p class="tznote" id="tzold" hidden></p>
   <div class="fg"><label>ดวงจร (วัน/เดือน/ปี)</label>
     <div style="display:flex;gap:5px">
       <input class="num" id="td" inputmode="numeric">
@@ -615,14 +616,14 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v117"></script>
-<script src="places.js?v=urain-v117"></script>
-<script src="engine.js?v=urain-v117"></script>
-<script src="render.js?v=urain-v117"></script>
+<script src="glyphs.js?v=urain-v118"></script>
+<script src="places.js?v=urain-v118"></script>
+<script src="engine.js?v=urain-v118"></script>
+<script src="render.js?v=urain-v118"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const SW_CACHE = "urain-v117";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v118";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 let DIALMARKS = null, _markTimer = 0;   // วงเส้นประกะพริบครอบดาวของสูตร (v80)
@@ -786,6 +787,7 @@ function run() {
       throw new Error("เขตเวลาต้องอยู่ระหว่าง −12 ถึง +14");
     }
     TZ = tzv;
+    tzOldNote();             // v118: ครอบกรณีโหลดดวงที่บันทึกไว้/ป๊อปอัพแก้ข้อมูล ซึ่งเขียนช่องโดยไม่เกิด input
     let lat, lon;
     if ($("place").value === "custom") {
       // Number("") และ Number(" ") = 0 → "," หรือ "13.5," เคยผ่านเช็คแล้วไปคำนวณ
@@ -1951,6 +1953,26 @@ function placeTzNote(show, city, tz) {
     `<b>ถ้าเกิดช่วง daylight saving ต้องบวกเองอีก 1 ชั่วโมง</b> ` +
     `(และบางประเทศเคยเปลี่ยนกฎเขตเวลาในอดีต ตรวจกับเอกสารการเกิดอีกครั้ง)`;
 }
+
+// v118 (สอบเทียบภายนอกรอบ 2 · ผู้ใช้เลือก "แค่ขึ้นคำเตือน" ไม่เปลี่ยนค่าให้เอง):
+// ไทยใช้เวลามาตรฐานกรุงเทพ UTC+6:42:04 จนถึง 1 เม.ย. 1920 (IANA Asia/Bangkok) แต่เลือกจังหวัดไทยแล้วช่องเขตเวลาเป็น +7
+// เวลาเกิดสมัยนั้นใส่ +7 จะคลาด 17 นาที 56 วินาที (ลัคนา/MC ~4.5°) · ซ่อนเมื่อผู้ใช้แก้เขตเวลาเป็นค่าอื่นแล้ว
+const TZ_BKK_OLD = 6 + 42 / 60 + 4 / 3600;
+function tzOldNote() {
+  const el = $("tzold");
+  const y = ceYear($("by").value), m = intStrict($("bm").value), d = intStrict($("bd").value);
+  const before = y >= 1900 && m >= 1 && m <= 12 && d >= 1 && (y < 1920 || (y === 1920 && m < 4));
+  const show = $("pcountry").value === "th" && before && tzStrict($("tz").value) === 7;
+  el.hidden = !show;
+  el.innerHTML = show
+    ? `<b>เกิดก่อน 1 เม.ย. 2463 (ค.ศ. 1920)</b> — สมัยนั้นไทยใช้เวลามาตรฐานกรุงเทพ <b>UTC+6:42:04</b> ไม่ใช่ +7 · ` +
+      `ถ้าเวลาเกิดเป็นเวลาท้องถิ่นสมัยนั้น ให้ใส่เขตเวลา <b>${TZ_BKK_OLD.toFixed(4)}</b> ` +
+      `(ใส่ +7 เวลาจะคลาด 17 นาที 56 วินาที · ลัคนา/MC เลื่อนราว 4.5°)`
+    : "";
+}
+for (const id of ["bd", "bm", "by", "tz"]) $(id).addEventListener("input", tzOldNote);
+$("place").addEventListener("change", tzOldNote);
+$("pcountry").addEventListener("change", tzOldNote);
 
 const MDIALS = [[360, "360°"], [90, "90°"], [45, "45°"],
                 [22.5, "22°30′"], [11.25, "11°15′"]];
@@ -3664,7 +3686,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v117")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v118")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
