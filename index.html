@@ -13,7 +13,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v115">
+<link rel="stylesheet" href="style.css?v=urain-v117">
 </head>
 <body>
 <div class="wrap">
@@ -615,14 +615,14 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v115"></script>
-<script src="places.js?v=urain-v115"></script>
-<script src="engine.js?v=urain-v115"></script>
-<script src="render.js?v=urain-v115"></script>
+<script src="glyphs.js?v=urain-v117"></script>
+<script src="places.js?v=urain-v117"></script>
+<script src="engine.js?v=urain-v117"></script>
+<script src="render.js?v=urain-v117"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const SW_CACHE = "urain-v115";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v117";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 let DIALMARKS = null, _markTimer = 0;   // วงเส้นประกะพริบครอบดาวของสูตร (v80)
@@ -722,7 +722,7 @@ function clearResults() {
   $("synlist").innerHTML = '<p class="svempty">เลือกดวงคนที่สองแล้วกดคำนวณความสมพงษ์</p>';
   $("syncount").textContent = "";
   $("synA").textContent = "กดคำนวณดวงก่อน";
-  RET.rows = null; RET.sel = -1; RET.year = null;
+  RET.rows = null; RET.sel = -1; RET.year = null; RET.pick = null;
   $("retwheel").innerHTML = "";
   $("retlist").innerHTML = '<p class="svempty">กดคำนวณดวงก่อน แล้วเลือกปี</p>';
   $("retcount").textContent = "";
@@ -957,7 +957,6 @@ const HOUSE_TH = { 1: "ตัวตน/เริ่มต้น", 2: "ทรั�
   4: "ฐานราก/บ้าน", 5: "สร้างสรรค์/บุตร", 6: "งาน/สุขภาพ", 7: "คู่/สัมพันธ์",
   8: "เปลี่ยนแปลง/ร่วม", 9: "ไกล/ความเชื่อ", 10: "การงาน/สถานะ",
   11: "เครือข่าย/หวัง", 12: "เบื้องหลัง/ปล่อยวาง" };
-function houseAngle(h) { return 180 + (h - 1) * 30; }   // องศา ccw · เรือน1=ซ้าย เรือน10=บน
 // สัญลักษณ์ดาวเป็น markup SVG — ดาวหลักใช้อักขระ Unicode (GLYPH_UNI) · ดาวทิพย์
 // ใช้เส้น path (URAN_GLYPHS พิกัด 0..1) แปลงมาวางที่ (x,y) ขนาด size · จุด MC/AS
 // ไม่มีสัญลักษณ์สากลจึงคงอักษรย่อ · cls = f-<class> ให้สีตามชั้นดาว
@@ -1250,6 +1249,7 @@ function aspWheelDraw(row) {
   const hi = row ? [[la, row.a], [lb, row.b]] : [];   // คู่ชั้นเดียวกัน (r=r) ทั้งสองดาวอยู่วงใน
   const isHi = (L, c) => hi.some(([l, k]) => l === L && k === c);
   const pick = ASP.pick && pos[ASP.pick.l] && pos[ASP.pick.l][ASP.pick.c] !== undefined ? ASP.pick : null;
+  ASP.pick = pick;   // v117: ชั้นของดาวที่แตะไม่ได้อยู่บนจานแล้ว (เปลี่ยนชิป) = ล้างทิ้ง ไม่แอบค้างแล้วโผล่กลับตอนสลับชิปคืน
   const sub = (L) => `<sub>${L}</sub>`;
   const A = aspLayerInfo(la), B = aspLayerInfo(ringIn);
   const tl = `<b>${swSwatch(SW.BAND.p1)}วงใน · ${A.nm}</b>${A.lines}`;
@@ -1998,7 +1998,7 @@ PANEL_DRAW.pasp = () => { if (TL && !$("aspwheel").querySelector("svg")) aspWhee
 // ── แท็บดวงวรรษ (Phase C · v104) ────────────────────────────────────────────
 // ทุกเวลามาจากเอนจิน (solarReturnJd / minorSolarReturnJds / lunarReturnJds ที่พอร์ตจาก
 // Python ซึ่งสอบเทียบหน้าเว็บไว้แล้ว) — หน้านี้ไม่คำนวณดาราศาสตร์เองเลย แค่จัดแสดง
-let RET = { year: null, rows: null, sel: -1 };
+let RET = { year: null, rows: null, sel: -1, pick: null };
 const RET_ASP_TH = { 0: "กุม", 22.5: "", 45: "กึ่งฉาก", 90: "ฉาก", 180: "เล็ง" };
 const RET_KIND_TH = { sr: "สุริยวรรษ", msr: "อนุสุริยวรรษ", lr: "จันทรวรรษ" };
 function retHM(jd) {
@@ -2011,64 +2011,56 @@ function retYearNow() {
   if (TL) return AISTRO.revjul(TL.jdT + TZ / 24)[0];
   return new Date().getFullYear();
 }
-// วงของจานดวงวรรษ: นอก = กำเนิด · ใน = ดวงวรรษ ณ เวลานั้น (chartAt ที่สถานที่เกิด)
-// โครงเดียวกับจานมุมสัมพันธ์ (v102) เพื่อให้อ่านเหมือนกันทั้งแอป
+// v116 (ผู้ใช้ขอ "ย้ายดวงวรรษไปใช้จานแบบเดียวกัน"): วาดด้วย swDraw ตัวเดียวกับความสมพงษ์/มุมสัมพันธ์
+// วงใน (ฟ้า) = กำเนิด · วงนอก (เหลือง) = ดวงวรรษ ณ เวลานั้น (chartAt ที่สถานที่เกิด) — ลำดับเดียวกับจานหมุน/มุมสัมพันธ์
+// ยังไม่เลือกแถว = วงนอกว่าง (คงสองวงไว้ ขนาดจานไม่กระโดดตอนเลือก/เลิกเลือก)
+// เลือกแถว → ไฮไลต์ดาวที่กลับมา (สุริย/อนุ = SU · จันทร = MO) สองวง + เส้นชี้ + เส้นเชื่อม + มุมกลางจาน · แตะดาว → มุมล่างซ้าย
 function retWheelDraw(row) {
   const box = $("retwheel");
   if (!TL) { box.innerHTML = ""; return; }
-  const outer = TL.R;
-  const inner = row ? AISTRO.chartAt(row.jd, TL.lat, TL.lon) : null;
-  const cx = 200, cy = 200, rOut = 196, rScale = 170, rMid = 141, rIn = 112;
-  const r1 = (rScale + rMid) / 2, r2 = (rMid + rIn) / 2;
-  const P = (r, lon) => [cx - r * Math.cos(lon * Math.PI / 180),
-                         cy + r * Math.sin(lon * Math.PI / 180)];
-  let s = `<svg viewBox="0 0 400 400" class="awsvg" xmlns="http://www.w3.org/2000/svg">`;
-  s += `<circle cx="${cx}" cy="${cy}" r="${r1}" class="awband awb1" stroke-width="${rScale - rMid}"/>` +
-       `<circle cx="${cx}" cy="${cy}" r="${r2}" class="awband awb2" stroke-width="${rMid - rIn}"/>`;
-  s += `<circle cx="${cx}" cy="${cy}" r="${rOut}" class="awring"/>` +
-       `<circle cx="${cx}" cy="${cy}" r="${rScale}" class="awring"/>` +
-       `<circle cx="${cx}" cy="${cy}" r="${rMid}" class="awring mid"/>` +
-       `<circle cx="${cx}" cy="${cy}" r="${rIn}" class="awring"/>`;
-  for (let d = 0; d < 360; d += 10) {
-    const big = d % 30 === 0;
-    const [x0, y0] = P(rOut, d), [x1, y1] = P(rOut - (big ? 9 : 5), d);
-    s += `<line class="awtick${big ? " big" : ""}" x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}"/>`;
-    if (big) { const [xt, yt] = P(rOut - 17, d);
-      s += `<text class="awdeg" x="${xt.toFixed(1)}" y="${yt.toFixed(1)}">${d}</text>`; }
-  }
-  const rings = [["r", outer, r1]];
-  if (inner) rings.push(["ret", inner, r2]);
-  // ดาวที่ทำมุมของรอบนั้น (อาทิตย์/จันทร์) ไฮไลต์ให้เห็นว่าอะไรกลับมาตรงอะไร
+  const pos = { r: TL.R, ret: row ? AISTRO.chartAt(row.jd, TL.lat, TL.lon) : {} };
   const hiC = row ? (row.kind === "lr" ? "MO" : "SU") : null;
-  const late = [];
-  for (const [L, pos, rr] of rings) for (const c of AISTRO.CODE_ORDER) {
-    if (pos[c] === undefined) continue;
-    const [x, y] = P(rr, pos[c]);
-    const hi = !!row && c === hiC;
-    const g = `<g class="awp${hi ? " awhi" : (row ? "" : "")}" data-c="${c}" data-l="${L}"` +
-      ` data-lon="${AISTRO.mod360(pos[c]).toFixed(6)}" data-x="${x.toFixed(2)}" data-y="${y.toFixed(2)}">` +
-      (hi ? `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="14" class="awhalo"/>` : "") +
-      svgGlyph(c, x, y, hi ? 20 : 15, "f-" + AISTRO.FACTOR_CLASS[c]) + `</g>`;
-    if (hi) late.push(g); else s += g;
-  }
+  const hi = row ? [["r", hiC], ["ret", hiC]] : [];
+  const isHi = (L, c) => hi.some(([l, k]) => l === L && k === c);
+  const pick = RET.pick && pos[RET.pick.l] && pos[RET.pick.l][RET.pick.c] !== undefined ? RET.pick : null;
+  RET.pick = pick;   // v117: ดาวที่แตะบนวงดวงวรรษ + เลิกเลือกแถว = ล้างทิ้ง (เดิมค้างแล้วโผล่เองบนรอบอื่นที่ไม่ได้แตะ)
+  const tag = { r: "<sub>r</sub>", ret: "<sub>วรรษ</sub>" }, nm = { r: "กำเนิด (r)", ret: "ดวงวรรษ" };
+  const esc = AISTRO_RENDER.esc, ang = row ? (row.asp === undefined ? 0 : row.asp) : 0;
+  const tl = `<b>${swSwatch(SW.BAND.p1)}วงใน · กำเนิด (r)</b>${aspLayerInfo("r").lines}`;
+  const tr = row
+    ? `<b>วงนอก · ${RET_KIND_TH[row.kind]}${swSwatch(SW.BAND.p2)}</b><span>${swTime(row.jd, TZ)}</span>` +
+      `<span class="sx">ที่สถานที่เกิด ${esc(TL.place || "")}</span><span class="sx">${coordStr(TL.lat, TL.lon)}</span><span class="sx">${swGmt(TZ)}</span>`
+    : `<b>วงนอก · ดวงวรรษ${swSwatch(SW.BAND.p2)}</b><span>— เลือกแถวด้านล่าง</span>`;
+  let bl;
   if (row) {
-    // เส้นจากศูนย์กลางถึงดาวที่กลับมา (วงนอก = กำเนิด · วงใน = ดวงวรรษ) + เส้นเชื่อม
-    const [ax, ay] = P(r1, outer[hiC]), [bx, by] = P(r2, inner[hiC]);
-    s += `<line class="awspoke" x1="${cx}" y1="${cy}" x2="${ax.toFixed(2)}" y2="${ay.toFixed(2)}"/>` +
-         `<line class="awspoke" x1="${cx}" y1="${cy}" x2="${bx.toFixed(2)}" y2="${by.toFixed(2)}"/>` +
-         `<line class="awline" x1="${ax.toFixed(2)}" y1="${ay.toFixed(2)}" x2="${bx.toFixed(2)}" y2="${by.toFixed(2)}"/>`;
-    s += late.join("");
-    s += `<text class="awc" x="${cx}" y="${cy - 6}">${hiC}<tspan class="lay">วรรษ</tspan> = ${hiC}<tspan class="lay">กำเนิด</tspan></text>` +
-         `<text class="awc sm" x="${cx}" y="${cy + 12}">${row.asp === undefined ? "" : "มุม " + row.asp + "° · "}${CAL_DFULL(row.jd)} ${retHM(row.jd)}</text>`;
+    const th = RET_ASP_TH[ang] ? " " + RET_ASP_TH[ang] : "";
+    bl = `<b class="swform">${hiC}${tag.ret} = ${hiC}${tag.r} <span class="swsub">· มุม ${ang}°${th} · ${RET_KIND_TH[row.kind]}</span></b>` +
+      hi.map(([L, c]) => swPosLine(c, tag[L], pos[L][c])).join("");
+  } else if (pick) {
+    bl = `<b>${nm[pick.l]}</b>` + swPosLine(pick.c, tag[pick.l], pos[pick.l][pick.c]);
   } else {
-    s += `<text class="awc sm" x="${cx}" y="${cy - 2}">จาน 360°</text>` +
-         `<text class="awc sm" x="${cx}" y="${cy + 14}">กดแถวด้านล่างเพื่อดูจานของรอบนั้น</text>`;
+    bl = `<b>— ยังไม่ได้เลือก</b><span>กดแถวด้านล่าง หรือแตะดาวบนจาน</span>`;
   }
-  s += `</svg>`;
-  box.innerHTML = s + `<div class="awleg"><i class="awsw b1"></i>วงนอก = กำเนิด · ` +
-    `<i class="awsw b2"></i>วงใน = ${row ? RET_KIND_TH[row.kind] + " " + CAL_DFULL(row.jd) : "ดวงวรรษ (เลือกแถว)"}` +
-    ` · 0° อยู่ซ้าย เดินทวนเข็ม</div>`;
+  if (row && pick && !isHi(pick.l, pick.c)) bl += swPosLine(pick.c, tag[pick.l], pos[pick.l][pick.c]);
+  const br = `<b>360° Dial</b><span class="sx">จานดวงวรรษ</span>` +
+    `<span>${row ? `${hiC} วรรษกลับมาทำมุมกับ ${hiC} กำเนิด` : "สุริยวรรษ · อนุสุริยวรรษ · จันทรวรรษ"}</span>` +
+    `<span class="sx">เรือนราศี เมษ = 1 · สีช่องราศี = ธาตุ</span><span class="sx">Tropical Zodiac</span>`;
+  swDraw(box, {
+    rings: [{ L: "r", pos: pos.r, fill: SW.BAND.p1 }, { L: "ret", pos: pos.ret, fill: SW.BAND.p2 }],
+    hi, pick, dim: !!row, houses: null, spokeClass: "awspoke",
+    chord: row ? hi : null,
+    center: row ? { big: `${ang}°`, bigClass: "awlab", small: RET_KIND_TH[row.kind] } : null,
+    corners: { tl, tr, bl, br },
+  });
 }
+// แตะดาวบนจาน → มุมล่างซ้ายบอกตำแหน่ง (แตะซ้ำ = เลิกเลือก) · คงรอบที่เลือกไว้ถ้ามี
+$("retwheel").addEventListener("click", (e) => {
+  const g = e.target.closest(".awp");
+  if (!g || !TL) return;
+  const same = RET.pick && RET.pick.l === g.dataset.l && RET.pick.c === g.dataset.c;
+  RET.pick = same ? null : { l: g.dataset.l, c: g.dataset.c };
+  retWheelDraw(RET.sel >= 0 && RET.rows ? RET.rows[RET.sel] : null);
+});
 function retRun() {
   if (!TL) { $("retlist").innerHTML = '<p class="svempty">กดคำนวณดวงก่อน</p>'; return; }
   const y = parseInt($("retyear").value, 10);
@@ -3672,7 +3664,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v115")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v117")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
@@ -3982,6 +3974,10 @@ window.addEventListener("resize", () => {
 document.addEventListener("click", (e) => {
   if ($("tmean").hidden) return;
   if (e.target.closest(".frow, .calrow, .hcell, .asprow, .scrow")) return;   // กดแถวอื่น = เปิดอันใหม่แทน
+  // v117 (ตรวจหาบัค): แตะดาวบนจาน swDraw ขณะคำแปลคู่เปิด = ดูองศาเพิ่ม ไม่ใช่ "กดข้างนอก" — เดิมคู่ที่เลือกหายทันที
+  // (ปิดคำแปล → aspClearSel/synClearSel) ทำให้สถานะ "คู่ + ดาวที่แตะ" ที่มุมล่างซ้ายออกแบบไว้ไม่มีทางเกิดได้เลย
+  // ตัวจานถูกวาดใหม่ก่อนถึงตัวจับนี้ แต่ target ที่หลุดจากหน้ายังมีบรรพบุรุษ .swwrap .awp ของมันเอง closest จึงยังจับได้
+  if (e.target.closest(".swwrap .awp")) return;
   tmeanClose();
 });
 

@@ -27,7 +27,6 @@
   --ink:#141a23; --dim:#586274; --faint:#8a94a4;
   --accent:#1560c4; --accent-ink:#ffffff;
   --accent-soft:rgba(21,96,196,.11); --accent-line:rgba(21,96,196,.42);
-  --awb1:#fdf6d5; --awb2:#dde8f7; --awb3:#e3f1e0;
   --warn-soft:rgba(196,124,20,.14); --warn-line:rgba(196,124,20,.45);
   --warn-ink:#a5660f;
   --hover:rgba(20,26,35,.045);
@@ -46,7 +45,6 @@
     --ink:#e0e7ef; --dim:#96a1b0; --faint:#6e7887;
     --accent:#6cb0f8; --accent-ink:#0d1117;
     --accent-soft:rgba(108,176,248,.15); --accent-line:rgba(108,176,248,.46);
-    --awb1:rgba(253,230,150,.10); --awb2:rgba(120,170,240,.13); --awb3:rgba(120,210,140,.11);
     --warn-soft:rgba(240,167,66,.15); --warn-line:rgba(240,167,66,.45);
     --warn-ink:#f0a742;
     --hover:rgba(224,231,239,.055);
@@ -64,7 +62,6 @@
   --ink:#e0e7ef; --dim:#96a1b0; --faint:#6e7887;
   --accent:#6cb0f8; --accent-ink:#0d1117;
   --accent-soft:rgba(108,176,248,.15); --accent-line:rgba(108,176,248,.46);
-  --awb1:rgba(253,230,150,.10); --awb2:rgba(120,170,240,.13); --awb3:rgba(120,210,140,.11);
   --warn-soft:rgba(240,167,66,.15); --warn-line:rgba(240,167,66,.45);
   --warn-ink:#f0a742;
   --hover:rgba(224,231,239,.055);
@@ -301,17 +298,6 @@ footer{margin-top:var(--s7);padding-top:var(--s4);border-top:1px solid var(--rul
 #hwheel{width:100%;max-width:940px}   /* v115 จานแบบความสมพงษ์ (swDraw) */
 .swhnum{font:600 9.5px/1 var(--mono);text-anchor:middle;dominant-baseline:central}
 .swsvg .swhsec:hover{fill:rgba(70,130,240,0.16)}
-.hsvg{width:100%;max-width:480px;height:auto;touch-action:manipulation}
-.hsvg .hring{fill:none;stroke:var(--rule)}
-.hsvg .hsec0{fill:var(--sunk)}
-.hsvg .hsec1{fill:var(--panel)}
-.hsvg [data-hnum]{cursor:pointer}
-.hsvg .hsec0:hover,.hsvg .hsec1:hover{fill:var(--hover)}
-.hsvg .hspoke{stroke:var(--rule-soft)}
-.hsvg .hnum{fill:var(--faint);font-size:13px;text-anchor:middle;dominant-baseline:middle;cursor:pointer}
-.hsvg .hnum.axis{fill:var(--f-personal);font-weight:700}
-.hsvg .hhit{fill:transparent;cursor:pointer}
-.hsvg .hhit:hover{fill:color-mix(in srgb,var(--accent) 22%,transparent)}
 /* สัญลักษณ์ดาว (ใช้ทั้งในจานและในคำแปล) — text=Unicode(☉♀) · hglp=path(ทิพย์) · hgl-code=MC/AS */
 .hgl{font-family:"Apple Symbols","Segoe UI Symbol","Noto Sans Symbols 2",system-ui,sans-serif;
   text-anchor:middle;dominant-baseline:central;pointer-events:none}
@@ -324,12 +310,6 @@ svg .f-neutral{fill:var(--f-neutral)}
 /* สัญลักษณ์เล็กหน้าอักษรย่อในคำแปลเรือน */
 .gmini{display:inline-block;width:20px;height:20px;vertical-align:-4px;margin-right:3px}
 .gmini svg{display:block;width:100%;height:100%}
-.hsvg .hcenter{fill:var(--dim);font-size:12px;text-anchor:middle;dominant-baseline:middle}
-.hsvg .hcenter.sm{fill:var(--faint);font-size:10px;font-family:var(--mono)}
-/* สีดาวตามชั้น (ใช้ตัวแปรเดียวกับตาราง) */
-.hsvg .f-personal{fill:var(--f-personal)} .hsvg .f-good{fill:var(--f-good)}
-.hsvg .f-bad{fill:var(--f-bad)} .hsvg .f-booster{fill:var(--f-booster)}
-.hsvg .f-neutral{fill:var(--f-neutral)}
 #hbelow{margin-top:var(--s2)}
 .hhead{font-size:var(--t-md);font-weight:700;color:var(--accent);
   display:flex;justify-content:space-between;align-items:baseline;
@@ -1129,32 +1109,6 @@ p.hint:empty{display:none}
 /* v100: จานมุมสัมพันธ์ — วง 360° ในแท็บมุมสัมพันธ์ กดแถวแล้วไฮไลต์คู่ดาว + เส้นเชื่อม */
 #aspwheel:empty{display:none}
 #aspwheel{margin:var(--s3) auto 0;max-width:940px}   /* v115 จานแบบความสมพงษ์ (swDraw) + 4 มุม */
-.awsvg{width:100%;display:block}
-.awring{fill:none;stroke:var(--rule);stroke-width:1.2}
-.awring.mid{stroke:var(--rule);stroke-width:1.6}
-/* v102: แถบวงสองชั้น (สีตามจานหมุน: นอกเหลือง ในฟ้า · โทนมืดจางลง) */
-.awband{fill:none}
-.awb1{stroke:var(--awb1)}
-.awb2{stroke:var(--awb2)}
-.awb3{stroke:var(--awb3)}
-.awsw{display:inline-block;width:.8em;height:.8em;border-radius:2px;vertical-align:-1px;margin-right:.3em;border:1px solid var(--rule)}
-.awsw.b1{background:var(--awb1)}
-.awsw.b2{background:var(--awb2)}
-.awsw.b3{background:var(--awb3)}
-.awtick{stroke:var(--rule-soft);stroke-width:1}
-.awtick.big{stroke:var(--rule);stroke-width:1.5}
-.awdeg{font-size:9px;fill:var(--faint);text-anchor:middle;dominant-baseline:middle;font-family:var(--mono)}
-.awsvg .awp.awdim{opacity:.38}
-.awsvg .awhalo{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.5}
-/* v115: จำกัดเฉพาะจานแบบเก่า (.awsvg · ดวงวรรษ) — มุมสัมพันธ์ย้ายไป swDraw ใช้คลาส awspoke/awline/awlab ร่วม แต่สีกำหนดใน SVG เอง */
-.awsvg .awspoke{stroke:var(--accent);stroke-width:1;stroke-dasharray:3 3;opacity:.7}
-.awsvg .awline{stroke:var(--accent);stroke-width:2.5;stroke-linecap:round}
-.awsvg .awlab{font-size:13px;font-weight:700;fill:var(--accent);text-anchor:middle;dominant-baseline:middle;
-  paint-order:stroke;stroke:var(--panel);stroke-width:5px;stroke-linejoin:round;font-family:var(--mono)}
-.awc{font-size:14px;font-weight:700;fill:var(--ink);text-anchor:middle;font-family:var(--mono)}
-.awc .lay{font-size:9px;fill:var(--dim)}
-.awc.sm{font-size:10px;font-weight:400;fill:var(--dim)}
-.awleg{text-align:center;font-size:var(--t-xs);color:var(--dim);margin-top:var(--s1)}
 .asprow.on{background:var(--sunk);outline:1px solid var(--f-personal)}
 /* v105: กาลชะตา — ป้ายบอกเหตุผลความแรง + แถวภาพ 3 ดวง */
 .horang{font:600 var(--t-xs)/1 var(--mono);color:var(--accent);white-space:nowrap}
@@ -1225,7 +1179,7 @@ p.hint:empty{display:none}
 
 /* v104: แท็บดวงวรรษ — แถวรายการรอบ (โครงเดียวกับ .asprow ให้อ่านเหมือนกันทั้งแอป) */
 #retwheel:empty{display:none}
-#retwheel{margin:var(--s3) auto 0;max-width:400px}
+#retwheel{margin:var(--s3) auto 0;max-width:940px}   /* v116 จานแบบความสมพงษ์ (swDraw) + 4 มุม */
 .retrow{display:grid;grid-template-columns:1fr auto auto auto;gap:var(--s2);align-items:center;
   padding:var(--s2) var(--s2);border-bottom:1px solid var(--rule-soft);cursor:pointer}
 .retrow:hover{background:var(--hover)}
@@ -1233,7 +1187,7 @@ p.hint:empty{display:none}
 .retrow .calhm{font:400 var(--t-sm)/1 var(--mono);color:var(--dim)}
 #retyear{width:5.5em;text-align:center;font-family:var(--mono)}
 @media (max-width:620px){
-  #retwheel{position:sticky;top:0;z-index:3;background:var(--panel);max-width:280px;padding:var(--s1) 0}
+  #retwheel{position:sticky;top:0;z-index:3;background:var(--panel);padding:var(--s1) 0}
   .retrow{grid-template-columns:1fr auto;grid-template-areas:"d t" "a k";row-gap:2px}
   .retrow .calf{grid-area:d}
   .retrow .calhm{grid-area:t}
