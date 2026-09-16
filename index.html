@@ -13,7 +13,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v118">
+<link rel="stylesheet" href="style.css?v=urain-v120">
 </head>
 <body>
 <div class="wrap">
@@ -21,7 +21,11 @@
   <h1>ยูเรเนียนออฟไลน์ <span class="tag">OFFLINE</span></h1>
 </header>
 
+<button type="button" class="fbar" id="fbar" hidden>
+  <span class="fsum" id="fsum"></span><span class="fedit">แก้ข้อมูล ▾</span></button>
+
 <form class="form" id="f" onsubmit="return false">
+  <button type="button" class="ffold" id="ffold" title="ย่อฟอร์มให้เหลือบรรทัดเดียว">ย่อ ▴</button>
   <div class="fg"><label>ชื่อดวง</label>
     <input id="cname" value="" placeholder="ไม่ระบุ" style="width:130px"></div>
   <div class="fg"><label>ประเภทดวง</label>
@@ -50,8 +54,6 @@
     <select id="place"></select></div>
   <div class="fg" id="latlon" style="display:none"><label>lat, lon</label>
     <input id="ll" value="13.7563, 100.5018" style="width:150px"></div>
-  <p class="tznote" id="tznote" hidden></p>
-  <p class="tznote" id="tzold" hidden></p>
   <div class="fg"><label>ดวงจร (วัน/เดือน/ปี)</label>
     <div style="display:flex;gap:5px">
       <input class="num" id="td" inputmode="numeric">
@@ -73,6 +75,10 @@
     เลือกช่วงเดือนของตารางได้ในแท็บ "ตารางดูดวงจร"</div>
 </form>
 
+<!-- v119: คำเตือนเขตเวลาย้ายออกมานอกฟอร์ม — เดิมอยู่ในฟอร์ม พอผู้ใช้ย่อฟอร์มคำเตือนหายไปด้วย
+     (เจอจากเทสต์ v118 ตอนรันชุดกลายพันธุ์ของเฟส 1) · คำเตือนต้องเห็นทุกสถานะของฟอร์ม -->
+<p class="tznote" id="tznote" hidden></p>
+<p class="tznote" id="tzold" hidden></p>
 <p class="ctnote" id="ctnote"></p>
 <p class="ctnote warn" id="warnpre" hidden>⚠️ ดวงจรอยู่<b>ก่อน</b>วันเกิด — โค้งสุริยยาตร์ติดลบ ตัวเลขคำนวณได้แต่ไม่มีความหมายทางโหราศาสตร์</p>
 <p id="status">พร้อมคำนวณ</p>
@@ -88,9 +94,11 @@
   <button type="button" class="tab" data-p="pasp">มุมสัมพันธ์</button>
   <button type="button" class="tab" data-p="pret">ดวงวรรษ</button>
   <button type="button" class="tab" data-p="psyn">ความสมพงษ์</button>
-  <button type="button" class="tab" data-p="ppos">ตำแหน่งดาว</button>
-  <button type="button" class="tab" data-p="ptl">ไทม์ไลน์</button>
-  <button type="button" class="tab" data-p="plife">แผนที่ชีวิต</button>
+  <!-- v120: ผู้ใช้ขอซ่อนไว้ก่อน (ยังไม่ได้ใช้งาน) — แผงและโค้ดยังอยู่ครบ เอา hidden ออกคือกลับมาเหมือนเดิม
+       เทสต์หมวด 11 ยังไล่ตรวจแผงที่ซ่อนอยู่ตามปกติ (ไล่จาก .panel ไม่ใช่ปุ่มแท็บ) -->
+  <button type="button" class="tab" data-p="ppos" hidden>ตำแหน่งดาว</button>
+  <button type="button" class="tab" data-p="ptl" hidden>ไทม์ไลน์</button>
+  <button type="button" class="tab" data-p="plife" hidden>แผนที่ชีวิต</button>
   <button type="button" class="tab" data-p="pscore">แนวโน้ม</button>
   <button type="button" class="tab" data-p="pfac">ความหมายปัจจัย</button>
   <button type="button" class="tab" data-p="pdict">พจนานุกรม</button>
@@ -616,14 +624,14 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v118"></script>
-<script src="places.js?v=urain-v118"></script>
-<script src="engine.js?v=urain-v118"></script>
-<script src="render.js?v=urain-v118"></script>
+<script src="glyphs.js?v=urain-v120"></script>
+<script src="places.js?v=urain-v120"></script>
+<script src="engine.js?v=urain-v120"></script>
+<script src="render.js?v=urain-v120"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const SW_CACHE = "urain-v118";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v120";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 let DIALMARKS = null, _markTimer = 0;   // วงเส้นประกะพริบครอบดาวของสูตร (v80)
@@ -902,10 +910,14 @@ function run() {
     st.textContent = `คำนวณ ${months.length} เดือนใน ` +
       `${(performance.now() - t0).toFixed(0)} ms · ` +
       `แถวรวม ${document.querySelectorAll(".frow").length} แถว`;
+    // v119: ฟอร์มถูกพับอยู่ → ข้อความสรุปต้องเป็นดวงที่เพิ่งคำนวณ ไม่ใช่ของเดิม
+    if ($("f").classList.contains("fold")) setFold(true, false);
   } catch (e) {
     clearResults();          // อย่าปล่อยผลของดวงก่อนหน้าค้างไว้คู่กับข้อความผิดพลาด
     st.className = "err";
     st.textContent = "ผิดพลาด: " + e.message;
+    // v119: กรอกผิดขณะฟอร์มพับอยู่ จะไม่เห็นช่องที่ต้องแก้ — กางคืนให้เสมอ (ไม่จำค่านี้)
+    if ($("f").classList.contains("fold")) setFold(false, false);
   }
 }
 
@@ -1974,6 +1986,47 @@ for (const id of ["bd", "bm", "by", "tz"]) $(id).addEventListener("input", tzOld
 $("place").addEventListener("change", tzOldNote);
 $("pcountry").addEventListener("change", tzOldNote);
 
+// ── v119 เฟส 1 (ผู้ใช้: "พัฒนา UI ให้ดูสะอาด ใช้งานได้ คงรูปแบบเดิม") ──────────────
+// แถบแท็บค้างบนจอ: ของที่ค้างอยู่แล้ว (แถบเครื่องมือ · จานความสมพงษ์/มุมสัมพันธ์/ดวงวรรษ · หัวเดือนปฏิทิน)
+// ใช้ top: var(--topbar) จึงต้องรู้ความสูงจริงของแถบแท็บ (จอกว้างแถบตัดบรรทัดได้ ความสูงไม่คงที่)
+function syncTopbar() {
+  const t = $("tabs");
+  const h = t && t.offsetParent ? Math.round(t.getBoundingClientRect().height) : 0;
+  document.documentElement.style.setProperty("--topbar", h + "px");
+  if (t) t.classList.toggle("stuck", h > 0 && t.getBoundingClientRect().top <= 0.5);
+}
+if (typeof ResizeObserver !== "undefined") new ResizeObserver(syncTopbar).observe($("tabs"));
+addEventListener("resize", syncTopbar);
+addEventListener("scroll", syncTopbar, { passive: true });
+// แถบแท็บจอแคบไถได้ 1,250px — เปลี่ยนแท็บแล้วต้องเห็นแท็บที่เลือก (เลื่อนเองในแนวนอนเท่านั้น
+// ไม่ใช้ scrollIntoView เพราะมันเลื่อนแนวตั้งของทั้งหน้าไปด้วย)
+function tabIntoView() {
+  const t = $("tabs"), el = t.querySelector(".tab.on");
+  if (!el || t.scrollWidth <= t.clientWidth) return;
+  const l = el.offsetLeft, r = l + el.offsetWidth, pad = 24;
+  if (l - pad < t.scrollLeft) t.scrollLeft = Math.max(0, l - pad);
+  else if (r + pad > t.scrollLeft + t.clientWidth) t.scrollLeft = r + pad - t.clientWidth;
+}
+// ฟอร์มพับได้ — ค่าที่เลือกจำไว้ในเครื่อง (ไม่พับเองโดยไม่บอก) · กรอกผิดเมื่อไรกางคืนให้เห็นช่องที่ผิด
+const FOLD_KEY = "urain_form_fold";
+function formSummary() {
+  const esc = AISTRO_RENDER.esc, v = (id) => $(id).value.trim();
+  const pl = $("place").value === "custom" ? v("ll")
+    : ($("place").selectedOptions[0] ? $("place").selectedOptions[0].text.trim() : "");
+  return `<b>${esc(v("cname") || "ไม่ระบุ")}</b> · ${esc(v("bd"))}/${esc(v("bm"))}/${esc(v("by"))} ` +
+    `${esc(v("bt"))} · ${esc(pl)} · จร ${esc(v("td"))}/${esc(v("tm"))}/${esc(v("ty"))} ${esc(v("tt"))}`;
+}
+function setFold(on, remember) {
+  $("f").classList.toggle("fold", on);
+  $("fbar").hidden = !on;
+  if (on) $("fsum").innerHTML = formSummary();
+  if (remember) { try { localStorage.setItem(FOLD_KEY, on ? "1" : "0"); } catch (e) {} }
+  syncTopbar();
+}
+$("ffold").addEventListener("click", () => setFold(true, true));
+$("fbar").addEventListener("click", () => setFold(false, true));
+try { if (localStorage.getItem(FOLD_KEY) === "1") setFold(true, false); } catch (e) {}
+
 const MDIALS = [[360, "360°"], [90, "90°"], [45, "45°"],
                 [22.5, "22°30′"], [11.25, "11°15′"]];
 let MDIAL = AISTRO.DIAL_DEFAULT;            // 22.5
@@ -2202,6 +2255,7 @@ function showPanel(id) {
     (p) => p.classList.toggle("on", p.id === id));
   document.querySelectorAll(".tab").forEach(
     (t) => t.classList.toggle("on", t.dataset.p === id));
+  tabIntoView(); syncTopbar();     // v119: จอแคบแถบแท็บไถได้ — แท็บที่เลือกต้องอยู่ในสายตา
   const fn = PANEL_DRAW[id];
   // ครอบไว้ — ถ้าแผงไหนโยน exception จะได้ไม่ทำให้การสลับแท็บค้างครึ่งทาง
   // (คลาสสลับไปแล้วแต่เนื้อหาเป็นของเก่า) และผู้ใช้ต้องเห็นว่าเกิดอะไรขึ้น
@@ -3686,7 +3740,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v118")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v120")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }

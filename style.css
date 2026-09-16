@@ -105,7 +105,7 @@ header.top h1 .tag{font-size:10px;font-weight:700;color:var(--accent);
 .chip b{color:var(--ink);font-family:var(--mono);font-variant-numeric:tabular-nums}
 
 /* ── ฟอร์มกรอกดวง ─────────────────────────────────────────────────────── */
-.form{border:1px solid var(--rule);border-radius:var(--r-md);background:var(--panel);
+.form{position:relative;border:1px solid var(--rule);border-radius:var(--r-md);background:var(--panel);
   box-shadow:var(--shadow-1);padding:var(--s5);margin-bottom:var(--s5);
   display:flex;flex-wrap:wrap;gap:var(--s4) var(--s5);align-items:end}
 .form .fg{display:flex;flex-direction:column;gap:var(--s1)}
@@ -126,6 +126,22 @@ header.top h1 .tag{font-size:10px;font-weight:700;color:var(--accent);
 .form button:hover{filter:brightness(1.1)}
 .form button:active{filter:brightness(.94)}
 .form .note{font-size:var(--t-sm);color:var(--faint);width:100%;margin-top:calc(var(--s1) * -1)}
+/* v119: ฟอร์มพับได้ — จอ 375px ฟอร์มสูง 606px ต้องเลื่อนผ่านทุกครั้งกว่าจะถึงเนื้อหา */
+.form.fold{display:none}
+.ffold{position:absolute;top:var(--s2);right:var(--s2);background:none !important;
+  color:var(--faint) !important;border:1px solid var(--rule) !important;box-shadow:none !important;
+  font-size:var(--t-sm) !important;font-weight:600 !important;padding:2px var(--s2) !important}
+.ffold:hover{color:var(--ink) !important;border-color:var(--dim) !important;filter:none !important}
+.fbar{display:flex;align-items:center;gap:var(--s3);width:100%;
+  border:1px solid var(--rule);border-radius:var(--r-md);background:var(--panel);
+  padding:var(--s2) var(--s3);margin:0 0 var(--s4);cursor:pointer;text-align:left;
+  font-family:inherit;color:var(--ink);box-shadow:var(--shadow-1)}
+.fbar:hover{border-color:var(--dim)}
+.fbar .fsum{flex:1;min-width:0;font-size:var(--t-sm);font-family:var(--mono);
+  font-variant-numeric:tabular-nums;color:var(--dim);overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.fbar .fsum b{color:var(--ink);font-family:var(--sans)}
+.fbar .fedit{flex:0 0 auto;font-size:var(--t-sm);font-weight:700;color:var(--accent)}
 #status{font-size:var(--t-md);color:var(--dim);margin:0 0 var(--s4);
   font-variant-numeric:tabular-nums}
 #status.err{color:var(--neg);font-weight:600}
@@ -135,7 +151,11 @@ header.top h1 .tag{font-size:10px;font-weight:700;color:var(--accent);
 
 /* ── แท็บ ─────────────────────────────────────────────────────────────── */
 .tabs{display:flex;flex-wrap:wrap;gap:0;margin:0 0 var(--s5);
-  border-bottom:1px solid var(--rule)}
+  border-bottom:1px solid var(--rule);
+  /* v119: ค้างบนจอ — เดิมต้องเลื่อนขึ้นสุดก่อนถึงจะสลับแท็บได้ (แถบกว้าง 1,250px ในจอ 359px)
+     พื้นทึบเพราะเนื้อหาเลื่อนลอดข้างใต้ · --topbar ตั้งจาก JS ให้ของที่ค้างอยู่แล้ว (แถบเครื่องมือ/จาน) หลบลงมา */
+  position:sticky;top:0;z-index:6;background:var(--bg)}
+.tabs.stuck{box-shadow:0 6px 12px -8px rgba(0,0,0,.45)}
 .tab{background:none;border:0;border-bottom:2px solid transparent;
   padding:var(--s3) var(--s4);font:inherit;font-size:var(--t-md);font-weight:500;
   color:var(--faint);cursor:pointer;border-radius:0;margin-bottom:-1px;
@@ -146,7 +166,7 @@ header.top h1 .tag{font-size:10px;font-weight:700;color:var(--accent);
 .panel.on{display:block}
 
 /* ── แถบตัวกรอง (ติดบนสุดเวลาเลื่อน) ──────────────────────────────────── */
-.tools{position:sticky;top:0;z-index:5;background:var(--panel);
+.tools{position:sticky;top:var(--topbar,0px);z-index:5;background:var(--panel);
   border:1px solid var(--rule);border-radius:var(--r-md);
   box-shadow:var(--shadow-1);
   padding:var(--s3) var(--s4);margin-bottom:var(--s5);
@@ -650,7 +670,9 @@ p.hint:empty{display:none}
   header.top{padding:var(--s4)}
   header.top h1{font-size:var(--t-lg)}
   .form{padding:var(--s4);gap:var(--s3) var(--s4)}
-  .tabs{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}
+  .tabs{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none;
+    -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 14px),transparent 100%);
+    mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 14px),transparent 100%)}
   .tabs::-webkit-scrollbar{display:none}
   .mcol{flex-basis:250px}
   .tools .hint{margin-left:0;width:100%}
@@ -752,7 +774,7 @@ p.hint:empty{display:none}
 
 /* แท็บปฏิทินโค้ง */
 #callist{margin-top:var(--s3);max-height:70vh;overflow:auto}
-.calmonth{position:sticky;top:0;background:var(--panel);padding:var(--s2) var(--s2);
+.calmonth{position:sticky;top:var(--topbar,0px);background:var(--panel);padding:var(--s2) var(--s2);
   font-size:var(--t-sm);font-weight:700;color:var(--accent);
   border-bottom:1px solid var(--rule-soft);z-index:2}
 .calrow{display:flex;align-items:center;gap:var(--s3);padding:3px var(--s2);
@@ -991,7 +1013,7 @@ p.hint:empty{display:none}
 /* หมายเหตุเขตเวลาเมื่อเลือกเมืองต่างประเทศ — DST เป็นสาเหตุคลาดเคลื่อน 1 ชม.
    ที่พบบ่อยที่สุดในดวงต่างประเทศ ต้องเตือนตรงจุดที่เพิ่งเลือก ไม่ใช่ซ่อนใน help */
 .tznote { flex-basis: 100%; font-size: var(--t-sm); line-height: 1.5;
-  color: var(--ink); margin: var(--s2) 0 0;
+  color: var(--ink); margin: 0 0 var(--s3);   /* v119: ย้ายออกมานอกฟอร์มแล้ว (ย่อฟอร์มก็ยังเห็น) */
   padding: var(--s2) var(--s3) var(--s2) var(--s6); position: relative;
   background: var(--warn-soft); border: 1px solid var(--warn-line);
   border-radius: var(--r-sm); }
@@ -1167,7 +1189,7 @@ p.hint:empty{display:none}
 }
 @media (max-width:620px){
   /* ค้างจานไว้ด้านบนตอนเลื่อนดูรายการ — ซ่อนบรรทัดรอง (สถานที่/พิกัด/GMT) ให้กินจอน้อยลง */
-  #synwheel{position:sticky;top:0;z-index:3;background:var(--panel);padding:var(--s1) 0}
+  #synwheel{position:sticky;top:var(--topbar,0px);z-index:3;background:var(--panel);padding:var(--s1) 0}
   .swsvg{max-width:270px}
   .swi .sx{display:none}
   /* มุมล่างซ้าย (สูตร + ตำแหน่งดาว) ยาว → ใช้เต็มแถว · มุมล่างขวาเหลือบรรทัดเดียว */
@@ -1187,7 +1209,7 @@ p.hint:empty{display:none}
 .retrow .calhm{font:400 var(--t-sm)/1 var(--mono);color:var(--dim)}
 #retyear{width:5.5em;text-align:center;font-family:var(--mono)}
 @media (max-width:620px){
-  #retwheel{position:sticky;top:0;z-index:3;background:var(--panel);padding:var(--s1) 0}
+  #retwheel{position:sticky;top:var(--topbar,0px);z-index:3;background:var(--panel);padding:var(--s1) 0}
   .retrow{grid-template-columns:1fr auto;grid-template-areas:"d t" "a k";row-gap:2px}
   .retrow .calf{grid-area:d}
   .retrow .calhm{grid-area:t}
@@ -1197,5 +1219,5 @@ p.hint:empty{display:none}
 .scgrp .lay{font-weight:400;color:var(--dim);font-size:var(--t-xs);margin-left:var(--s1)}
 @media (max-width:620px){
   /* จอแคบ: จานติดขอบบนขณะเลื่อนรายการ จะได้กดแถวแล้วเห็นเส้นทันทีโดยไม่ต้องเลื่อนกลับ */
-  #aspwheel{position:sticky;top:0;z-index:3;background:var(--panel);padding:var(--s1) 0}
+  #aspwheel{position:sticky;top:var(--topbar,0px);z-index:3;background:var(--panel);padding:var(--s1) 0}
 }
