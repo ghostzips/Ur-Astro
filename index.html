@@ -13,7 +13,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v120">
+<link rel="stylesheet" href="style.css?v=urain-v122">
 </head>
 <body>
 <div class="wrap">
@@ -22,7 +22,7 @@
 </header>
 
 <button type="button" class="fbar" id="fbar" hidden>
-  <span class="fsum" id="fsum"></span><span class="fedit">แก้ข้อมูล ▾</span></button>
+  <span class="fsum" id="fsum"></span><span class="fpend" id="fpend" hidden>ยังไม่ได้คำนวณค่าที่แก้</span><span class="fedit">แก้ข้อมูล ▾</span></button>
 
 <form class="form" id="f" onsubmit="return false">
   <button type="button" class="ffold" id="ffold" title="ย่อฟอร์มให้เหลือบรรทัดเดียว">ย่อ ▴</button>
@@ -82,6 +82,33 @@
 <p class="ctnote" id="ctnote"></p>
 <p class="ctnote warn" id="warnpre" hidden>⚠️ ดวงจรอยู่<b>ก่อน</b>วันเกิด — โค้งสุริยยาตร์ติดลบ ตัวเลขคำนวณได้แต่ไม่มีความหมายทางโหราศาสตร์</p>
 <p id="status">พร้อมคำนวณ</p>
+
+<!-- v122: ป๊อปอัพ "ดวงที่บันทึกไว้" กับ "แก้ข้อมูล" ย้ายออกมานอก #pdial
+     เดิมอยู่ใน #dialbox ซึ่งอยู่ใน #pdial · พออยู่แท็บอื่น #pdial เป็น display:none
+     กล่องจึงเปิดแบบสูง 0px (วัดได้จริง dlg h=0) ผู้ใช้กดปุ่มแล้วไม่มีอะไรขึ้น
+     กล่องพวกนี้เป็น position:fixed อยู่แล้ว ตำแหน่งใน DOM จึงไม่มีผลต่อการวาง -->
+  <dialog id="edlg" class="edlg">
+    <form method="dialog" id="edform">
+      <h3 id="edtitle"></h3>
+      <div id="edbody"></div>
+      <p class="ederr" id="ederr" hidden></p>
+      <div class="edbtns">
+        <button type="button" id="edcancel" class="clearf">ยกเลิก</button>
+        <button type="button" id="edsave">บันทึกและคำนวณใหม่</button>
+      </div>
+    </form>
+  </dialog>
+  <dialog id="savedlg" class="autodlg savedlg" aria-label="ดวงที่บันทึกไว้">
+    <div class="auhead"><b>📂 ดวงที่บันทึกไว้</b>
+      <button type="button" class="aux" id="svclose" title="ปิด">✕</button></div>
+    <div class="svbody" id="svlist"></div>
+    <div class="svfoot">
+      <button type="button" id="svexport" title="สำรองดวงทั้งหมดเป็นไฟล์ .json">⬇ ส่งออกไฟล์</button>
+      <button type="button" id="svimport" title="อ่านไฟล์ .json ที่เคยส่งออก มารวมกับของในเครื่อง">⬆ นำเข้าไฟล์</button>
+      <input type="file" id="svfile" accept=".json,application/json" hidden>
+    </div>
+    <p class="svnote" id="svnote" hidden></p>
+  </dialog>
 
 <nav class="tabs" id="tabs" style="display:none">
   <!-- ลำดับตามที่ผู้ใช้ขอ (31 ส.ค. 2026): สี่แท็บที่ใช้บ่อยขึ้นก่อน -->
@@ -264,17 +291,6 @@
     </div>
   </div>
   <canvas id="dlkey" class="dialkey" width="1200" height="120"></canvas>
-  <dialog id="edlg" class="edlg">
-    <form method="dialog" id="edform">
-      <h3 id="edtitle"></h3>
-      <div id="edbody"></div>
-      <p class="ederr" id="ederr" hidden></p>
-      <div class="edbtns">
-        <button type="button" id="edcancel" class="clearf">ยกเลิก</button>
-        <button type="button" id="edsave">บันทึกและคำนวณใหม่</button>
-      </div>
-    </form>
-  </dialog>
   <!-- เดินอัตโนมัติ — **ไม่ใช่ modal** (`show()` ไม่ใช่ `showModal()`)
        ทั้งหมดของฟีเจอร์นี้คือดูดาวขยับ ถ้าหรี่จานไว้ข้างหลังก็หมดประโยชน์ -->
   <div id="daystep" class="daystep" hidden>
@@ -282,17 +298,6 @@
     <button type="button" data-dstep="1" title="เดินวันดวงจร 1 วัน">+1 วัน</button>
   </div>
 
-  <dialog id="savedlg" class="autodlg savedlg" aria-label="ดวงที่บันทึกไว้">
-    <div class="auhead"><b>📂 ดวงที่บันทึกไว้</b>
-      <button type="button" class="aux" id="svclose" title="ปิด">✕</button></div>
-    <div class="svbody" id="svlist"></div>
-    <div class="svfoot">
-      <button type="button" id="svexport" title="สำรองดวงทั้งหมดเป็นไฟล์ .json">⬇ ส่งออกไฟล์</button>
-      <button type="button" id="svimport" title="อ่านไฟล์ .json ที่เคยส่งออก มารวมกับของในเครื่อง">⬆ นำเข้าไฟล์</button>
-      <input type="file" id="svfile" accept=".json,application/json" hidden>
-    </div>
-    <p class="svnote" id="svnote" hidden></p>
-  </dialog>
 
   <dialog id="autodlg" class="autodlg">
     <div class="auhead">
@@ -624,14 +629,14 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v120"></script>
-<script src="places.js?v=urain-v120"></script>
-<script src="engine.js?v=urain-v120"></script>
-<script src="render.js?v=urain-v120"></script>
+<script src="glyphs.js?v=urain-v122"></script>
+<script src="places.js?v=urain-v122"></script>
+<script src="engine.js?v=urain-v122"></script>
+<script src="render.js?v=urain-v122"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const SW_CACHE = "urain-v120";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v122";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 let DIALMARKS = null, _markTimer = 0;   // วงเส้นประกะพริบครอบดาวของสูตร (v80)
@@ -911,6 +916,7 @@ function run() {
       `${(performance.now() - t0).toFixed(0)} ms · ` +
       `แถวรวม ${document.querySelectorAll(".frow").length} แถว`;
     // v119: ฟอร์มถูกพับอยู่ → ข้อความสรุปต้องเป็นดวงที่เพิ่งคำนวณ ไม่ใช่ของเดิม
+    FORM_SUM_CALC = formSummary();          // v121: ค่าที่ผลบนจอคำนวณจริง (ช่องกรอก ณ ตอนนี้ = ดวงที่เพิ่งคำนวณ)
     if ($("f").classList.contains("fold")) setFold(true, false);
   } catch (e) {
     clearResults();          // อย่าปล่อยผลของดวงก่อนหน้าค้างไว้คู่กับข้อความผิดพลาด
@@ -2016,10 +2022,18 @@ function formSummary() {
   return `<b>${esc(v("cname") || "ไม่ระบุ")}</b> · ${esc(v("bd"))}/${esc(v("bm"))}/${esc(v("by"))} ` +
     `${esc(v("bt"))} · ${esc(pl)} · จร ${esc(v("td"))}/${esc(v("tm"))}/${esc(v("ty"))} ${esc(v("tt"))}`;
 }
+// v121 (รีวิว ChatGPT รอบ 6): แถบสรุปต้องเป็น "ดวงที่ผลบนจอคำนวณจริง" — เดิมอ่านช่องกรอกตอนกดย่อ
+// แก้ปี 2530 → 2500 แล้วย่อโดยยังไม่กดคำนวณ แถบบอก 2500 ทั้งที่ทุกแท็บยังเป็นดวง 2530
+// → เก็บสรุป ณ ตอน run() สำเร็จ · ถ้าช่องกรอกต่างจากนั้น ขึ้นป้าย "ยังไม่ได้คำนวณค่าที่แก้"
+let FORM_SUM_CALC = "";
 function setFold(on, remember) {
   $("f").classList.toggle("fold", on);
   $("fbar").hidden = !on;
-  if (on) $("fsum").innerHTML = formSummary();
+  if (on) {
+    const now = formSummary();
+    $("fsum").innerHTML = FORM_SUM_CALC || now;
+    $("fpend").hidden = !FORM_SUM_CALC || now === FORM_SUM_CALC;
+  }
   if (remember) { try { localStorage.setItem(FOLD_KEY, on ? "1" : "0"); } catch (e) {} }
   syncTopbar();
 }
@@ -3740,7 +3754,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v120")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v122")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
