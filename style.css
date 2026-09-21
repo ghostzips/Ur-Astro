@@ -1228,3 +1228,20 @@ p.hint:empty{display:none}
   /* จอแคบ: จานติดขอบบนขณะเลื่อนรายการ จะได้กดแถวแล้วเห็นเส้นทันทีโดยไม่ต้องเลื่อนกลับ */
   #aspwheel{position:sticky;top:var(--topbar,0px);z-index:3;background:var(--panel);padding:var(--s1) 0}
 }
+
+/* v123: กล่องดาวเด่น/ดาวสันโดษ (คำสอน อ.รหัสวิทยา) */
+#notebox .noterow { display: flex; flex-wrap: wrap; gap: var(--s2);
+  align-items: center; margin: var(--s2) 0; }
+#notebox .notelbl { flex: 0 0 auto; min-width: 84px; color: var(--muted);
+  font-size: var(--t-sm); }
+#notebox .notechip { display: inline-flex; gap: 6px; align-items: baseline;
+  padding: 3px 9px; border: 1px solid var(--rule); border-radius: 999px;
+  font-size: var(--t-sm); background: var(--card); }
+#notebox .notechip b { font-weight: 600; }
+#notebox .hint { display: block; margin-top: var(--s2); line-height: 1.5; }
+
+/* v123: คำเตือนกฎงดพยากรณ์ในแท็บกาลชะตา */
+.horwarn { margin: var(--s3) 0; padding: var(--s3); border-radius: var(--r-md);
+  border: 1px solid var(--warn, #b8860b); background: rgba(184, 134, 11, .08);
+  font-size: var(--t-sm); line-height: 1.55; }
+.horwarn span { display: block; margin-top: 4px; }

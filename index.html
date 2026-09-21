@@ -13,7 +13,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v122">
+<link rel="stylesheet" href="style.css?v=urain-v123">
 </head>
 <body>
 <div class="wrap">
@@ -386,6 +386,16 @@
   <div class="axbox" id="axbox" style="display:none"></div>
   <div class="picbox" id="dlpics"></div>
 </section>
+
+<!-- v123: ดาวเด่น/ดาวสันโดษ ตามคำสอน อ.รหัสวิทยา (part 37, 38)
+     อ่านจากค่าที่เอนจินคำนวณอยู่แล้ว ไม่ได้เพิ่ม/แก้สูตรหรือค่าคงที่ใด ๆ -->
+<section class="legend" id="notebox" style="display:none">
+  <h3>ดาวเด่น · ดาวสันโดษ
+    <span class="hint">เกณฑ์ตามคำสอน อ.รหัสวิทยา (มีที่มากำกับใต้กล่อง)</span>
+  </h3>
+  <div id="noteout"></div>
+  <p class="hint" id="notewhy"></p>
+</section>
 </div><!-- /pdial -->
 
 <div class="panel" id="pctr">
@@ -629,14 +639,14 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v122"></script>
-<script src="places.js?v=urain-v122"></script>
-<script src="engine.js?v=urain-v122"></script>
-<script src="render.js?v=urain-v122"></script>
+<script src="glyphs.js?v=urain-v123"></script>
+<script src="places.js?v=urain-v123"></script>
+<script src="engine.js?v=urain-v123"></script>
+<script src="render.js?v=urain-v123"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const SW_CACHE = "urain-v122";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v123";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 let DIALMARKS = null, _markTimer = 0;   // วงเส้นประกะพริบครอบดาวของสูตร (v80)
@@ -768,7 +778,7 @@ function clearResults() {
   cx.clearRect(0, 0, cv.width, cv.height);
   $("fxout").innerHTML = "";
   for (const id of ["tabs", "tools", "radixbox", "tlbox", "lifebox", "dialbox",
-                    "ctrbox", "fxbox"]) {
+                    "ctrbox", "fxbox", "notebox"]) {
     $(id).style.display = "none";
   }
   $("fwarn").hidden = true;
@@ -896,6 +906,7 @@ function run() {
     $("radixbox").style.display = "";
     TL = { R, jd, jdT, months, tables, lat, lon,
            place: placeTxt0 === "กำหนดเอง…" ? "" : placeTxt0 };
+    renderNotable(R);      // v123: ดาวเด่น/ดาวสันโดษ (อ่านจากค่าที่คำนวณแล้ว)
     renderHouseWheel(R);   // v115: ต้องหลัง TL — จานแบบ swDraw ใช้วันเวลา/สถานที่จาก TL ที่มุมบนซ้าย
     $("tlmonth").innerHTML = $("cmpmonth").innerHTML;
     $("tlmonth").value = String(mb);   // ดัชนีของเดือนดวงจร = จำนวนเดือนที่ย้อนหลัง
@@ -1000,6 +1011,70 @@ function svgGlyph(code, x, y, size, cls) {
   }
   return `<text class="hgl-code ${cls}" x="${x}" y="${y}" ` +
     `font-size="${Math.round(size * 0.6)}">${code}</text>`;
+}
+// ── ดาวเด่น / ดาวสันโดษ (v123 · คำสอน อ.รหัสวิทยา part 37 · part 38) ──────
+// ดาวเด่น   = ปัจจัยที่ทำมุมแข็งถึง "เมอริเดียน" (0/45/90/135/180) ภายในค่าวังกะ
+//            อาจารย์: "ทำมุมสัมพันธ์ถึงจุดเมอริเดียน … มุมกุม มุมเล็ง มุมเชียง
+//            และ 135 หรือมุม harmonic 8 ก็ถือว่าปัจจัยนั้นเป็นดาวเด่น" (part 37 @00:59)
+//            ลำดับความแรง: ถึง MC แรงสุด แล้วจึงถึงอาทิตย์/จันทร์ (part 37 @05:27)
+// ดาวสันโดษ = ดาวที่มีพื้นที่ว่างข้างใดข้างหนึ่ง ≥ 45° (เด่นชัดเมื่อ ≥ 90°)
+//            อาจารย์: "เห็นพื้นที่ว่าง ๆ ตีไปทั้งหมดประมาณ 90 องศา หรืออย่างน้อย 45" (part 38 @03:02)
+//            และย้ำว่า "ไม่ได้หมายความว่าดาวดวงนั้นดีหรือร้าย" (part 38 @01:42)
+// ไม่มีการเพิ่ม/แก้ค่าคงที่ใด ๆ — orb ใช้ AISTRO.ORB_RT (1.0°) ที่มีอยู่แล้ว
+// และค่าทั้งหมดอ่านจากดวงที่เอนจินคำนวณเสร็จแล้ว (R)
+const NOTE_BODIES = AISTRO.CODE_ORDER.filter((c) => c !== "AR" && c !== "MC" && c !== "AS");
+function notableStars(R) {
+  const ORB = AISTRO.ORB_RT;
+  const all = AISTRO.CODE_ORDER.filter((c) => R[c] !== undefined);
+  const hi = [];
+  for (const c of all) {
+    if (c === "MC") continue;
+    const d = Math.abs(((R[c] - R.MC + 180) % 360 + 360) % 360 - 180);   // 0..180
+    const k = Math.round(d / 45), off = Math.abs(d - k * 45);
+    if (off <= ORB) hi.push({ c, ang: k * 45, off });
+  }
+  hi.sort((a, b) => a.off - b.off);
+  const lone = [];
+  const bodies = NOTE_BODIES.filter((c) => R[c] !== undefined);
+  for (const c of bodies) {
+    let fw = 360, bw = 360;
+    for (const o of bodies) {
+      if (o === c) continue;
+      const d = (((R[o] - R[c]) % 360) + 360) % 360;
+      // ดาวซ้อนตำแหน่งกันสนิท (d = 0) ต้องนับว่าไม่มีที่ว่างทั้งสองข้าง
+      // ไม่ใช่ 360 − 0 = 360 ซึ่งจะทำให้ดาวที่ทับกันกลายเป็น "สันโดษ" (เจอจากเทสต์ขอบ)
+      if (d === 0) { fw = 0; bw = 0; continue; }
+      if (d < fw) fw = d;
+      if (360 - d < bw) bw = 360 - d;
+    }
+    const gap = Math.max(fw, bw);
+    if (gap >= 45) lone.push({ c, gap, full: gap >= 90 });
+  }
+  lone.sort((a, b) => b.gap - a.gap);
+  return { hi, lone };
+}
+function renderNotable(R) {
+  const box = $("notebox"), out = $("noteout");
+  if (!box || !out) return;
+  const n = notableStars(R), esc = AISTRO_RENDER.esc;
+  const chip = (c, extra) =>
+    `<span class="notechip" data-c="${c}"><b>${esc(FACTOR_TH[c] || c)}</b> ${esc(extra)}</span>`;
+  let h = `<p class="noterow"><span class="notelbl">ดาวเด่น</span>` +
+    (n.hi.length
+      ? n.hi.map((x) => chip(x.c, `${x.ang}° จาก ${FACTOR_TH.MC} · คลาด ${x.off.toFixed(2)}°`)).join("")
+      : `<span class="mnone">ไม่มีปัจจัยที่ทำมุมแข็งถึงเมอริเดียนในค่าวังกะ ${AISTRO.ORB_RT}°</span>`) +
+    `</p>`;
+  h += `<p class="noterow"><span class="notelbl">ดาวสันโดษ</span>` +
+    (n.lone.length
+      ? n.lone.map((x) => chip(x.c, `ว่างข้างเดียว ${x.gap.toFixed(1)}°${x.full ? " · เด่นชัด" : ""}`)).join("")
+      : `<span class="mnone">ไม่มีดาวที่มีพื้นที่ว่างข้างใดข้างหนึ่งถึง 45°</span>`) +
+    `</p>`;
+  out.innerHTML = h;
+  $("notewhy").textContent =
+    "เกณฑ์: ดาวเด่น = ทำมุม 0/45/90/135/180 ถึงเมอริเดียน (part 37 @00:59) · " +
+    "ดาวสันโดษ = มีพื้นที่ว่างข้างใดข้างหนึ่ง ≥ 45° เด่นชัดเมื่อ ≥ 90° (part 38 @03:02) · " +
+    "อาจารย์ย้ำว่าสันโดษไม่ได้แปลว่าดีหรือร้าย ต้องดูองค์ประกอบอื่นด้วย (part 38 @01:42)";
+  box.style.display = "";
 }
 function renderHouseWheel(R) {
   const axis = AISTRO.uranianAxis(R);
@@ -3754,7 +3829,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v122")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v123")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
@@ -4814,6 +4889,36 @@ async function horAsk() {
 $("horgo").addEventListener("click", horAsk);
 $("horq").addEventListener("keydown", (e) => { if (e.key === "Enter") horAsk(); });
 
+// ── กฎ "งดพยากรณ์" ของกาลชะตา (v123 · คำสอน อ.รหัสวิทยา part 64.1) ─────────
+// ข้อ 1 ลัคนา 3 องศาแรกของราศี = ถามเร็วไป เรื่องยังไม่สุกงอม (part 64.1 @02:22)
+// ข้อ 2 ลัคนา 3 องศาสุดท้าย = ถามช้าไป เรื่องจบแล้ว (part 64.1 @04:28)
+// ข้อ 3 ข้อยกเว้น: ดวงกำเนิดมีปัจจัยอยู่ราศีและองศาเดียวกับลัคนาคำถาม (part 64.1 @05:49)
+// ข้อ 4 จันทร์อยู่ 15° ตุลย์ ถึง 15° พิจิก ("ช่วงเผาไหม้") (part 64.1 @08:23–08:31)
+// เป็นคำเตือนอย่างเดียว ไม่เปลี่ยนการคำนวณและไม่ปิดคำตอบ
+function horWarnings(R, natal) {
+  const w = [];
+  const asDeg = ((R.AS % 30) + 30) % 30;
+  const early = asDeg < 3, late = asDeg >= 27;
+  if (early || late) {
+    const same = !natal ? [] : AISTRO.CODE_ORDER.filter((c) =>
+      c !== "AS" && natal[c] !== undefined &&
+      Math.floor(natal[c] / 30) === Math.floor(R.AS / 30) &&
+      Math.abs(natal[c] % 30 - asDeg) < 1);
+    w.push({ kind: early ? "early" : "late", except: same,
+      text: `ลัคนาคำถามอยู่ ${asDeg.toFixed(2)}° ของราศี — ` +
+        (early ? "3 องศาแรก (ถามเร็วไป เรื่องยังไม่สุกงอม)"
+               : "3 องศาสุดท้าย (ถามช้าไป เรื่องจบแล้ว)") +
+        ` อาจารย์แนะนำให้<b>งดพยากรณ์</b>` +
+        (same.length ? ` — แต่เข้าข้อยกเว้น: ดวงกำเนิดมี ${same.map((c) => FACTOR_TH[c] || c).join(" · ")}` +
+          ` อยู่ราศีและองศาเดียวกัน ถ้าคำถามเกี่ยวกับปัจจัยนี้ถือว่าใช้ได้` : "") });
+  }
+  const mo = ((R.MO % 360) + 360) % 360;
+  if (mo >= 195 && mo <= 225)
+    w.push({ kind: "burn", except: [],
+      text: `จันทร์อยู่ ${mo.toFixed(2)}° (ระหว่าง 15° ตุลย์ ถึง 15° พิจิก) — ` +
+        `ช่วง "เผาไหม้" อาจารย์แนะนำให้<b>งดพยากรณ์</b>` });
+  return w;
+}
 function horRender() {
   const A = HOR.ans, esc = AISTRO_RENDER.esc;
   const fset = {};
@@ -4854,10 +4959,14 @@ function horRender() {
   const nGood = rel.filter((p) => HOR_GOOD.indexOf(p.a) >= 0 || HOR_GOOD.indexOf(p.b) >= 0).length;
   const nBad = rel.filter((p) => HOR_BAD.indexOf(p.a) >= 0 || HOR_BAD.indexOf(p.b) >= 0).length;
   const nSelf = rel.filter((p) => HOR_SELF.indexOf(p.a) >= 0 || HOR_SELF.indexOf(p.b) >= 0).length;
+  const horWarn = horWarnings(A.R, TL && TL.R);
   let h = `<div class="horwhen">⏱ ดวงคำถาม ณ ${A.when}` +
     (A.q ? ` · "${esc(A.q)}"` : "") +
     ` · สูตรทั้งดวง ${A.pairs.length} คู่ · เกี่ยวกับเรื่องที่เลือก ${rel.length} คู่ ` +
     `<button type="button" id="hordial">เปิดจาน ณ เวลาถาม</button></div>`;
+  if (horWarn.length)
+    h += `<div class="horwarn">⚠️ กฎงดพยากรณ์ (คำสอน อ.รหัสวิทยา · part 64.1)` +
+      horWarn.map((w) => `<span>${w.text}</span>`).join("") + `</div>`;
   // A) ดาวประจำเรื่อง พร้อมคีย์เวิร์ดตำรา
   h += `<div class="horh">ดาวประจำเรื่อง (คีย์เวิร์ดตำราวิทเทอ)</div><div class="horfac">` +
     Object.keys(fset).map((f) =>
