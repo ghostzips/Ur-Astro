@@ -6,7 +6,7 @@
  * ขนาดที่ต้องโหลดตอนติดตั้ง ≈ 16 MB: ตารางดาว 10.5 + ละติจูดดาว 3.1 + แผนที่ระดับหยาบ/กลาง 2.1 + ที่เหลือ <1
  * แผนที่ระดับละเอียด (1:10m, 8.9 MB) **ไม่บังคับโหลดตอนติดตั้ง** — ดึงครั้งแรกที่ซูมถึงตอนมีเน็ต แล้วเก็บไว้ใช้ออฟไลน์
  */
-const CACHE = "urmap-v2";
+const CACHE = "urmap-v3";
 const FILES = [
   "./",
   "./index.html",
@@ -33,6 +33,10 @@ const FILES = [
   "./geo/cities.json",
   "./geo/admin1-labels.json",
 ];
+// ไฟล์ที่ "ไม่มีก็ต้องติดตั้งได้": คำอ่านเป็นตัวเลือกตอน deploy (ลิขสิทธิ์ — ดู deploy_map.sh)
+// บั๊กจริง urmap-v1/v2 (21 ก.ย. 2026): ไฟล์นี้อยู่ใน FILES แบบบังคับ แต่ชุดที่ขึ้นเว็บไม่มี → 404 → install ล้มทั้งชุด
+// แคชค้างครึ่งเดียว (18/23) และไม่มีใครเห็น เพราะหน้าเว็บขึ้น "พร้อมใช้ออฟไลน์" จาก SW ของแอปยูเรเนียนที่ครอบ /map/ อยู่
+const OPTIONAL = new Set(["./readings.json.gz"]);
 // โหลดเมื่อขอครั้งแรก แล้วเก็บไว้ (ไฟล์ใหญ่ ใช้เฉพาะตอนซูมลึก)
 const ON_DEMAND = /\/geo\/(countries|states)-10m\.json$/;
 
@@ -41,8 +45,10 @@ self.addEventListener("install", (e) => {
     const c = await caches.open(CACHE);
     // cache:"reload" — ไม่ให้ตรึงไฟล์เก่าจากแคช HTTP ของเบราว์เซอร์ไว้ในแคชของเรา (บทเรียนจาก app/sw.js)
     await Promise.all(FILES.map(async (f) => {
-      const res = await fetch(f, { cache: "reload" });
-      if (!res.ok) throw new Error("โหลด " + f + " ไม่สำเร็จ: " + res.status);
+      let res;
+      try { res = await fetch(f, { cache: "reload" }); }
+      catch (err) { if (OPTIONAL.has(f)) return; throw err; }
+      if (!res.ok) { if (OPTIONAL.has(f)) return; throw new Error("โหลด " + f + " ไม่สำเร็จ: " + res.status); }
       await c.put(f, res);
     }));
     await self.skipWaiting();

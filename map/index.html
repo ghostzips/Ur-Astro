@@ -1350,7 +1350,7 @@ addEventListener("resize",size);
 </script>
 <script>
 // ── ออฟไลน์: ลงทะเบียน service worker (แยกแคชจากแอปยูเรเนียน: urmap-v*) ──
-const MAP_CACHE="urmap-v2";
+const MAP_CACHE="urmap-v3";
 (function(){
   const el=document.createElement("div");el.className="hint";el.style.cssText="margin:6px 4px 0";el.id="swstat";
   document.querySelector(".wrap").append(el);
@@ -1361,10 +1361,18 @@ const MAP_CACHE="urmap-v2";
     try{
       // updateViaCache:"none" — บังคับถาม sw.js กับเซิร์ฟเวอร์เสมอ ไม่งั้นรุ่นใหม่ไม่มีวันถูกเห็น (บทเรียนจากแอป)
       const reg=await navigator.serviceWorker.register("sw.js",{updateViaCache:"none"});
-      const ready=()=>say("พร้อมใช้ออฟไลน์ (แคช "+MAP_CACHE+") — ปิดเน็ตแล้วเปิดใหม่ได้",true);
+      // "พร้อม" ต้องพิสูจน์จากของจริง: SW ที่ active เป็นของแผนที่เอง (ไม่ใช่ของแอปยูเรเนียนที่ขอบเขต /Ur-Astro/ ครอบ /map/ อยู่)
+      // และไฟล์หลักอยู่ในแคชของเราจริง — เดิมเช็คแค่ navigator.serviceWorker.controller จึงขึ้น "พร้อม" ทั้งที่ติดตั้งล้ม (ผลบวกปลอม เจอจริง)
+      const mine=new URL("sw.js",location.href).href;
+      const ready=async()=>{
+        const a=reg.active; if(!a||a.scriptURL!==mine){say("ยังไม่พร้อมออฟไลน์ — service worker ของแผนที่ยังไม่ทำงาน ลองรีโหลดตอนมีเน็ต",false);return}
+        const c=await caches.open(MAP_CACHE); const need=["./index.html","./ephem.bin.gz","./beta.bin.gz","./engine.js","./geo/countries-110m.json"];
+        const miss=[];for(const f of need)if(!(await c.match(f)))miss.push(f);
+        if(miss.length){say("ยังไม่พร้อมออฟไลน์ — ไฟล์ยังไม่ครบในแคช "+MAP_CACHE+": "+miss.join(", "),false);return}
+        say("พร้อมใช้ออฟไลน์ (แคช "+MAP_CACHE+") — ปิดเน็ตแล้วเปิดใหม่ได้",true)};
       reg.addEventListener("updatefound",()=>{const w=reg.installing;if(!w)return;say("กำลังโหลดไฟล์สำหรับใช้ออฟไลน์ (~16 MB)…",true);
         w.addEventListener("statechange",()=>{if(w.state==="activated")ready();else if(w.state==="redundant")say("ติดตั้งออฟไลน์ไม่สำเร็จ — ลองรีโหลดตอนมีเน็ต",false)})});
-      if(navigator.serviceWorker.controller)ready();
+      if(reg.active&&!reg.installing)ready();
     }catch(e){say("ลงทะเบียน service worker ไม่ได้: "+e.message,false)}
   });
 })();
