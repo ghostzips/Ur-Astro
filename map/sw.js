@@ -6,7 +6,7 @@
  * ขนาดที่ต้องโหลดตอนติดตั้ง ≈ 16 MB: ตารางดาว 10.5 + ละติจูดดาว 3.1 + แผนที่ระดับหยาบ/กลาง 2.1 + ที่เหลือ <1
  * แผนที่ระดับละเอียด (1:10m, 8.9 MB) **ไม่บังคับโหลดตอนติดตั้ง** — ดึงครั้งแรกที่ซูมถึงตอนมีเน็ต แล้วเก็บไว้ใช้ออฟไลน์
  */
-const CACHE = "urmap-v1";
+const CACHE = "urmap-v2";
 const FILES = [
   "./",
   "./index.html",
@@ -62,7 +62,7 @@ const FRESH = new Set(["", "index.html", "manifest.json", "glyphs.js", "engine.j
                        "meanings.js", "places.js", "timing.js", "api.js", "house_dict.json"]);
 const isFresh = (url) => { const u = new URL(url); return u.origin === location.origin && FRESH.has(u.pathname.split("/").pop()); };
 // หน้าสอบเทียบ/fixture ต้องสดเสมอ ห้ามลงแคช — ไม่งั้นแก้เทสต์แล้วรันได้ของเก่าเงียบ ๆ (บทเรียนจากแอป)
-const NEVER_CACHE = /\/(selftest\.html|fixture\.json)$/;
+const NEVER_CACHE = /\/(selftest\.html|uitest\.html|fixture\.json)$/;
 
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;

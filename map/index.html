@@ -55,6 +55,8 @@
   .spacer{flex:1}
   #mapwrap{position:relative;width:100%;aspect-ratio:2/1;background:#bcd6e6;cursor:grab;touch-action:none}
   #mapwrap.drag{cursor:grabbing}
+  /* มือถือ: กรอบ 2:1 สูงแค่ ~170px ป้าย 44 เส้นอัดกันจนอ่านไม่ได้ (ภาพจากเครื่องจริง 21 ก.ย. 2026) → กรอบ 4:5 */
+  @media (max-width:700px){#mapwrap{aspect-ratio:4/5}}
   #map{width:100%;height:100%;display:block}
   #flashtip{position:absolute;left:8px;top:8px;background:rgba(20,28,38,.86);color:#fff;font-size:12.5px;
     padding:4px 10px;border-radius:14px;pointer-events:none}
@@ -66,6 +68,7 @@
   .legend .legsep{flex-basis:100%;height:0}
   .legend label.group{font-weight:600;background:#eef2f7}
   .legend input{display:none}
+  @media (max-width:700px){.legend{gap:8px}.legend label{padding:9px 13px;font-size:14px}}   /* เป้าแตะ ≥38px — ต้องอยู่หลังกฎ .legend label ข้างบน ไม่งั้นถูกทับ (เจอจริง) */
   .teach{margin-top:6px;font-size:12.5px}
   .teach>summary{cursor:pointer;color:#2b5f9e;font-weight:600;list-style:none}
   .teach>summary::-webkit-details-marker{display:none}
@@ -257,14 +260,20 @@ function setBirthPlace(){const p=placeOf($("#place").value);$("#lat").value=p.la
 const cv=$("#map"), ctx=cv.getContext("2d"), wrap=$("#mapwrap");
 let W=0,H=0;
 function size(){const r=wrap.getBoundingClientRect();const d=devicePixelRatio||1;W=r.width;H=r.height;cv.width=W*d;cv.height=H*d;ctx.setTransform(d,0,0,d,0,0);clampView();draw()}
-const X=lon=>(lon-view.cx)*view.k*W/360+W/2, Y=lat=>(view.cy-lat)*view.k*H/180+H/2;
-const LON=x=>(x-W/2)*360/(view.k*W)+view.cx, LAT=y=>view.cy-(y-H/2)*180/(view.k*H);
-function clampView(){view.k=Math.min(60,Math.max(1,view.k));const hx=180/view.k,hy=90/view.k;view.cx=Math.min(180-hx,Math.max(-180+hx,view.cx));view.cy=Math.min(90-hy,Math.max(-90+hy,view.cy))}
-function zoomAt(px,py,f){const lo=LON(px),la=LAT(py);view.k*=f;clampView();view.cx+=lo-LON(px);view.cy+=la-LAT(py);clampView();draw()}
+// มาตราส่วนเดียวกันทั้งสองแกน: พิกเซลต่อองศา = k·W/360 — กรอบ 2:1 (PC) ได้ค่าเท่าเดิมทุกประการ เพราะ H/180 = W/360
+// แต่กรอบทรงอื่น (มือถือ 4:5) แผนที่ไม่บิด · ซูมต่ำสุด KMIN = พอดีให้โลกเต็มความสูงกรอบ (PC = 1 เหมือนเดิม)
+const PPD=()=>view.k*W/360;
+const X=lon=>(lon-view.cx)*PPD()+W/2, Y=lat=>(view.cy-lat)*PPD()+H/2;
+const LON=x=>(x-W/2)/PPD()+view.cx, LAT=y=>view.cy-(y-H/2)/PPD();
+const KMIN=()=>{const r=W?2*H/W:1;return r>1.02?r:1};
+const COMPACT=()=>W>0&&W<520;          // จอแคบ: ป้ายเล็กลง ไม่ซ้อนแถวลึก ป้ายที่ชนกันไม่วาด (เส้นยังอยู่ แตะดูชื่อได้)
+function clampView(){view.k=Math.min(60,Math.max(KMIN(),view.k));const hx=180/view.k,hy=W?Math.min(90,180*H/(W*view.k)):90/view.k;view.cx=Math.min(180-hx,Math.max(-180+hx,view.cx));view.cy=Math.min(90-hy,Math.max(-90+hy,view.cy))}
+function zoomAt(px,py,f,fast){const lo=LON(px),la=LAT(py);view.k*=f;clampView();view.cx+=lo-LON(px);view.cy+=la-LAT(py);clampView();fast?gestureDraw():draw()}
 function setRegion(i){const r=REGIONS[i];view.cx=r[1];view.cy=r[2];view.k=r[3];clampView();[...$("#regions").children].forEach((b,j)=>b.classList.toggle("on",j===i));draw()}
 
 function path(pts,lonFirst){ // pts: [[lat,lon]] (เส้นดาว) หรือ [[lon,lat]] (ขอบทวีป)
-  pts.forEach((p,i)=>{const x=X(lonFirst?p[0]:p[1]),y=Y(lonFirst?p[1]:p[0]);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});
+  const q=PPD(),ox=W/2-view.cx*q,oy=H/2+view.cy*q;      // คำนวณครั้งเดียวต่อเส้น (เดิมเรียก X()/Y() ทุกจุด ~12,000 จุด/เฟรม)
+  for(let i=0;i<pts.length;i++){const p=pts[i],x=(lonFirst?p[0]:p[1])*q+ox,y=oy-(lonFirst?p[1]:p[0])*q;i?ctx.lineTo(x,y):ctx.moveTo(x,y)}
 }
 function draw(){
   if(!W) return;
@@ -336,24 +345,33 @@ function draw(){
       ctx.fill();ctx.restore();return true;
     };
     window.__badge=(x,y,l,dash)=>{
-      const big=15, small=9, uran=l.group==="uranian";
+      const cp=COMPACT(), big=cp?12:15, small=cp?7.5:9, uran=l.group==="uranian";
       ctx.font=`bold ${small}px sans-serif`; const aw=ctx.measureText(l.angle).width;
       ctx.font=`bold ${big}px sans-serif`;   const gw=uran?big*0.9:ctx.measureText(l.glyph).width;
-      const bw=gw+aw+11, bh=21;
+      const bw=gw+aw+(cp?8:11), bh=cp?17:21;
       ctx.fillStyle=dash?"rgba(255,255,255,.82)":"#fff";ctx.strokeStyle=COLORS[l.body];ctx.lineWidth=dash?1:1.5;
       ctx.setLineDash(dash?[3,2]:[]);
       ctx.beginPath();ctx.roundRect?ctx.roundRect(x-bw/2,y-bh/2,bw,bh,10):ctx.rect(x-bw/2,y-bh/2,bw,bh);ctx.fill();ctx.stroke();
       ctx.setLineDash([]);
       ctx.fillStyle=COLORS[l.body];ctx.textAlign="left";ctx.textBaseline="middle";
-      const gx=x-bw/2+5;
+      const gx=x-bw/2+(cp?4:5);
       // ถ้าไม่มีเส้นขอบ (เช่นไฟล์ glyphs.js โหลดไม่ได้) ต้องถอยไปใช้ตัวอักษร ไม่ปล่อยป้ายว่าง
       if(!uran || !uranPath(l.body,gx+gw/2,y,big*1.05)){ctx.font=`bold ${big}px sans-serif`;ctx.fillText(l.glyph,gx,y+1)}
-      ctx.font=`bold ${small}px sans-serif`;ctx.fillText(l.angle,gx+gw+3,y+4);
+      ctx.font=`bold ${small}px sans-serif`;ctx.fillText(l.angle,gx+gw+(cp?2:3),y+(cp?3:4));
       ctx.textBaseline="alphabetic";ctx.textAlign="left";
     };
     const badge=window.__badge;
     const placed=badgeState;
-    const put=(key,x,y0,dir)=>{let row=0;while(placed[key].some(p=>p.row===row&&Math.abs(p.x-x)<42))row++;placed[key].push({x,row});return y0+dir*row*23};
+    // put คืน null = แถวเต็มแล้ว ไม่วาดป้ายนี้ (จอแคบให้ 2 แถว) — นับไว้บอกผู้ใช้ใน #status ไม่ซ่อนเงียบ ๆ
+    const put=window.__put=(key,x,y0,dir)=>{const cp=COMPACT(),gap=cp?33:42,rh=cp?19:23,maxRow=cp?2:99;let row=0;
+      while(placed[key].some(p=>p.row===row&&Math.abs(p.x-x)<gap))row++;
+      if(row>=maxRow){placed.skipped=(placed.skipped||0)+1;return null}
+      placed[key].push({x,row});return y0+dir*row*rh};
+    // ป้ายกลางจอ (AC/DC): PC ซ้อนลงล่างเหมือนเดิม · จอแคบ ป้ายที่ชนกันไม่วาด
+    const putMid=window.__putMid=(x,y)=>{const cp=COMPACT();
+      const n=placed.mid.filter(p=>Math.abs(p.x-x)<(cp?34:40)&&Math.abs(p.y-y)<(cp?19:22)).length;
+      if(cp&&n){placed.skipped=(placed.skipped||0)+1;return null}
+      placed.mid.push({x,y,row:0});return y+n*22};
     const items=[];
     for(const l of chart.lines){
       if(hidden.has(l.body))continue;
@@ -364,13 +382,23 @@ function draw(){
     }
     items.sort((a,b)=>a.x-b.x);
     for(const it of items){
-      if(it.key==="top")badge(it.x,put("top",it.x,16,1),it.l);
-      else if(it.key==="bottom")badge(it.x,put("bottom",it.x,H-26,-1),it.l);
-      else{const row=placed.mid.filter(p=>Math.abs(p.x-it.x)<40&&Math.abs(p.y-it.y)<22).length;placed.mid.push({x:it.x,y:it.y,row:0});badge(it.x+22,it.y+row*22,it.l)}
+      // เส้นที่กำลังชี้/แตะอยู่ต้องมีป้ายเสมอ (วาดทีหลังสุด ด้านล่าง) — ที่เหลือวาดเท่าที่ไม่ชนกัน
+      if(hover&&hover.line===it.l)continue;
+      let y;
+      if(it.key==="top"){y=put("top",it.x,COMPACT()?13:16,1);if(y!==null)badge(it.x,y,it.l)}
+      else if(it.key==="bottom"){y=put("bottom",it.x,H-26,-1);if(y!==null)badge(it.x,y,it.l)}
+      else{y=putMid(it.x,it.y);if(y!==null)badge(it.x+(COMPACT()?17:22),y,it.l)}
     }
   }
   // ป้ายชั้นจร/โปรเกรส — สัญลักษณ์เดียวกัน กรอบประ เพื่อไม่ให้สับสนกับเส้นกำเนิด
   if(dynamic&&typeof drawDynBadges==="function") drawDynBadges(badgeState);
+  if(chart&&hover&&hover.line&&!hidden.has(hover.line.body)&&window.__badge){     // ป้ายของเส้นที่ชี้/แตะ — ทับบนสุดเสมอ
+    const l=hover.line;let bx=null,by=null;
+    if(l.angle==="MC"||l.angle==="IC"){bx=X(l.segments[0][0][1]);by=l.angle==="MC"?16:H-26}
+    else{let best=null;for(const s of l.segments)for(const [la,lo] of s){const x=X(lo),y=Y(la);if(x<20||x>W-20||y<40||y>H-40)continue;const d=Math.abs(la-view.cy);if(!best||d<best.d)best={d,x,y}}
+      if(best){bx=best.x+22;by=best.y}}
+    if(bx!==null&&bx>=10&&bx<=W-10)window.__badge(bx,by,l);
+  }
   // จุดเกิด + เมืองที่เลือก
   const bl=+$("#lat").value,bo=+$("#lon").value;
   if(chart&&!isNaN(bl)){ctx.fillStyle="#fff";ctx.strokeStyle="#24527f";ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(X(bo),Y(bl),5,0,7);ctx.fill();ctx.stroke()}
@@ -378,7 +406,38 @@ function draw(){
     ctx.fillStyle="#d8352a";ctx.strokeStyle="#fff";ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,6.5,0,7);ctx.fill();ctx.stroke();
     ctx.font="bold 13px sans-serif";const t=city.name;const tw=ctx.measureText(t).width;
     ctx.fillStyle="rgba(255,255,255,.9)";ctx.fillRect(x+10,y-20,tw+10,19);ctx.fillStyle="#1d2127";ctx.fillText(t,x+15,y-6)}
-  $("#status").textContent=`ซูม ${view.k.toFixed(1)}× · กลาง ${view.cy.toFixed(0)}°, ${view.cx.toFixed(0)}°`;
+  $("#status").textContent=`ซูม ${view.k.toFixed(1)}× · กลาง ${view.cy.toFixed(0)}°, ${view.cx.toFixed(0)}°`+
+    (badgeState.skipped?` · ซ่อนป้ายที่ซ้อน ${badgeState.skipped} · แตะเส้นดูชื่อ`:"");
+  drawn={cx:view.cx,cy:view.cy,k:view.k,W,H};drawVer++;inGesture=false;
+}
+// ── วาดแบบเร็วระหว่างลาก/ซูม/กะพริบ ─────────────────────────────────────────────
+// วัดจริง (21 ก.ย. 2026): คำนวณทั้งชุด ≤46 ms แต่ draw() เต็ม 1 เฟรม ~27 ms บน Mac → มือถือ ~100+ ms (เส้น 160+ เส้น × 2 ชั้น + เงาแผ่นดิน)
+// เดิมเรียก draw() ทุก pointermove และทุกเฟรมตอนกะพริบ 7 วินาที → สะดุด
+// แก้: ระหว่างท่าทาง (ลาก/หนีบ/ล้อ) ถ่ายภาพจอที่วาดเสร็จไว้ แล้วแค่เลื่อน/ย่อขยาย "ภาพ" เฟรมละครั้ง · นิ่ง 140 ms ค่อยวาดจริง
+let drawn=null, drawVer=0, inGesture=false, snap=null, gRaf=0, gTimer=0;
+function takeSnap(){const c=(snap&&snap.c)||document.createElement("canvas");
+  if(c.width!==cv.width||c.height!==cv.height){c.width=cv.width;c.height=cv.height}
+  const g=c.getContext("2d");g.clearRect(0,0,c.width,c.height);g.drawImage(cv,0,0);snap={c,...drawn,ver:drawVer}}
+function fastDraw(){
+  if(!snap||snap.W!==W||snap.H!==H){draw();return}
+  const s=view.k/snap.k,q=PPD(),dx=(snap.cx-view.cx)*q+W/2-s*W/2,dy=(view.cy-snap.cy)*q+H/2-s*H/2;
+  ctx.fillStyle="#c3dbe8";ctx.fillRect(0,0,W,H);ctx.drawImage(snap.c,dx,dy,W*s,H*s);
+}
+function gestureDraw(){
+  if(!inGesture){if(drawn)takeSnap();inGesture=true}          // จอยังเป็นภาพที่วาดจริงล่าสุด — ถ่ายก่อนจะวาดทับ
+  if(!gRaf)gRaf=requestAnimationFrame(()=>{gRaf=0;if(inGesture)fastDraw()});
+  clearTimeout(gTimer);gTimer=setTimeout(()=>{if(gRaf){cancelAnimationFrame(gRaf);gRaf=0}draw()},140);
+}
+function settleDraw(){clearTimeout(gTimer);if(gRaf){cancelAnimationFrame(gRaf);gRaf=0}draw()}
+function drawFlashOnly(){
+  const fl=flash&&chart?chart.lines.find(l=>l.body===flash.body&&l.angle===flash.angle):null; if(!fl) return;
+  const t=performance.now()/1000, pulse=(Math.sin(t*9)+1)/2;
+  ctx.setLineDash(fl.angle==="IC"||fl.angle==="DC"?[7,5]:[]);
+  for(const seg of fl.segments){
+    ctx.strokeStyle=`rgba(255,255,255,${.35+.5*pulse})`;ctx.lineWidth=9+7*pulse;ctx.beginPath();path(seg,false);ctx.stroke();
+    ctx.strokeStyle=COLORS[fl.body];ctx.lineWidth=2.5+2.5*pulse;ctx.beginPath();path(seg,false);ctx.stroke();
+  }
+  ctx.setLineDash([]);
 }
 // ── แผนที่โลกหลายระดับรายละเอียด (Natural Earth ผ่าน world-atlas 2.0.2 · ไฟล์ในเครื่อง ออฟไลน์) ─────────
 // ซูม <2.5 ใช้ 1:110 ล้าน · <7 ใช้ 1:50 ล้าน · ≥7 ใช้ 1:10 ล้าน (โหลดเมื่อซูมถึงครั้งแรก)
@@ -477,7 +536,7 @@ function drawAppPlaces(){
 }
 function drawDetail(){
   if(!showDetail){drawAppPlaces();return}
-  const d=devicePixelRatio||1, sx=view.k*W/360, sy=view.k*H/180;
+  const d=devicePixelRatio||1, sx=view.k*W/360, sy=sx;
   if(view.k>=2.2){
     const st=stateSet();
     if(st){
@@ -589,27 +648,25 @@ function geoLevel(){
 // ป้ายของชั้นจร/โปรเกรส (เรียกจาก draw หลังวาดป้ายเส้นกำเนิดแล้ว)
 function dynBadge(x,y,l,kind){ if(window.__badge) window.__badge(x,y,l,true) }
 function drawDynBadges(placed){
-  const put=(key,x,y0,dir)=>{let row=0;while(placed[key].some(p=>p.row===row&&Math.abs(p.x-x)<42))row++;
-    placed[key].push({x,row});return y0+dir*row*23};
+  const put=window.__put, putMid=window.__putMid; if(!put) return;      // กติกาวางป้ายชุดเดียวกับเส้นกำเนิด (นิยามใน draw)
   for(const [kind,lines] of Object.entries(dynamic.layers)){
     for(const l of lines){
       if(hidden.has(l.body))continue;
       if(l.angle==="MC"||l.angle==="IC"){
         const x=X(l.segments[0][0][1]); if(x<10||x>W-10)continue;
-        dynBadge(x,put(l.angle==="MC"?"top":"bottom",x,l.angle==="MC"?16:H-26,l.angle==="MC"?1:-1),l,kind);
+        const y=put(l.angle==="MC"?"top":"bottom",x,l.angle==="MC"?(COMPACT()?13:16):H-26,l.angle==="MC"?1:-1);if(y!==null)dynBadge(x,y,l,kind);
       }else{
         let best=null;
         for(const s of l.segments)for(const [la,lo] of s){const x=X(lo),y=Y(la);
           if(x<20||x>W-20||y<40||y>H-40)continue;const d=Math.abs(la-view.cy);if(!best||d<best.d)best={d,x,y}}
-        if(best){const row=placed.mid.filter(p=>Math.abs(p.x-best.x)<40&&Math.abs(p.y-best.y)<22).length;
-          placed.mid.push({x:best.x,y:best.y,row:0});dynBadge(best.x+22,best.y+row*22,l,kind)}
+        if(best){const y=putMid(best.x,best.y);if(y!==null)dynBadge(best.x+(COMPACT()?17:22),y,l,kind)}
       }
     }
   }
 }
 function drawGeo(){
   const g=geoLevel(); if(!g) return;
-  const d=devicePixelRatio||1, sx=view.k*W/360, sy=view.k*H/180;
+  const d=devicePixelRatio||1, sx=view.k*W/360, sy=sx;
   const vx0=LON(0),vx1=LON(W),vy0=LAT(H),vy1=LAT(0);
   const vis=g.countries.filter(c=>c.bbox[2]>=vx0&&c.bbox[0]<=vx1&&c.bbox[3]>=vy0&&c.bbox[1]<=vy1);
   ctx.save();
@@ -641,7 +698,7 @@ function drawGeo(){
 async function loadLand(){loadGeo("110m")}
 
 // ── เส้นที่ใกล้เคอร์เซอร์ (หน่วยพิกเซลบนจอ) ────────────────────
-function nearestLine(px,py){
+function nearestLine(px,py,tol){ nearestLine.tol=tol||9;
   if(!chart) return null; let best=null;
   for(const l of chart.lines){ if(hidden.has(l.body))continue;
     for(const s of l.segments){ for(let i=1;i<s.length;i++){
@@ -649,7 +706,7 @@ function nearestLine(px,py){
       const dx=bx-ax,dy=by-ay,L2=dx*dx+dy*dy; let t=L2?((px-ax)*dx+(py-ay)*dy)/L2:0; t=Math.max(0,Math.min(1,t));
       const d=Math.hypot(px-(ax+t*dx),py-(ay+t*dy)); if(!best||d<best.d) best={d,line:l};
     }}}
-  return best&&best.d<=9?best:null;
+  return best&&best.d<=(nearestLine.tol||9)?best:null;      // เมาส์ 9px · นิ้ว 22px (ตั้งใน pointer handler)
 }
 
 // ── API ─────────────────────────────────────────────────
@@ -720,6 +777,9 @@ async function loadCity(){
 function buildLegend(){
   const lg=$("#legend");lg.innerHTML="";
   const bodies=[...new Set(chart.lines.map(l=>l.body))];
+  // จอเล็กเส้นแน่น: ทางอ่านที่ได้ผลคือ "ซ่อนทุกดวง" แล้วเปิดทีละดวงที่สนใจ
+  for(const [id,txt] of [["legNone","ซ่อนทุกดวง"],["legAll","แสดงทุกดวง"]]){const b=document.createElement("label");b.id=id;b.className="group";b.textContent=txt;lg.append(b)}
+  {const br=document.createElement("div");br.className="legsep";lg.append(br)}
   const add=b=>{const l=chart.lines.find(x=>x.body===b);
     const lab=document.createElement("label");lab.className=hidden.has(b)?"off":"";lab.dataset.b=b;
     lab.innerHTML=`<span class="sw" style="background:${COLORS[b]}"></span>${l.glyph} ${l.th}`;lg.append(lab)};
@@ -736,7 +796,8 @@ $("#ckDetail").addEventListener("click",()=>{showDetail=!showDetail;$("#ckDetail
 $("#ckTiles").addEventListener("click",()=>{showTiles=!showTiles;$("#ckTiles").classList.toggle("on",showTiles);
   if(showTiles&&view.k<2)  $("#status").textContent="แผ่นภาพออนไลน์: ซูมเข้าเพื่อดูรายละเอียดถนน/เมือง";draw()});
 $("#legend").addEventListener("click",e=>{const lab=e.target.closest("label");if(!lab)return;
-  if(lab.id==="paranToggle"){showParan=!showParan;lab.classList.toggle("off",!showParan)}
+  if(lab.id==="legNone"||lab.id==="legAll"){const bs=[...new Set(chart.lines.map(l=>l.body))];hidden.clear();if(lab.id==="legNone")bs.forEach(b=>hidden.add(b));hover=null;buildLegend()}
+  else if(lab.id==="paranToggle"){showParan=!showParan;lab.classList.toggle("off",!showParan)}
   else if(lab.id==="tnpToggle"){const allOff=TNP.every(b=>hidden.has(b));TNP.forEach(b=>allOff?hidden.delete(b):hidden.add(b));buildLegend()}
   else{const b=lab.dataset.b;hidden.has(b)?hidden.delete(b):hidden.add(b);lab.classList.toggle("off",hidden.has(b))}draw()});
 
@@ -856,9 +917,19 @@ function startFlash(body,angle){
   // ไม่ใช้ #status เพราะ draw() เขียนทับทุกเฟรม (ช่องบอกระดับซูม) — ใช้ป้ายลอยของตัวเองแทน
   const tip=$("#flashtip"); tip.textContent=`กะพริบอยู่: ${(chart.lines.find(l=>l.body===body)||{}).th||body} ${ANG_TH[angle]||angle}`;
   tip.hidden=false;
+  // เดิม draw() เต็มทุกเฟรม 7 วินาที (มือถือ ~100 ms/เฟรม) → วาดฉากไม่มีเส้นกะพริบครั้งเดียวเก็บเป็นภาพ แล้วแต่ละเฟรมทับแค่เส้นเดียว
+  let base=null;
   const tick=()=>{ if(!flash) return;
     if(performance.now()>flash.until){flash=null;$("#flashtip").hidden=true;draw();return}
-    draw(); requestAnimationFrame(tick);
+    if(!inGesture){
+      if(!base||base.ver!==drawVer||base.W!==W||base.H!==H){
+        const f=flash;flash=null;draw();flash=f;
+        const c=(base&&base.c)||document.createElement("canvas");c.width=cv.width;c.height=cv.height;c.getContext("2d").drawImage(cv,0,0);
+        base={c,ver:drawVer,W,H};
+      }
+      ctx.drawImage(base.c,0,0,W,H);drawFlashOnly();
+    }
+    requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);
 }
@@ -1206,28 +1277,59 @@ $("#zin").addEventListener("click",()=>zoomAt(W/2,H/2,1.6));
 $("#zout").addEventListener("click",()=>zoomAt(W/2,H/2,1/1.6));
 $("#zreset").addEventListener("click",()=>setRegion(0));
 
-let drag=null;
-wrap.addEventListener("pointerdown",e=>{const r=cv.getBoundingClientRect();drag={x:e.clientX,y:e.clientY,cx:view.cx,cy:view.cy,moved:false,rx:r.left,ry:r.top};wrap.setPointerCapture(e.pointerId)});
+let drag=null, pinch=null, tipTimer=0;
+const fingers=new Map();               // pointerId → {x,y} — สองนิ้ว = หนีบซูม (เดิมไม่มี: นิ้วที่สองเขียนทับ drag ทำแผนที่กระโดด)
+const clearRegion=()=>[...$("#regions").children].forEach(b=>b.classList.remove("on"));
+function showTip(px,py,n){const t=$("#tip");t.style.display="block";t.style.left=Math.max(4,Math.min(px+14,W-190))+"px";t.style.top=Math.min(py+14,H-30)+"px";
+  t.textContent=(n?`${n.line.glyph} ${n.line.th} · ${ANG_TH[n.line.angle]} · `:"")+`${LAT(py).toFixed(1)}°, ${LON(px).toFixed(1)}°`}
+wrap.addEventListener("pointerdown",e=>{const r=cv.getBoundingClientRect();
+  fingers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  try{wrap.setPointerCapture(e.pointerId)}catch(err){}
+  if(fingers.size===2){const [a,b]=[...fingers.values()];
+    pinch={d:Math.hypot(a.x-b.x,a.y-b.y)||1,k:view.k,lon:LON((a.x+b.x)/2-r.left),lat:LAT((a.y+b.y)/2-r.top)};
+    if(drag)drag.moved=true;$("#tip").style.display="none";return}
+  drag={x:e.clientX,y:e.clientY,cx:view.cx,cy:view.cy,moved:false,rx:r.left,ry:r.top}});
 wrap.addEventListener("pointermove",e=>{
   const r=cv.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top;
+  if(fingers.has(e.pointerId))fingers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pinch&&fingers.size>=2){const [a,b]=[...fingers.values()];
+    const mx=(a.x+b.x)/2-r.left,my=(a.y+b.y)/2-r.top;
+    view.k=pinch.k*Math.hypot(a.x-b.x,a.y-b.y)/pinch.d;clampView();
+    view.cx+=pinch.lon-LON(mx);view.cy+=pinch.lat-LAT(my);clampView();      // จุดใต้กึ่งกลางสองนิ้วอยู่กับที่
+    clearRegion();gestureDraw();return}
+  if(pinch)return;
   if(drag&&(drag.moved||Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>4)){
     drag.moved=true;wrap.classList.add("drag");
-    view.cx=drag.cx-(e.clientX-drag.x)*360/(view.k*W);view.cy=drag.cy+(e.clientY-drag.y)*180/(view.k*H);clampView();
-    [...$("#regions").children].forEach(b=>b.classList.remove("on"));$("#tip").style.display="none";draw();return;
+    view.cx=drag.cx-(e.clientX-drag.x)/PPD();view.cy=drag.cy+(e.clientY-drag.y)/PPD();clampView();
+    clearRegion();$("#tip").style.display="none";gestureDraw();return;
   }
+  if(e.pointerType==="touch")return;          // นิ้วไม่มี hover — ชื่อเส้นโชว์ตอนแตะ (pointerup)
   const n=nearestLine(px,py); if((n&&n.line)!==(hover&&hover.line)){hover=n;draw()}
-  const t=$("#tip");t.style.display="block";t.style.left=Math.min(px+14,W-190)+"px";t.style.top=(py+14)+"px";
-  t.textContent=(n?`${n.line.glyph} ${n.line.th} · ${ANG_TH[n.line.angle]} · `:"")+`${LAT(py).toFixed(1)}°, ${LON(px).toFixed(1)}°`;
+  showTip(px,py,n);
 });
+const endPointer=e=>{
+  const had2=fingers.size>=2;fingers.delete(e.pointerId);
+  if(had2||pinch){if(fingers.size<2){pinch=null;
+      if(fingers.size===1){const [f]=[...fingers.values()];drag={x:f.x,y:f.y,cx:view.cx,cy:view.cy,moved:true}}   // เหลือนิ้วเดียว ลากต่อได้ ไม่กระโดด
+      else{drag=null;settleDraw()}}
+    return true}
+  return false};
+wrap.addEventListener("pointercancel",e=>{endPointer(e);if(!fingers.size){drag=null;wrap.classList.remove("drag");settleDraw()}});
 wrap.addEventListener("pointerup",e=>{
+  if(endPointer(e))return;
   const wasDrag=drag&&drag.moved;wrap.classList.remove("drag");
+  if(wasDrag)settleDraw();
   if(drag&&!wasDrag){const r=cv.getBoundingClientRect();const lon=LON(e.clientX-r.left),lat=LAT(e.clientY-r.top);
+    if(e.pointerType==="touch"){            // แตะ: บอกชื่อเส้นที่ใกล้นิ้ว (รัศมี 22px) + ป้ายของเส้นนั้นขึ้นบนสุด · ค้างไว้ 4 วินาที
+      hover=nearestLine(e.clientX-r.left,e.clientY-r.top,22);showTip(e.clientX-r.left,e.clientY-r.top,hover);
+      clearTimeout(tipTimer);tipTimer=setTimeout(()=>{$("#tip").style.display="none"},4000)}
     city={name:`จุดที่เลือก ${lat.toFixed(2)}, ${lon.toFixed(2)}`,lat:+lat.toFixed(4),lon:+lon.toFixed(4),tz:+$("#tz").value};$("#city").value="custom";draw();
     invalidatePanels();loadCity();refreshTab()}
   drag=null;
 });
-wrap.addEventListener("pointerleave",()=>{$("#tip").style.display="none";if(hover){hover=null;draw()}});
-wrap.addEventListener("wheel",e=>{e.preventDefault();const r=cv.getBoundingClientRect();zoomAt(e.clientX-r.left,e.clientY-r.top,e.deltaY<0?1.2:1/1.2);[...$("#regions").children].forEach(b=>b.classList.remove("on"))},{passive:false});
+wrap.addEventListener("pointerleave",e=>{if(e.pointerType==="touch")return;      // นิ้วยกออก = pointerleave ทันที ห้ามลบชื่อเส้นที่เพิ่งโชว์
+  $("#tip").style.display="none";if(hover){hover=null;draw()}});
+wrap.addEventListener("wheel",e=>{e.preventDefault();const r=cv.getBoundingClientRect();zoomAt(e.clientX-r.left,e.clientY-r.top,e.deltaY<0?1.2:1/1.2,true);clearRegion()},{passive:false});
 addEventListener("resize",size);
 
 (async()=>{
@@ -1248,7 +1350,7 @@ addEventListener("resize",size);
 </script>
 <script>
 // ── ออฟไลน์: ลงทะเบียน service worker (แยกแคชจากแอปยูเรเนียน: urmap-v*) ──
-const MAP_CACHE="urmap-v1";
+const MAP_CACHE="urmap-v2";
 (function(){
   const el=document.createElement("div");el.className="hint";el.style.cssText="margin:6px 4px 0";el.id="swstat";
   document.querySelector(".wrap").append(el);
