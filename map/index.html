@@ -129,7 +129,15 @@
   td,th{overflow-wrap:anywhere}
   td.num{white-space:nowrap;overflow-wrap:normal}          /* ตัวเลขระยะ/เวลา ห้ามแตกกลางคำเมื่อคอลัมน์ถูกบีบ */
   td.num .hint{white-space:nowrap}
+  /* คำแปล/คำอ่านของเส้นได้แถวของตัวเองกว้างเต็มตาราง (liftReadings) — เดิมอยู่ในคอลัมน์แรก จอมือถือกว้าง ~130px
+     ข้อความยาวถูกบีบเป็นเสาแคบ 2–3 คำต่อบรรทัด อีกสองคอลัมน์ว่างเปล่า (ภาพจากเครื่องจริง 21 ก.ย. 2026) */
+  tr.has-rd>td{border-bottom:0;padding-bottom:2px}
+  tr.rdrow>td{padding-top:0}
+  tr.rdrow>td>details{max-width:calc(100vw - 56px)}      /* ตารางกว้างที่เลื่อนแนวนอนได้: คำแปลไม่ยืดเกินจอ */
   @media (max-width:520px){table{font-size:13px}th,td{padding:7px 4px}}
+  /* ช่วงวันที่ "จาก → ถึง": จอแคบให้ขึ้น 2 บรรทัดได้ (ตัดระหว่างสองวัน ไม่ตัดกลางวันที่) — ไม่งั้นคอลัมน์ชื่อเส้นถูกบีบเหลือ 3 คำต่อบรรทัด */
+  td.rng>span{white-space:nowrap}
+  @media (max-width:520px){td.num.rng{white-space:normal}}
   th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
   th{color:var(--mute);font-weight:500;font-size:12.5px}
   .cols{display:grid;grid-template-columns:1fr 1fr;gap:18px}
@@ -877,7 +885,7 @@ function spanRows(list,kindTh){
     list.map(x=>`<tr><td><span class="sw" style="background:${COLORS[x.body]}"></span> ${esc(x.glyph)} ${esc(x.th)} · ${ANG_TH[x.angle]}`+
       (x.reading?`<details class="teach"><summary>คำแปลของเส้นนี้</summary><div class="rd"><p>${esc(x.reading.text)}</p>`+
         x.reading.notes.map(n=>`<p class="note">${esc(n)}</p>`).join("")+`</div></details>`:"")+
-      `</td><td class="num">${esc(x.from)} → ${esc(x.to)}<div class="hint">${hrTxt(x.hours)}</div></td>`+
+      `</td><td class="num rng"><span>${esc(x.from)} →</span> <span>${esc(x.to)}</span><div class="hint">${hrTxt(x.hours)}</div></td>`+
       `<td class="num">${esc(x.closest_date)}<div class="hint">${kmTxt(x.closest_km)}</div></td></tr>`).join("")+`</table></div>`;
 }
 // อ่านตามลำดับ — ทยอยเพิ่มทีละข้อตามที่ตกลงกันไว้
@@ -1232,7 +1240,20 @@ function windowHtml(){
   if(w.timing) html+=awakenedHtml(w.timing,kinds);   // ข้อ 6 ของการอ่านตามลำดับ ย้ายมาอยู่ที่นี่
   return html;
 }
-function renderPanel(){
+// ย้ายบล็อก <details> (คำแปล/คำอ่าน/คำสอน) ที่อยู่ในเซลล์ของตารางหลายคอลัมน์ ไปเป็นแถวใหม่ colspan เต็มตาราง ใต้แถวเดิม
+// ทำที่เดียวหลังวาดแผง จึงครอบทุกตารางทั้งที่มีอยู่และที่จะเพิ่ม — ตัวสร้างแถวแต่ละตัวไม่ต้องรู้เรื่องนี้
+function liftReadings(root){
+  root.querySelectorAll("table tr").forEach(tr=>{
+    if(tr.classList.contains("rdrow")||tr.classList.contains("has-rd")) return;
+    const cells=[...tr.children].filter(c=>c.tagName==="TD"); if(cells.length<2) return;
+    const blocks=cells.flatMap(c=>[...c.children].filter(e=>e.tagName==="DETAILS")); if(!blocks.length) return;
+    const row=document.createElement("tr"),td=document.createElement("td");
+    row.className="rdrow";td.colSpan=cells.reduce((n,c)=>n+(c.colSpan||1),0);
+    blocks.forEach(b=>td.append(b));row.append(td);tr.classList.add("has-rd");tr.after(row);
+  });
+}
+function renderPanel(){renderPanelRaw();liftReadings($("#panel"))}
+function renderPanelRaw(){
   const d=cityData,p=$("#panel");
   if(tab==="guide"){p.innerHTML=guideHtml();return}   // ข้อ 1 เป็นเรื่องดวงกำเนิด ไม่ใช้ cityData — ต้องวาดได้แม้ /api/city ล้ม
   const head=city?`<div class="cityhead"><h2>${esc(city.name)}</h2><span class="hint">${city.lat.toFixed(4)}, ${city.lon.toFixed(4)}</span></div>`:"";
@@ -1358,7 +1379,7 @@ addEventListener("resize",size);
 </script>
 <script>
 // ── ออฟไลน์: ลงทะเบียน service worker (แยกแคชจากแอปยูเรเนียน: urmap-v*) ──
-const MAP_CACHE="urmap-v4";
+const MAP_CACHE="urmap-v5";
 (function(){
   const el=document.createElement("div");el.className="hint";el.style.cssText="margin:6px 4px 0";el.id="swstat";
   document.querySelector(".wrap").append(el);
