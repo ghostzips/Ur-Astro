@@ -13,7 +13,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v124">
+<link rel="stylesheet" href="style.css?v=urain-v125">
 </head>
 <body>
 <div class="wrap">
@@ -117,6 +117,7 @@
   <button type="button" class="tab" data-p="pctr">ศูนย์รังสี 360°</button>
   <button type="button" class="tab" data-p="pcal">ปฏิทินโค้ง</button>
   <button type="button" class="tab" data-p="phor">กาลชะตา</button>
+  <button type="button" class="tab" data-p="pelec">ฤกษ์</button>
   <button type="button" class="tab" data-p="phouse">เรือนชะตา</button>
   <button type="button" class="tab" data-p="pasp">มุมสัมพันธ์</button>
   <button type="button" class="tab" data-p="pret">ดวงวรรษ</button>
@@ -490,6 +491,42 @@
 </section>
 </div>
 
+<div class="panel" id="pelec">
+<!-- v125: ตัวหาฤกษ์ ไล่ตามขั้นของคำสอน VT (part 66 · 66.1 · 66.2 · 66.3 · 66.4)
+     ขั้น 1 วันดี = อาทิตย์ไม่ถูกดาวร้ายกระทบ (part 66 @17:14)
+     ขั้น 2 ชั่วโมงดี = จันทร์ไม่ไร้มุม (VOC) และไม่อยู่ Via Combusta (part 66 @21:01)
+     ขั้น 3 นาทีดี = MC ไม่ถูกดาวร้ายกระทบ (part 66.3 @27:35)
+     ขั้น 4 เทียบดวงกำเนิด = ดาวร้ายต้องไม่ถึงจุดเจ้าชะตา/MC กำเนิด (part 66.3 @31:03)
+     ไม่ให้คะแนนรวม/ไม่จัดอันดับ — อาจารย์ว่า "ฤกษ์ไม่มี 100% ทุกครั้งมีตัวเสีย" (part 66.2 @59:26) -->
+<section class="legend" id="elecbox">
+  <h3>ฤกษ์ (หาเวลาเริ่มงาน)</h3>
+  <p class="dialnote">ไล่หาตามขั้นของคำสอน VT: <b>วันดี</b> (อาทิตย์) →
+    <b>ชั่วโมงดี</b> (จันทร์) → <b>นาทีดี</b> (MC) → <b>เทียบดวงกำเนิด</b> ·
+    ใช้พิกัด/เขตเวลาเดียวกับหน้าตั้งดวง · ไล่ทีละ 1 นาที ·
+    หน้านี้ <b>ไม่ให้คะแนนรวมและไม่จัดอันดับ</b> แสดงเป็นช่วงเวลาที่ผ่านเกณฑ์พร้อมบอกว่าผ่านข้อไหน
+    ให้ผู้ใช้ตัดสินเอง</p>
+  <div class="dictlook">
+    <span class="lbl">ตั้งแต่</span>
+    <input class="num" id="eld1" value="1" inputmode="numeric" title="วัน">
+    <input class="num" id="elm1" value="1" inputmode="numeric" title="เดือน">
+    <input class="num" id="ely1" value="2569" inputmode="numeric" style="width:88px" title="ปี พ.ศ. หรือ ค.ศ.">
+    <span class="lbl">ถึง</span>
+    <input class="num" id="eld2" value="30" inputmode="numeric" title="วัน">
+    <input class="num" id="elm2" value="1" inputmode="numeric" title="เดือน">
+    <input class="num" id="ely2" value="2569" inputmode="numeric" style="width:88px" title="ปี พ.ศ. หรือ ค.ศ.">
+  </div>
+  <div class="dictlook">
+    <span class="lbl">เฉพาะเวลา</span>
+    <input id="elt1" value="09:00" style="width:78px" inputmode="numeric">
+    <span class="lbl">ถึง</span>
+    <input id="elt2" value="17:00" style="width:78px" inputmode="numeric">
+    <label class="elchk"><input type="checkbox" id="elnatal" checked> เทียบดวงกำเนิด (ขั้น 4)</label>
+    <button type="button" id="elgo">หาฤกษ์</button>
+  </div>
+  <div id="elecout"><p class="svempty">กำหนดช่วงเวลาที่ทำได้จริง แล้วกด "หาฤกษ์"</p></div>
+</section>
+</div>
+
 <div class="panel" id="pasp">
 <section class="legend" id="aspbox">
   <h3>ดาวทำมุมสัมพันธ์ <span class="hint">(ร่าง)</span></h3>
@@ -639,14 +676,14 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v124"></script>
-<script src="places.js?v=urain-v124"></script>
-<script src="engine.js?v=urain-v124"></script>
-<script src="render.js?v=urain-v124"></script>
+<script src="glyphs.js?v=urain-v125"></script>
+<script src="places.js?v=urain-v125"></script>
+<script src="engine.js?v=urain-v125"></script>
+<script src="render.js?v=urain-v125"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const SW_CACHE = "urain-v124";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v125";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 let DIALMARKS = null, _markTimer = 0;   // วงเส้นประกะพริบครอบดาวของสูตร (v80)
@@ -730,6 +767,18 @@ function clearResults() {
   $("calday").innerHTML = "";
   $("callist").innerHTML = '<p class="svempty">เลือกชนิดสมการแล้วกดคำนวณ</p>';
   $("calcount").textContent = "";
+  // ฤกษ์ (v125) — บั๊กชั้นเดียวกันอีกครั้ง: ผลฤกษ์ผูกกับดวงกำเนิด (ขั้น 4) และพิกัด/เขตเวลา
+  // คำนวณดวงคนใหม่แล้วไม่ล้าง = การ์ด "วันดีที่สุด" ของคนเก่าค้างบนจอ อ่านผิดคนได้
+  // (จับได้ตอนไล่บั๊ก v125 — ตรงกับคำเตือนใน CLAUDE.md ที่เคยเจอมาแล้วหลายรอบ)
+  // แต่ผลฤกษ์ "ไม่ได้" ผูกกับวันจร — ปุ่ม "เปิดจาน ณ เวลานี้" เรียก gotoJd ซึ่งคำนวณใหม่
+  // แล้ววนมาล้างผลของตัวเอง ผู้ใช้กลับมาเทียบฤกษ์ตัวถัดไปไม่ได้ (เจอตอนไล่กดทุกจุด)
+  // ทางออก: พักผลไว้พร้อมลายเซ็นดวงกำเนิด · run() สำเร็จและลายเซ็นตรง = คืนผลให้
+  // คำนวณไม่สำเร็จ หรือเป็นดวงคนอื่น = ผลไม่กลับมา (ยังกันอ่านผิดคนได้เหมือนเดิม)
+  if (ELEC_LAST && ELEC_SIG)
+    ELEC_STASH = { sig: ELEC_SIG, html: $("elecout").innerHTML, last: ELEC_LAST };
+  ELEC_LAST = null;
+  $("elecout").innerHTML =
+    '<p class="svempty">กำหนดช่วงเวลาที่ทำได้จริง แล้วกด "หาฤกษ์"</p>';
   // ── v98: ยามกลาง (uitest หมวด 11) ไล่ทุกแท็บแล้วจับได้อีก 4 ที่ที่ไม่เคยถูกล้าง ──
   // มุมสัมพันธ์ — รายการคู่ดาว + ยอดรวม + สถานะ (ครั้งที่ 4 ของบั๊กชั้นนี้)
   ASP.rows = null; ASP.key = ""; ASP.sel = -1; ASP.pick = null;
@@ -906,6 +955,7 @@ function run() {
     $("radixbox").style.display = "";
     TL = { R, jd, jdT, months, tables, lat, lon,
            place: placeTxt0 === "กำหนดเอง…" ? "" : placeTxt0 };
+    elecRestore();         // v125: ดวงกำเนิด/สถานที่/เขตเวลาเดิม = คืนผลฤกษ์ที่พักไว้
     renderNotable(R);      // v123: ดาวเด่น/ดาวสันโดษ (อ่านจากค่าที่คำนวณแล้ว)
     renderHouseWheel(R);   // v115: ต้องหลัง TL — จานแบบ swDraw ใช้วันเวลา/สถานที่จาก TL ที่มุมบนซ้าย
     $("tlmonth").innerHTML = $("cmpmonth").innerHTML;
@@ -3829,7 +3879,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v124")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v125")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
@@ -4888,6 +4938,519 @@ async function horAsk() {
 }
 $("horgo").addEventListener("click", horAsk);
 $("horq").addEventListener("keydown", (e) => { if (e.key === "Enter") horAsk(); });
+
+// ── ตัวหาฤกษ์ (v125 · คำสอน VT part 66 / 66.1 / 66.2 / 66.3 / 66.4) ─────────
+// ทุกเกณฑ์มาจากคำสอน ไม่มีเกณฑ์ที่เครื่องคิดขึ้นเอง · ค่าที่ใช้ก็เป็นของเดิมในแอป:
+//   ดาวร้าย = HOR_BAD (SA NE HA AD)  ·  วังกะ = AISTRO.ORB_RT (1°, ตรงคำสอน part 24)
+//   "ทำมุม" = จาน 22°30′ แบบยูเรเนียน (ชุดเดียวกับกาลชะตา/จานหมุน)
+// สิ่งที่ผมตัดสินใจเองและเขียนบอกไว้ในหน้าจอ: VOC นับเฉพาะ "ดาว" ไม่นับ AR/MC/AS
+//   เพราะสามตัวนั้นหมุนตามเวลาทุกนาที ถ้านับด้วยจะไม่มีวันเกิด VOC เลย
+let ELEC_LAST = null, ELEC_SIG = "", ELEC_STASH = null;
+// ลายเซ็นของสิ่งที่ผลฤกษ์ขึ้นอยู่ด้วย: เวลาเกิด (ดวงกำเนิด) · พิกัด · เขตเวลา — ไม่รวมวันจร
+function elecSig() { return TL ? [TL.jd, TL.lat, TL.lon, TZ].join("|") : ""; }
+function elecRestore() {
+  const st = ELEC_STASH; ELEC_STASH = null;          // ใช้ครั้งเดียว ไม่ว่าจะตรงหรือไม่
+  if (!st || st.sig !== elecSig()) return;
+  $("elecout").innerHTML = st.html; ELEC_LAST = st.last; ELEC_SIG = st.sig;
+}
+const ELEC_TOP = 8, ELEC_CARD_WIN = 6;
+// วังกะของแท็บฤกษ์ — ผู้ใช้เลือกให้ใช้ 1.2° ทั้งตอนแสดงรายการสูตรและตอนตัดสินผ่าน/ไม่ผ่าน
+// ใช้ชุดเดียวกับกฎลูกโซ่ของแท็บกาลชะตา จะได้ไม่มีสูตรโผล่มาทั้งที่เกณฑ์ถือว่าไม่ถึง
+// ⚠ ค่านี้เป็นของแท็บนี้เท่านั้น — AISTRO.ORB_RT (1.0° ตามคำสอน part 24) ยังเป็นค่าเดิม ไม่ถูกแตะ
+const ELEC_ORB = 1.2;
+// ชนิดช่องบนแถบเวลา — เรียงตามลำดับความเด็ดขาด ช่องหนึ่งนาทีได้ชนิดเดียว
+const ELEC_SEG_TH = { ok: "ผ่านครบ", natal: "ดาวร้ายถึง MC กำเนิด",
+  sun: "อาทิตย์/MC ถูกดาวร้าย",
+  moon: "จันทร์ (ถูกดาวร้าย · VOC · Via Combusta)" };
+function elecSegKind(r) {
+  if (r.ok) return "ok";
+  if (r.bad.natal.length) return "natal";
+  if (r.bad.su.length || r.bad.mc.length) return "sun";
+  return "moon";
+}
+// ยุบนาทีที่ชนิดเดียวกันติดกันเป็นช่องเดียว — แถบหนึ่งวันมี 481 นาที แต่เหลือช่องไม่กี่สิบ
+function elecSegs(rows) {
+  const g = [];
+  for (const r of rows) {
+    const k = elecSegKind(r);
+    if (g.length && g[g.length - 1].k === k) g[g.length - 1].n++;
+    else g.push({ k, n: 1 });
+  }
+  return g;
+}
+const ELEC_VOC_BODIES = AISTRO.CODE_ORDER.filter(
+  (c) => c !== "AR" && c !== "MC" && c !== "AS" && c !== "MO");
+// ระยะบนจาน 22.5 (0 = ทำมุมพอดี) — ตัวเดียวกับที่กาลชะตาใช้
+function elecDial(a, b) {
+  const d = (((a - b) % 22.5) + 22.5) % 22.5;
+  return Math.min(d, 22.5 - d);
+}
+// ปัจจัยที่ "ถูกดาวร้ายกระทบ" ในค่าวังกะ — คืนรายชื่อดาวร้ายที่ถึง
+function elecHitBy(R, code, orb) {
+  return HOR_BAD.filter((m) => m !== code && R[m] !== undefined &&
+    elecDial(R[code], R[m]) <= orb);
+}
+// ── จันทร์ไร้มุม (VOC) — เขียนใหม่ v125 หลังผลตรวจภายนอก ───────────────────
+// นิยาม: ตั้งแต่เวลานี้จนจันทร์ออกจากราศีปัจจุบัน จะไม่ทำมุมกับดาวดวงใดอีก (part 65 @02:03)
+// ของเดิมเดินทีละ 2 นาที โดยเดาจำนวนก้าวจากความเร็วคงที่ 0.02°/ก้าว ซึ่งผิดสองทาง:
+//   (ก) จันทร์ช้าสุดเดิน 0.0163°/ก้าว จำนวนก้าวจึงไม่พอถึงขอบราศี พอหมดก้าวก็ "คืน VOC"
+//       ทั้งที่ยังไม่ได้ตรวจส่วนที่เหลือเลย — ตีความการค้นหาไม่สำเร็จว่าเป็น VOC
+//   (ข) ช่วงที่เพิ่งเข้าวังกะก่อนออกจากราศีไม่ถึงหนึ่งก้าว ถูกข้ามไป
+// วิธีใหม่: หาเวลาออกจากราศีจากเอนจินจริง (เดินหยาบแล้วบีบครึ่ง) แล้วหา "เวลาสุดท้ายที่ยัง
+// อยู่ในวังกะ" ของทั้งการผ่านราศีครั้งนั้น · VOC(t) = t เลยเวลานั้นไปแล้ว
+// คำนวณครั้งเดียวต่อการผ่านราศีหนึ่งครั้งแล้วแคชไว้ (แทนแคชราย 30 นาทีแบบเดิมที่ไม่รับประกันผลรายนาที)
+// หาขอบราศีไม่สำเร็จ → คืน null = "คำนวณไม่สำเร็จ" ห้ามตีความเป็น VOC
+let ELEC_EXIT_CACHE = new Map(), ELEC_VOC_CACHE = new Map();
+function elecSignExit(jd, lat, lon, moDeg) {
+  const s0 = Math.floor((((moDeg % 360) + 360) % 360) / 30);
+  const key = s0 + ":" + Math.floor(jd);
+  if (ELEC_EXIT_CACHE.has(key)) return ELEC_EXIT_CACHE.get(key);
+  const same = (t) => Math.floor(AISTRO.chartAt(t, lat, lon).MO / 30) === s0;
+  let lo = jd, hi = null;
+  // จันทร์ช้าสุดราว 11.7°/วัน → ข้ามราศี 30° ใช้ไม่เกิน ~2.6 วัน · เผื่อเพดานเป็น 3.5 วัน
+  for (let d = 0.02; d <= 3.5; d += 0.02) {
+    const t = jd + d;
+    if (!same(t)) { hi = t; break; }
+    lo = t;
+  }
+  let out = null;
+  if (hi !== null) {
+    for (let i = 0; i < 44; i++) {      // บีบจนเหลือความคลาดเคลื่อนต่ำกว่าเศษวินาที
+      const m = (lo + hi) / 2;
+      if (same(m)) lo = m; else hi = m;
+    }
+    out = hi;
+  }
+  ELEC_EXIT_CACHE.set(key, out);
+  return out;
+}
+// คืน { exit, last, from } — last = เวลาสุดท้ายที่จันทร์ยังอยู่ในวังกะก่อนออกจากราศี
+function elecVocLast(jd, lat, lon, orb, moDeg) {
+  const exit = elecSignExit(jd, lat, lon, moDeg);
+  if (exit === null) return null;
+  // ใส่วังกะในคีย์ด้วย — ตอนใช้งานจริงวังกะคงที่ แต่ถ้าวันหนึ่งมีหน้าที่เรียกด้วยวังกะอื่น
+  // (หรือเทสต์เรียกหลายค่า) แคชเดิมจะตอบผิดเงียบ ๆ
+  const key = Math.round(exit * 86400) + "@" + orb;
+  const hit = ELEC_VOC_CACHE.get(key);
+  // ใช้ค่าที่แคชไว้ได้เฉพาะเมื่อช่วงที่เคยไล่ครอบคลุมถึงเวลาที่ถามอยู่ตอนนี้
+  if (hit && hit.from <= jd) return hit;
+  const inOrb = (t) => {
+    const R = AISTRO.chartAt(t, lat, lon);
+    for (const c of ELEC_VOC_BODIES)
+      if (R[c] !== undefined && elecDial(R.MO, R[c]) <= orb) return true;
+    return false;
+  };
+  const from = hit ? Math.min(hit.from, jd) : jd;
+  let last = -Infinity;
+  const nMin = Math.ceil((exit - from) * 1440);
+  for (let i = 0; i <= nMin; i++) {
+    const t = from + i / 1440;
+    if (t >= exit) break;
+    if (inOrb(t)) last = t;
+  }
+  // เศษท้ายราศีที่สั้นกว่าหนึ่งนาที ต้องตรวจแยก ไม่งั้นมุมที่เพิ่งเข้าวังกะตอนท้ายหลุดไป
+  const tail = exit - 1e-7;
+  if (tail > from && inOrb(tail)) last = tail;
+  const res = { exit, last, from };
+  ELEC_VOC_CACHE.set(key, res);
+  return res;
+}
+// true = ไร้มุม · false = ยังมีมุม · null = คำนวณไม่สำเร็จ (ห้ามนับเป็นไร้มุม)
+function elecMoonVOC(jd, lat, lon, orb, moDeg) {
+  const v = elecVocLast(jd, lat, lon, orb,
+    moDeg === undefined ? AISTRO.chartAt(jd, lat, lon).MO : moDeg);
+  return v === null ? null : jd > v.last;
+}
+// Via Combusta 15° ตุลย์ ถึง 15° พิจิก (part 64.1 @08:23) — "จันรุยไฟ" ที่ห้ามใช้ทำฤกษ์ (part 66 @21:01)
+function elecViaComb(mo) { const m = ((mo % 360) + 360) % 360; return m >= 195 && m <= 225; }
+
+// ไล่ทีละนาทีด้วย "ตัวนับจำนวนเต็ม" ไม่ใช่การบวก jd += 1/1440 สะสม
+// เดิมบวกสะสม ทำให้เวลาจุดท้ายถอยไปราว 5 มิลลิวินาที ซึ่งเกินค่าชดเชย 1 มิลลิวินาที
+// ใน jdLocalParts แล้ว ผลคือ 201 จาก 481 แถวแสดงเวลาเพี้ยนไปหนึ่งนาที (13:39 แทน 13:40)
+// จำนวนแถวถูกเสมอ ป้ายเวลาเท่านั้นที่ผิด — เจอจากผลตรวจภายนอกแล้ววัดยืนยันในหน้าจริง
+function elecScan(base, minFrom, minTo, lat, lon, natal) {
+  const orb = ELEC_ORB, rows = [];
+  for (let mi = minFrom; mi <= minTo; mi++) {
+    const jd = base + mi / 1440;
+    const R = AISTRO.chartAt(jd, lat, lon);
+    const bad = {};
+    bad.su = elecHitBy(R, "SU", orb);                 // ขั้น 1 วันดี
+    bad.via = elecViaComb(R.MO);                      // ขั้น 2 ชั่วโมงดี
+    // คำสอนบอกให้ตรวจจันทร์สองที่ ไม่ใช่แค่ VOC/Via Combusta:
+    // "อาทิตย์ดี จันดี MC ดี" (part 66.3 @06:39) · "จันต้องหลังออก ไม่ให้มี Hard Aspect
+    // มาคร่อม" (part 66.3 @22:18) — เจอว่าขาดข้อนี้ตอนลองแสดงสูตรจริงของฤกษ์ที่ "ผ่าน"
+    // แล้วพบ AD ทำมุมฉากกับจันทร์ห่างแค่ 0.19°
+    bad.mo = elecHitBy(R, "MO", orb);
+    const voc = elecMoonVOC(jd, lat, lon, orb, R.MO);
+    bad.voc = voc === true;
+    bad.vocx = voc === null;                          // คำนวณไม่สำเร็จ — ไม่นับว่าผ่าน
+    bad.mc = elecHitBy(R, "MC", orb);                 // ขั้น 3 นาทีดี
+    // ขั้น 4 เทียบดวงกำเนิด — คำสอนแยกไว้ 2 ระดับ ห้ามรวบเป็นระดับเดียว:
+    //   (ก) ดาวร้ายถึง "MC กำเนิด" = อันตรายที่สุด "ไม่มีฤกษ์ ไม่ควรทำอะไรเลย" (part 66.3 @31:03)
+    //       และอาจารย์ยอมรับเองว่าอาจแช่นานเป็นปี ต้องรอ (part 66.3 @31:39) → ตัดทิ้งจริง
+    //   (ข) ดาวร้ายถึงจุดเจ้าชะตาตัวอื่น = "เพิ่มความยุ่งยาก" (part 66.3 @27:35) → เป็น "ตัวเสีย"
+    //       ไม่ตัดทิ้ง เพราะอาจารย์ย้ำว่า "ฤกษ์ไม่มี 100% ทุกครั้งมีตัวเสีย" (part 66.2 @59:26)
+    //       ถ้าตัดทิ้งหมดจะไม่เหลือฤกษ์เลย (เจอจริงตอนทดสอบ: ตัด 14,430 จาก 14,430 นาที)
+    bad.natal = [];
+    const soft = [];
+    if (natal)
+      for (const s of HOR_SELF) {
+        if (natal[s] === undefined) continue;
+        for (const m of HOR_BAD)
+          if (R[m] !== undefined && elecDial(R[m], natal[s]) <= orb) {
+            if (s === "MC") bad.natal.push(m + "→" + s);
+            else soft.push({ m, s, gap: elecDial(R[m], natal[s]) });
+          }
+      }
+    // ระวัง: bad.su/bad.mo/bad.mc/bad.natal เป็นอาร์เรย์ — อาร์เรย์ว่างเป็น truthy
+    // เคยเขียน !bad.mc แล้วเงื่อนไขเป็นเท็จตลอด ตัดทิ้งทุกนาทีโดยไม่มีอะไรฟ้อง
+    const ok = !bad.su.length && !bad.via && !bad.voc && !bad.vocx &&
+      !bad.mo.length && !bad.mc.length && !bad.natal.length;
+    rows.push({ mi, jd, ok, bad, soft });
+  }
+  return rows;
+}
+// รวมนาทีที่ผ่านติดกันเป็นช่วง (อาจารย์ว่าบางฤกษ์มีหน้าต่างแค่ 5 นาที · part 66.3 @29:12)
+// เทียบความต่อเนื่องด้วยเลขนาทีจำนวนเต็ม ไม่ใช่ผลต่างของ jd ที่เป็นทศนิยม
+function elecWindows(rows) {
+  const w = []; let cur = null;
+  for (const r of rows) {
+    if (r.ok) {
+      if (cur && r.mi !== cur.bMi + 1) { w.push(cur); cur = null; }
+      if (!cur) cur = { a: r.jd, b: r.jd, aMi: r.mi, bMi: r.mi, soft: {} };
+      else { cur.b = r.jd; cur.bMi = r.mi; }
+      for (const x of r.soft || []) {
+        const k = x.m + "\u2192" + x.s;
+        if (!(k in cur.soft) || x.gap < cur.soft[k]) cur.soft[k] = x.gap;
+      }
+    }
+    else if (cur) { w.push(cur); cur = null; }
+  }
+  if (cur) w.push(cur);
+  return w;
+}
+const elecMins = (w) => w.bMi - w.aMi + 1;
+function elecWhen(jd) {
+  const p = jdLocalParts(jd);
+  return `${p.d}/${p.m}/${p.y + 543} ${pad2(p.hh)}:${pad2(p.mm)}`;
+}
+const ELEC_WHY = {
+  su: "อาทิตย์ถูกดาวร้ายกระทบ", via: "จันทร์อยู่ Via Combusta (15° ตุลย์ – 15° พิจิก)",
+  mo: "จันทร์ถูกดาวร้ายกระทบ",
+  voc: "จันทร์ไร้มุม (VOC)", vocx: "หาขอบราศีของจันทร์ไม่สำเร็จ (ไม่นับว่าผ่าน)",
+  mc: "MC ถูกดาวร้ายกระทบ", natal: "ดาวร้ายถึง MC กำเนิด" };
+// ── สูตรของฤกษ์หนึ่ง ๆ (v125) ────────────────────────────────────────────────
+// ไม่ได้ตัดสินว่า "ฤกษ์นี้เหมาะทำอะไร" — ตำราไม่มีตารางแบบนั้น และการสรุปเองคือ
+// การแต่งเนื้อหาทำนาย · หน้านี้บอกแค่ข้อเท็จจริง: ดาวอะไรทำมุมถึงอาทิตย์/MC/จันทร์
+// ที่มุมเท่าไร ห่างเท่าไร และสมการพระเคราะห์สนธิของภาพสามปัจจัย (A=B=C ≡ A+B−C
+// ตาม RULES ข้อ 0) · กลไกเดียวกับแท็บกาลชะตา ไม่ได้เพิ่มสูตรใหม่
+const ELEC_ANCHOR = ["SU", "MC", "MO"];
+function elecFormulas(jd) {
+  const R = AISTRO.chartAt(jd, TL.lat, TL.lon);
+  const pairs = [], tris = [];
+  for (const g of AISTRO.clusterOnDial(R, 22.5, ELEC_ORB)) {
+    const m = g.members;
+    for (let i = 0; i < m.length; i++)
+      for (let j = i + 1; j < m.length; j++) {
+        if (!ELEC_ANCHOR.includes(m[i]) && !ELEC_ANCHOR.includes(m[j])) continue;
+        pairs.push({ a: m[i], b: m[j], gap: horGap(R[m[i]], R[m[j]]),
+                     ang: horTrueAng(R, m[i], m[j]) });
+      }
+    for (let i = 0; i < m.length; i++)
+      for (let j = i + 1; j < m.length; j++)
+        for (let k = j + 1; k < m.length; k++) {
+          const t = [m[i], m[j], m[k]];
+          if (!t.some((c) => ELEC_ANCHOR.includes(c))) continue;
+          tris.push({ s: t, worst: Math.max(horGap(R[t[0]], R[t[1]]),
+            horGap(R[t[0]], R[t[2]]), horGap(R[t[1]], R[t[2]])) });
+        }
+  }
+  // กฎลูกโซ่ทำให้คู่หัว–ท้ายของกลุ่มห่างเกินวังกะได้ — ตัดคู่ที่เกิน ELEC_ORB ทิ้ง
+  pairs.sort((x, y) => x.gap - y.gap);
+  tris.sort((x, y) => x.worst - y.worst);
+  return { pairs: pairs.filter((p) => p.gap <= ELEC_ORB),
+           tris: tris.filter((t) => t.worst <= ELEC_ORB) };
+}
+function elecFormHTML(jd) {
+  const esc = AISTRO_RENDER.esc, F = elecFormulas(jd);
+  const isBad = (c) => HOR_BAD.indexOf(c) >= 0;
+  const nm = (c) => `<b>${c}</b>`;
+  let h = `<div class="elfh">ดาวที่ทำมุมถึง อาทิตย์ · MC · จันทร์ ` +
+    `<span class="hint">(${F.pairs.length} สูตร · วังกะ ${ELEC_ORB}°)</span></div><div class="elflist">`;
+  h += F.pairs.map((p) => {
+    const bad = isBad(p.a) || isBad(p.b);
+    return `<div class="elfrow${bad ? " bad" : ""}" data-t="A" ` +
+      `data-p="${p.a}" data-x="${p.b}"><span class="elff">${nm(p.a)}=${nm(p.b)}</span>` +
+      `<span class="elfa">${angLabel(p.ang)}${ASP_TH[p.ang] ? " " + esc(ASP_TH[p.ang]) : ""}</span>` +
+      `<span class="elfo">ห่าง ${p.gap.toFixed(3)}°</span>` +
+      (bad ? `<span class="elfbad">⚠️ ดาวร้าย</span>` : "") + `</div>`;
+  }).join("") || `<div class="elfrow">— ไม่มีสูตรในวังกะ ${ELEC_ORB}°</div>`;
+  h += `</div>`;
+  const TRI = 8;
+  h += `<div class="elfh">พระเคราะห์สนธิ สามปัจจัย ` +
+    `<span class="hint">(${F.tris.length} ภาพ` +
+    (F.tris.length > TRI ? ` · แสดง ${TRI} ภาพที่แน่นที่สุด` : "") +
+    ` · A=B=C อ่านเท่ากับ A+B−C ตาม RULES ข้อ 0)</span></div><div class="elflist">`;
+  h += F.tris.slice(0, TRI).map((t) => {
+    const bad = t.s.some(isBad);
+    return `<div class="elfrow${bad ? " bad" : ""}" data-t="ABC" ` +
+      `data-a="${t.s[0]}" data-b="${t.s[1]}" data-c="${t.s[2]}">` +
+      `<span class="elff">${t.s.map(nm).join("=")}</span>` +
+      `<span class="elfa">${t.s[0]}+${t.s[1]}−${t.s[2]}</span>` +
+      `<span class="elfo">แน่นสุด ${t.worst.toFixed(3)}°</span>` +
+      (bad ? `<span class="elfbad">⚠️ ดาวร้าย</span>` : "") + `</div>`;
+  }).join("") || `<div class="elfrow">— ไม่มีภาพสามปัจจัยในวังกะ ${ELEC_ORB}°</div>`;
+  h += `</div><p class="hint elfhint">แตะสูตรไหนก็ได้เพื่อดูคำแปล — คำแปลทุกบรรทัด` +
+    `คัดจากพจนานุกรมตำราคำต่อคำ <b>ไม่มีข้อความที่เครื่องแต่งเอง</b> และไม่ใช่คำแนะนำ` +
+    `ว่าฤกษ์นี้ควรทำอะไร ตำราไม่มีตารางแบบนั้น</p>` +
+    `<button type="button" class="elecgo" data-jd="${jd}">เปิดจาน ณ เวลานี้</button>`;
+  return h;
+}
+// แตะแถวสูตร → คำแปลจากพจนานุกรมตำรา (ตัวเดียวกับที่ทุกแท็บใช้ ไม่ได้เขียนคำใหม่)
+async function elecMean(row) {
+  const old = row.nextElementSibling;
+  if (old && old.classList.contains("elfmean")) {   // กดซ้ำ = ปิด
+    old.remove(); row.classList.remove("on"); return;
+  }
+  const box = document.createElement("div");
+  box.className = "elfmean";
+  box.innerHTML = '<div class="mnone">กำลังโหลดพจนานุกรม …</div>';
+  row.after(box); row.classList.add("on");
+  const ok = await dictNeed();
+  if (!ok) { box.innerHTML = '<div class="mnone">โหลดพจนานุกรมไม่สำเร็จ</div>'; return; }
+  const d = row.dataset;
+  box.innerHTML = meanHTML(d.t === "A"
+    ? { type: "A", p: d.p, axis: d.x }
+    : { type: "ABC", a: d.a, b: d.b, c: d.c });
+}
+// ป้าย "ตัวเสีย" ให้อ่านรู้เรื่อง — เดิมเขียนว่า "AD→AR" ซึ่งไม่มีใครเดาออกว่าหมายถึงอะไร
+// ความหมายจริง: ดาวร้าย "จร" ณ เวลาฤกษ์ ทำมุมถึงจุดเจ้าชะตาใน "ดวงกำเนิด"
+// คำสอนว่าเป็นการ "เพิ่มความยุ่งยาก" (part 66.3 @27:35) ไม่ถึงขั้นห้าม (ที่ห้ามคือถึง MC กำเนิด)
+function elecSoftHTML(soft, lbl) {
+  lbl = lbl || "";
+  const esc = AISTRO_RENDER.esc, ks = Object.keys(soft);
+  if (!ks.length) return "";
+  const th = (c) => FACTOR_TH[c] || c;
+  return `<div class="elecsoft"><b>ตัวเสีย${lbl}</b> — ดาวร้ายจรถึงจุดเจ้าชะตาในดวงกำเนิด ` +
+    `<span class="hint">(เพิ่มความยุ่งยาก ไม่ถึงขั้นห้าม · part 66.3 @27:35)</span>` +
+    ks.sort((a, b) => soft[a] - soft[b]).map((k) => {
+      const [m, sc] = k.split("\u2192");
+      return `<span class="elsoftr">${esc(th(m))} <i>จร</i> → ${esc(th(sc))} <i>กำเนิด</i>` +
+        ` <b>${soft[k].toFixed(2)}°</b></span>`;
+    }).join("") + `</div>`;
+}
+function elecRun() {
+  const out = $("elecout");
+  if (!TL) { out.innerHTML = '<p class="svempty">กดคำนวณดวงก่อน — ฤกษ์ใช้พิกัด/เขตเวลาจากหน้าตั้งดวง</p>'; return; }
+  // ⚠ intStrict คืน NaN ไม่ได้โยน error (และรับอาร์กิวเมนต์เดียว ป้ายชื่อถูกทิ้ง)
+  // เดิมครอบ try/catch ไว้เปล่า ๆ ค่าเสียจึงไหลผ่านไปจน julday ได้ NaN แล้วลูปไม่ทำงาน
+  // ผลคือขึ้นข้อความกว้าง ๆ ว่า "ไล่ไม่ได้สักนาที" แทนที่จะบอกว่าช่องไหนผิด
+  const num = (id, label, lo, hi) => {
+    const v = intStrict($(id).value);
+    if (!Number.isFinite(v) || v < lo || v > hi) throw new Error(`${label} ไม่ถูกต้อง`);
+    return v;
+  };
+  let d1, m1, y1, d2, m2, y2, h1, h2;
+  try {
+    d1 = num("eld1", "วันที่เริ่ม", 1, 31);
+    m1 = num("elm1", "เดือนที่เริ่ม", 1, 12);
+    y1 = ceYear(num("ely1", "ปีที่เริ่ม", 1, 9999));
+    d2 = num("eld2", "วันที่สิ้นสุด", 1, 31);
+    m2 = num("elm2", "เดือนที่สิ้นสุด", 1, 12);
+    y2 = ceYear(num("ely2", "ปีที่สิ้นสุด", 1, 9999));
+    if (y1 < 1900 || y1 > 2099 || y2 < 1900 || y2 > 2099)
+      throw new Error("ตารางดาวมีถึง ค.ศ. 1900–2099 เท่านั้น");
+    // ตรวจ 1–31 อย่างเดียวไม่พอ — julday() แปลง 31 ก.พ. เป็น 3 มี.ค. ให้เงียบ ๆ
+    // (พิสูจน์แล้ว: julday(2026,2,31,0) === julday(2026,3,3,0)) แล้วสแกนผิดวันโดยไม่มีใครรู้
+    // วิธีตรวจที่เชื่อถือได้คือแปลงไป-กลับแล้วเทียบ ไม่ใช่ท่องจำจำนวนวันของแต่ละเดือน
+    const realDate = (y, m, d, what) => {
+      const g = AISTRO.revjul(AISTRO.julday(y, m, d, 0));
+      if (g[0] !== y || g[1] !== m || g[2] !== d)
+        throw new Error(`${what} ${d}/${m} ไม่มีอยู่จริงในปีนั้น`);
+    };
+    realDate(y1, m1, d1, "วันที่เริ่ม");
+    realDate(y2, m2, d2, "วันที่สิ้นสุด");
+  } catch (e) {
+    out.innerHTML = `<p class="svempty">${AISTRO_RENDER.esc(e.message)}</p>`; return;
+  }
+  // หน้านี้ไล่ทีละนาทีและแสดงผลเป็น HH:MM จึงรับเฉพาะ HH:MM
+  // parseTime กลางรับวินาทีด้วย ถ้าปล่อยผ่านจะได้ฤกษ์ที่มีวินาทีจริงแต่ป้ายไม่แสดง
+  // (เช่น 09:00:59 แสดงเป็น 09:00 แต่ปุ่มเปิดจานพาไปที่ 09:00:59) — ไม่แก้ parser กลาง
+  // เพราะแท็บอื่นใช้วินาทีอยู่จริง
+  const hhmm = (v) => /^\d{1,2}[:.]\d{1,2}$/.test(String(v).trim()) ? parseTime(v) : null;
+  h1 = hhmm($("elt1").value); h2 = hhmm($("elt2").value);
+  if (h1 === null || h2 === null) {
+    out.innerHTML = '<p class="svempty">เวลาต้องเป็นรูปแบบ HH:MM (เช่น 09:00) — หน้านี้ไล่ทีละนาที ไม่รับวินาที</p>';
+    return;
+  }
+  if (h2 <= h1) {
+    out.innerHTML = '<p class="svempty">เวลาสิ้นสุดต้องหลังเวลาเริ่มในวันเดียวกัน</p>'; return;
+  }
+  const day1 = AISTRO.julday(y1, m1, d1, 0), day2 = AISTRO.julday(y2, m2, d2, 0);
+  const nDays = Math.round(day2 - day1) + 1;
+  if (nDays < 1) { out.innerHTML = '<p class="svempty">วันสิ้นสุดต้องไม่ก่อนวันเริ่ม</p>'; return; }
+  if (nDays > 62) { out.innerHTML = '<p class="svempty">ช่วงยาวเกิน 62 วัน — แบ่งเป็นช่วงสั้นลงก่อน</p>'; return; }
+  const natal = $("elnatal").checked && TL ? TL.R : null;
+  ELEC_EXIT_CACHE = new Map(); ELEC_VOC_CACHE = new Map();
+  const t0 = performance.now();
+  // เก็บแยกเป็นวัน — ทั้งการ์ด "วันดีที่สุด" และแถบเวลาต่างต้องใช้ข้อมูลรายวัน
+  const days = [];
+  let rows = [];
+  const minFrom = Math.round(h1 * 60), minTo = Math.round(h2 * 60);
+  for (let k = 0; k < nDays; k++) {
+    const base = day1 + k - TZ / 24;                 // แปลงเวลาท้องถิ่นเป็น jd สากล
+    const dr = elecScan(base, minFrom, minTo, TL.lat, TL.lon, natal);
+    const dwin = elecWindows(dr);
+    days.push({ rows: dr, win: dwin,
+      pass: dr.filter((r) => r.ok).length,
+      best: dwin.reduce((m, w) => Math.max(m, elecMins(w)), 0),
+      soft: dwin.reduce((acc, w) => {
+        for (const k in w.soft) if (!(k in acc) || w.soft[k] < acc[k]) acc[k] = w.soft[k];
+        return acc;
+      }, {}) });
+    rows = rows.concat(dr);
+  }
+  const ms = Math.round(performance.now() - t0);
+  if (!rows.length) {
+    out.innerHTML = '<p class="svempty">ไล่ไม่ได้สักนาที — ตรวจช่วงวันและช่วงเวลาอีกครั้ง</p>'; return;
+  }
+  const win = [].concat(...days.map((d) => d.win));
+  const cnt = { su: 0, mo: 0, via: 0, voc: 0, vocx: 0, mc: 0, natal: 0 };
+  for (const r of rows) {
+    if (r.ok) continue;
+    if (r.bad.su.length) cnt.su++;
+    if (r.bad.mo.length) cnt.mo++;
+    if (r.bad.via) cnt.via++;
+    if (r.bad.voc) cnt.voc++;
+    if (r.bad.vocx) cnt.vocx++;
+    if (r.bad.mc.length) cnt.mc++;
+    if (r.bad.natal.length) cnt.natal++;
+  }
+  ELEC_LAST = { days, h1, h2 }; ELEC_SIG = elecSig();
+  const esc = AISTRO_RENDER.esc;
+  // .horwhen เป็น flex — ต้องห่อทั้งข้อความเป็นก้อนเดียว ไม่งั้น <b> กลายเป็นไอเท็มแยกแล้วตกบรรทัด
+  let h = `<div class="horwhen"><span>⏱ ไล่ ${rows.length.toLocaleString()} นาที ` +
+    `(${nDays} วัน × ${esc($("elt1").value)}–${esc($("elt2").value)}) ใน ${ms} มิลลิวินาที · ` +
+    `ผ่านครบทุกเกณฑ์ ${rows.filter((r) => r.ok).length.toLocaleString()} นาที ` +
+    `รวมเป็น ${win.length} ช่วง · เทียบดวงกำเนิด (ขั้น 4): <b>${natal ? "เปิด" : "ปิด"}</b></span></div>`;
+  h += `<div class="horwarn">⚠️ คำเตือนจากคำสอน VT` +
+    `<span>ฤกษ์ช่วยราว <b>5–10%</b> ดวงกำเนิดสำคัญ <b>80–90%</b> (part 66.1 @01:50)</span>` +
+    `<span>ไม่มีฤกษ์ที่สมบูรณ์ 100% ทุกฤกษ์มีตัวเสียเสมอ (part 66.2 @59:26)</span>` +
+    `<span>ฤกษ์ที่ใช้จริงไม่ได้ ไม่มีประโยชน์ — ต้องอยู่ในข้อจำกัดของชีวิตจริง (part 66.2 @57:31)</span></div>`;
+  if (!win.length) {
+    h += `<div class="horh">ไม่พบเวลาที่ผ่านครบทุกเกณฑ์</div>` +
+      `<p class="hint">อาจารย์ว่า "ยิ่งใส่เกณฑ์มากเท่าไหร่ ยิ่งหาฤกษ์ได้ยากเท่านั้น" (part 66.2 @70:47) ` +
+      `และ "หาไม่ได้ต้องเลื่อนวัน" (part 66.3 @30:22) — ลองขยายช่วงวันหรือช่วงเวลา` +
+      ($("elnatal").checked ? " หรือปิดขั้น 4 เพื่อดูว่าติดที่การเทียบดวงกำเนิดหรือไม่" : "") + `</p>`;
+  } else {
+    // ── การ์ด "วันดีที่สุด" ──────────────────────────────────────────────
+    // ตรงวิธีของอาจารย์: หาวันดีมา 7–8 ตัวเลือกก่อน แล้วค่อยเทียบกัน (part 66.2 @56:22)
+    // เรียงด้วยนาทีที่ผ่านรวม แล้วค่อยช่วงที่ยาวที่สุด — ไม่ใช่ "คะแนนดวง" แต่เป็นจำนวนเวลาที่ใช้ได้
+    const top = days.map((d, i) => ({ d, i })).filter((x) => x.d.pass > 0)
+      .sort((a, b) => b.d.pass - a.d.pass || b.d.best - a.d.best).slice(0, ELEC_TOP);
+    h += `<div class="horh">วันที่มีเวลาผ่านเกณฑ์มากที่สุด ${top.length} วัน ` +
+      `<span class="hint">(เรียงตามจำนวนนาทีที่ใช้ได้ · วิธีของอาจารย์คือหามา 7–8 วันแล้วเทียบกันเอง part 66.2 @56:22)</span></div>` +
+      `<div class="eltop">`;
+    top.forEach((x, n) => {
+      const d = x.d, p0 = jdLocalParts(d.win[0].a);
+      h += `<div class="eltopc"><div class="eltoph"><b>ที่ ${n + 1}</b> ` +
+        `<span class="eltopd">${p0.d}/${p0.m}/${p0.y + 543}</span>` +
+        `<span class="elecmin">ผ่าน ${d.pass} นาที · ${d.win.length} ช่วง · ยาวสุด ${d.best} น.</span></div>` +
+        // วันหนึ่งอาจมี 20 กว่าช่วงสั้น ๆ — การ์ดโชว์เฉพาะช่วงที่ยาวที่สุด
+        // (ช่วงยาวกว่าใช้งานง่ายกว่า · อาจารย์ว่าบางฤกษ์มีหน้าต่างแค่ 5 นาที part 66.3 @29:12)
+        // ที่เหลือดูได้จากแถบเวลาด้านล่าง
+        `<div class="eltopw">` +
+        d.win.slice().sort((a, b) => (b.b - b.a) - (a.b - a.a)).slice(0, ELEC_CARD_WIN)
+          .sort((a, b) => a.a - b.a).map((w) => {
+            const mins = elecMins(w);
+            return `<button type="button" class="elform" data-jd="${w.a}">` +
+              `${esc(elecWhen(w.a).split(" ")[1])}–${esc(elecWhen(w.b).split(" ")[1])}` +
+              `<i>${mins} น.</i></button>`;
+          }).join("") +
+        (d.win.length > ELEC_CARD_WIN
+          ? `<span class="elmore">อีก ${d.win.length - ELEC_CARD_WIN} ช่วงสั้นกว่า — ดูที่แถบเวลา</span>` : "") +
+        `</div>` +
+        elecSoftHTML(d.soft, " (รวมทุกช่วงของวันนี้)") +
+        `</div>`;
+    });
+    h += `</div>`;
+  }
+  // แถบเวลาแสดงทุกครั้ง แม้ไม่มีช่วงไหนผ่าน — กรณีนั้นแหละที่ต้องเห็นว่าติดอะไรตรงไหน
+  // ── แถบเวลารายวัน ────────────────────────────────────────────────────
+  h += `<div class="horh">แถบเวลาทุกวัน <span class="hint">(แตะแถบเพื่อดูช่วงของวันนั้น)</span></div>` +
+    `<div class="elbars">`;
+  days.forEach((d, i) => {
+    const p = jdLocalParts(d.rows[0].jd);
+    h += `<div class="elbarrow" data-i="${i}"><span class="elbard">${p.d}/${p.m}</span>` +
+      `<span class="elbar">` + elecSegs(d.rows).map((g) =>
+        `<i class="s-${g.k}" style="flex:${g.n}" title="${esc(ELEC_SEG_TH[g.k])}"></i>`).join("") +
+      `</span><span class="elbarn${d.pass ? " on" : ""}">${d.pass}</span></div>` +
+      `<div class="elbardet" data-d="${i}"></div>`;
+  });
+  h += `</div><div class="elleg">` +
+    Object.keys(ELEC_SEG_TH).map((k) =>
+      `<span><i class="s-${k}"></i>${esc(ELEC_SEG_TH[k])}</span>`).join("") +
+    `<span class="elleghint">ตัวเลขท้ายแถบ = นาทีที่ผ่านของวันนั้น</span></div>`;
+  h += `<div class="horh">นาทีที่ตก ติดเกณฑ์ข้อไหนบ้าง</div><div class="elecwhy">` +
+    Object.keys(cnt).map((k) =>
+      `<span><b>${esc(ELEC_WHY[k])}</b> ${cnt[k].toLocaleString()} นาที</span>`).join("") + `</div>`;
+  h += `<p class="hint">เกณฑ์ทั้งหมดมาจากคำสอน: ขั้น 1 อาทิตย์ไม่ถูกดาวร้าย (part 66 @17:14) · ` +
+    `ขั้น 2 จันทร์ไม่ VOC ไม่รุยไฟ (part 66 @21:01) · ขั้น 3 MC ไม่ถูกดาวร้ายคร่อม (part 66.3 @27:35) · ` +
+    `ขั้น 4 ดาวร้ายต้องไม่ถึง <b>MC กำเนิด</b> ซึ่งอาจารย์ว่าอันตรายที่สุด "ไม่มีฤกษ์" (part 66.3 @31:03) · ` +
+    `ดาวร้ายถึงจุดเจ้าชะตา<b>ตัวอื่น</b>ไม่ตัดทิ้ง แสดงเป็น "ตัวเสีย" ของช่วงนั้นแทน ` +
+    `เพราะคำสอนว่าเป็นการ "เพิ่มความยุ่งยาก" (part 66.3 @27:35) และ "ฤกษ์ไม่มี 100% ทุกครั้งมีตัวเสีย" (part 66.2 @59:26) · ` +
+    `ดาวร้าย = ${HOR_BAD.join(" ")} ตามที่แอปแบ่งกลุ่มอยู่เดิม · วังกะของหน้านี้ ${ELEC_ORB}° ` +
+    `(ค่าคงที่ ORB_RT ${AISTRO.ORB_RT}° ของทั้งแอปไม่ถูกแตะ) · ` +
+    `<b>ข้อที่ผมตัดสินใจเอง:</b> VOC นับเฉพาะดาว ไม่นับ AR/MC/AS เพราะสามตัวนั้นหมุนทุกนาที ` +
+    `ถ้านับด้วยจะไม่มีวันเกิด VOC เลย</p>`;
+  out.innerHTML = h;
+}
+$("elgo").addEventListener("click", elecRun);
+$("elecout").addEventListener("click", (e) => {
+  const b = e.target.closest(".elecgo");
+  if (b) {
+    // ต้องพาไปแท็บจานด้วย ไม่ใช่แค่ตั้งวันเวลา — แบบเดียวกับปุ่ม "เปิดจาน ณ เวลาถาม"
+    // ของกาลชะตา · เดิมตั้งวันเวลาถูกแต่ผู้ใช้ยังค้างอยู่หน้าฤกษ์ เหมือนกดแล้วไม่เกิดอะไร
+    // และ gotoJd คืนข้อความผิดพลาดเป็นค่าส่งกลับ (ไม่โยน) ถ้าไม่รับมาแสดงก็จะเงียบไปเฉย ๆ
+    const err = gotoJd(+b.dataset.jd);
+    if (err) { $("status").className = "err"; $("status").textContent = err; return; }
+    showPanel("pdial");
+    DIALFROM = { h: "ฤกษ์" };
+    return;
+  }
+  const fr = e.target.closest(".elfrow");
+  if (fr && fr.dataset.t) { elecMean(fr); return; }
+  const f = e.target.closest(".elform");
+  if (f) {
+    const host = f.closest(".eltopw") || f.closest(".elbardet");
+    let box = host.querySelector(":scope > .elfbox");
+    if (box && box.dataset.jd === f.dataset.jd) {      // กดซ้ำที่ปุ่มเดิม = ปิด
+      box.remove(); f.classList.remove("on"); return;
+    }
+    if (box) box.remove();
+    host.querySelectorAll(".elform.on").forEach((x) => x.classList.remove("on"));
+    box = document.createElement("div");
+    box.className = "elfbox"; box.dataset.jd = f.dataset.jd;
+    box.innerHTML = elecFormHTML(+f.dataset.jd);
+    host.appendChild(box); f.classList.add("on");
+    return;
+  }
+  const row = e.target.closest(".elbarrow");
+  if (!row || !ELEC_LAST) return;
+  const i = +row.dataset.i, det = $("elecout").querySelector(`.elbardet[data-d="${i}"]`);
+  if (!det) return;
+  if (det.innerHTML) { det.innerHTML = ""; row.classList.remove("open"); return; }
+  const esc = AISTRO_RENDER.esc, d = ELEC_LAST.days[i];
+  det.innerHTML = d.win.length
+    ? d.win.map((w) => {
+        const mins = elecMins(w);
+        return `<button type="button" class="elform" data-jd="${w.a}">` +
+          `${esc(elecWhen(w.a).split(" ")[1])}–${esc(elecWhen(w.b).split(" ")[1])}` +
+          `<i>${mins} น.</i></button>`;
+      }).join("")
+    : '<span class="elecsoft">วันนี้ไม่มีช่วงที่ผ่านครบทุกเกณฑ์</span>';
+  row.classList.add("open");
+});
 
 // ── กฎ "งดพยากรณ์" ของกาลชะตา (v123 · คำสอน VT part 64.1) ─────────
 // ข้อ 1 ลัคนา 3 องศาแรกของราศี = ถามเร็วไป เรื่องยังไม่สุกงอม (part 64.1 @02:22)

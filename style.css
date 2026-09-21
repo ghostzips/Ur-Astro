@@ -1245,3 +1245,82 @@ p.hint:empty{display:none}
   border: 1px solid var(--warn, #b8860b); background: rgba(184, 134, 11, .08);
   font-size: var(--t-sm); line-height: 1.55; }
 .horwarn span { display: block; margin-top: 4px; }
+
+/* v125: แท็บฤกษ์ */
+#elecbox .elchk { display:flex; align-items:center; gap:6px; font-size:.9em; }
+#elecbox .elchk input { width:auto; margin:0; }
+.elecwhy { display:flex; flex-wrap:wrap; gap:6px 14px; margin:4px 0 8px;
+  font-size:.88em; color:var(--dim); }
+.elecwhy b { color:var(--ink); font-weight:600; }
+.elecsoft { color:var(--dim); font-size:.82em; }
+
+/* การ์ดวันดีที่สุด */
+.eltop { display:flex; flex-direction:column; gap:8px; margin:6px 0 12px; }
+.eltopc { border:1px solid var(--rule); border-radius:10px; padding:9px 11px;
+  background:var(--panel); }
+.eltoph { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+.eltopd { font-weight:600; font-variant-numeric:tabular-nums; }
+.eltopw { display:flex; flex-wrap:wrap; gap:6px; margin-top:7px; }
+.eltopw .elecgo, .elbardet .elecgo { display:inline-flex; align-items:baseline; gap:5px;
+  padding:4px 9px; font-size:.86em; font-variant-numeric:tabular-nums; }
+.eltopw .elecgo i, .elbardet .elecgo i { font-style:normal; color:var(--dim); font-size:.9em; }
+.elmore { font-size:.8em; color:var(--faint); align-self:center; }
+.eltopc .elecsoft { margin-top:6px; display:block; }
+
+/* แถบเวลารายวัน */
+.elbars { display:flex; flex-direction:column; gap:3px; margin:6px 0 8px; }
+.elbarrow { display:flex; align-items:center; gap:8px; cursor:pointer;
+  padding:2px 4px; border-radius:6px; }
+.elbarrow:hover { background:var(--hover); }
+.elbarrow.open { background:var(--hover); }
+.elbard { flex:0 0 44px; font-size:.82em; color:var(--dim);
+  font-variant-numeric:tabular-nums; text-align:right; }
+.elbar { flex:1 1 auto; display:flex; height:16px; border-radius:4px;
+  overflow:hidden; border:1px solid var(--rule); }
+.elbar i { display:block; min-width:0; }
+.elbarn { flex:0 0 38px; font-size:.8em; color:var(--faint);
+  font-variant-numeric:tabular-nums; text-align:right; }
+.elbarn.on { color:var(--pos); font-weight:600; }
+.elbardet { display:flex; flex-wrap:wrap; gap:6px; padding:0 0 0 52px; }
+.elbardet:not(:empty) { padding-bottom:6px; }
+
+/* สีของช่องบนแถบ — ใช้ตัวแปรเดิมของธีม ไม่เพิ่มสีใหม่ */
+.s-ok    { background:var(--pos); }
+.s-natal { background:var(--neg); }
+.s-sun   { background:var(--rule); }
+.s-moon  { background:var(--rule-soft); }
+.elleg { display:flex; flex-wrap:wrap; gap:6px 14px; font-size:.82em;
+  color:var(--dim); margin-bottom:10px; align-items:center; }
+.elleg i { display:inline-block; width:14px; height:10px; border-radius:2px;
+  margin-right:5px; vertical-align:middle; border:1px solid var(--rule); }
+.elleghint { color:var(--faint); }
+
+/* v125: กล่องสูตรของฤกษ์แต่ละช่วง */
+.elform { display:inline-flex; align-items:baseline; gap:5px; padding:4px 9px;
+  font-size:.86em; font-variant-numeric:tabular-nums; }
+.elform i { font-style:normal; color:var(--dim); font-size:.9em; }
+.elform.on { border-color:var(--accent); color:var(--accent-ink); }
+.elfbox { flex:1 0 100%; margin-top:8px; padding:9px 10px; border-radius:8px;
+  border:1px solid var(--rule); background:var(--bg); }
+.elfh { font-size:.86em; font-weight:600; margin:2px 0 5px; }
+.elfh:not(:first-child) { margin-top:10px; }
+.elflist { display:flex; flex-direction:column; gap:3px; }
+.elfrow { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 10px;
+  font-size:.84em; font-variant-numeric:tabular-nums; }
+.elfrow.bad .elff b { color:var(--neg); }
+.elff { font-family:var(--mono); letter-spacing:.02em; }
+.elfa { color:var(--dim); }
+.elfo { color:var(--faint); margin-left:auto; }
+.elfbad { color:var(--neg); font-size:.94em; flex:1 0 100%; }
+.elfbox .elecgo { margin-top:9px; font-size:.84em; padding:4px 10px; }
+.elfrow[data-t] { cursor:pointer; border-radius:5px; padding:2px 4px; margin:0 -4px; }
+.elfrow[data-t]:hover { background:var(--hover); }
+.elfrow[data-t].on { background:var(--hover); }
+.elfmean { margin:4px 0 8px 4px; padding:7px 9px; border-left:2px solid var(--accent-line);
+  font-size:.85em; }
+.elfmean .mtext { line-height:1.55; }
+.elfmean .mwitte, .elfmean .mnote { margin-top:5px; color:var(--dim); font-size:.95em; }
+.elfhint { margin-top:9px; }
+.elecsoft b { color:var(--ink); }
+.elsoftr { display:block; margin-top:3px; font-variant-numeric:tabular-nums; }
+.elsoftr i { font-style:normal; color:var(--faint); font-size:.9em; }
