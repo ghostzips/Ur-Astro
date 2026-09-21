@@ -35,6 +35,31 @@
   button.primary{background:var(--accent);color:#fff;border:0;cursor:pointer;font-weight:600}
   button.primary:hover{background:var(--accent-2)}
   .hint{font-size:12px;color:var(--mute)}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .row input,.row select{flex:1;min-width:0}
+  .row button{width:auto;white-space:nowrap;cursor:pointer;padding:8px 12px}
+  .row button.danger{color:#b3261e;border-color:#e3bdb9}
+  #savemsg{font-size:12.5px;color:#1d6b3a;margin:4px 0 0}
+  #actions{position:relative}
+  #actions{flex-wrap:nowrap}                  /* จอ 375px ปุ่มเคยตกไปบรรทัดสอง — ย่อระยะในปุ่มแทนการขึ้นบรรทัดใหม่ */
+  #actions #go{flex:1;min-width:0}
+  #actions button{padding:9px 10px}
+  /* ป๊อปอัพเลือกดวง: เล็ก สะอาด ปิดง่าย · ใช้ .show() ไม่ใช่ showModal() ตามกติกาโปรเจกต์ (ไม่หรี่หน้าจอ) */
+  #loaddlg{position:absolute;top:calc(100% + 6px);right:0;left:auto;margin:0;z-index:30;
+    width:min(320px,calc(100vw - 40px));max-height:60vh;overflow:auto;padding:0;
+    border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(20,35,55,.22);background:#fff}
+  #loaddlg::backdrop{background:transparent}
+  .dlghead{display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--line);
+    font-weight:600;font-size:14px;position:sticky;top:0;background:#fff}
+  .dlghead button{width:auto;margin-left:auto;padding:2px 8px;border:0;background:transparent;cursor:pointer;font-size:16px;color:var(--mute)}
+  .dlgrow{display:flex;align-items:center;border-bottom:1px solid var(--line)}
+  .dlgrow:last-child{border-bottom:0}
+  .dlgrow .pick{flex:1;text-align:left;border:0;border-radius:0;background:transparent;cursor:pointer;padding:10px 12px;min-height:42px}
+  .dlgrow .pick b{display:block;font-size:14px}
+  .dlgrow .pick span{font-size:12px;color:var(--mute)}
+  .dlgrow .pick:hover{background:#f2f6fb}
+  .dlgrow .rm{width:auto;border:0;background:transparent;color:#b3261e;cursor:pointer;padding:10px 12px;font-size:13px}
+  .dlgempty{padding:14px 12px;font-size:13px;color:var(--mute)}
   .dyn{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .dyn .ck{display:flex;align-items:center;gap:5px;margin:0;font-size:13px;color:var(--ink);white-space:nowrap}
   .dyn .ck input{width:auto;margin:0}
@@ -162,6 +187,9 @@
 
 <div class="wrap">
   <div class="card form" id="formcard">
+    <div class="wide"><label for="owner">ชื่อเจ้าของดวง</label>
+      <input id="owner" type="text" maxlength="40" placeholder="เช่น ตัวฉัน · คุณแม่ · ไอน์สไตน์">
+      <div id="savemsg"></div></div>
     <div><label for="date">วันเกิด (ค.ศ.)</label><input id="date" type="date" value="1987-09-20"></div>
     <div><label for="time">เวลาเกิด</label><input id="time" type="time" value="11:16"></div>
     <div class="wide"><label for="place">สถานที่เกิด</label><select id="place"></select></div>
@@ -185,7 +213,15 @@
         <label class="ck"><input type="checkbox" id="ckProg"> เส้นโปรเกรส</label>
         <input type="date" id="dynDate"> <span class="hint">ถึง</span> <input type="date" id="dynDate2">
       </div></div>
-    <div><button class="primary" id="go">วาดแผนที่</button></div>
+    <div class="wide row" id="actions">
+      <button class="primary" id="go">วาดแผนที่</button>
+      <button id="save" title="เก็บดวงกำเนิดนี้ไว้ในเบราว์เซอร์เครื่องนี้">บันทึกดวง</button>
+      <button id="load" title="เลือกจากดวงที่เคยบันทึกไว้">โหลดดวง</button>
+      <dialog id="loaddlg">
+        <div class="dlghead">ดวงที่บันทึกไว้ (เครื่องนี้)<button id="dlgx" title="ปิด">✕</button></div>
+        <div id="dlglist"></div>
+      </dialog>
+    </div>
   </div>
   <div class="hint" style="margin:6px 4px 0">ต่างประเทศ: เขตเวลาที่เติมให้เป็นเวลามาตรฐาน ถ้าเกิดช่วงเวลาออมแสงต้องแก้เอง</div>
 
@@ -212,9 +248,9 @@
 
   <div id="citybox" hidden>
     <div class="tabs" id="tabs">
-      <button data-t="guide" class="on">อ่านตามลำดับ</button>
+      <button data-t="window" class="on">ช่วงเวลา</button>
+      <button data-t="guide">อ่านตามลำดับ</button>
       <button data-t="near">เส้นใกล้เมือง</button>
-      <button data-t="window">ช่วงเวลา</button>
       <button data-t="paran">Paran</button>
       <button data-t="relA">ย้ายเมือง A · ย้ายดวง</button>
       <button data-t="relB">ย้ายเมือง B · LM/LA</button>
@@ -247,7 +283,7 @@ const bootReady=(async()=>{
 })();
 // ข้อความทุกชิ้นที่มาจากไฟล์ข้อมูล/เซิร์ฟเวอร์ ต้องผ่าน esc() ก่อนต่อเป็น HTML
 const esc=v=>String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-let places={th:[],intl:[]}, chart=null, cityData=null, city=null, land=null, method="mundo", tab="guide", showParan=false, hover=null;
+let places={th:[],intl:[]}, chart=null, cityData=null, city=null, land=null, method="mundo", tab="window", showParan=false, hover=null;
 let dynamic=null;                       // {date_on, layers:{transit:[],progressed:[]}} — ชั้นแยก ไม่ปนเส้นกำเนิด
 const dynKinds=()=>[...($("#ckTransit").checked?["transit"]:[]),...($("#ckProg").checked?["progressed"]:[])];
 const DYN_STYLE={transit:{dash:[2,4],w:1.2},progressed:{dash:[6,3],w:1.2}};
@@ -262,7 +298,53 @@ function fillSelect(sel,withCustom){
   sel.append(g1,g2); if(withCustom) sel.append(new Option("— จุดที่คลิกบนแผนที่ —","custom"));
 }
 const placeOf=v=>{const [k,i]=v.split(":");return places[k][+i]};
-function setBirthPlace(){const p=placeOf($("#place").value);$("#lat").value=p.lat;$("#lon").value=p.lon;$("#tz").value=p.tz}
+function setBirthPlace(){const v=$("#place").value; if(v===SAVED_OPT) return;   // ตัวเลือกของดวงที่บันทึกไว้ — พิกัดมาจากไฟล์บันทึก ไม่ใช่จากรายชื่อเมือง
+  const p=placeOf(v);$("#lat").value=p.lat;$("#lon").value=p.lon;$("#tz").value=p.tz}
+
+// ── ดวงที่บันทึกไว้ (localStorage ของเบราว์เซอร์นี้เท่านั้น — ไม่ส่งออกไปไหน ไม่ซิงก์ข้ามเครื่อง) ──────────
+// เก็บเฉพาะสิ่งที่เป็น "ตัวดวงกำเนิด": ชื่อเจ้าของ วัน เวลา สถานที่ พิกัด เขตเวลา วิธีคำนวณเส้น ระยะที่ถือว่าใกล้
+// ไม่เก็บเมืองที่กำลังดู/ช่วงวันที่จร เพราะเป็นสิ่งที่เปลี่ยนไปมาระหว่างอ่าน ไม่ใช่ของดวง
+const STORE="acg_charts_v1", SAVED_OPT="saved";
+function savedList(){try{const v=JSON.parse(localStorage.getItem(STORE)||"[]");return Array.isArray(v)?v:[]}catch(e){return []}}
+function writeSaved(l){try{localStorage.setItem(STORE,JSON.stringify(l));return true}
+  catch(e){alert("บันทึกไม่ได้ (พื้นที่เก็บของเบราว์เซอร์เต็มหรือถูกปิดไว้): "+e.message);return false}}
+function placeName(){const o=$("#place").selectedOptions[0];return o?o.textContent:""}
+function currentChart(){return {name:$("#owner").value.trim(),date:$("#date").value,time:$("#time").value,
+  place:$("#place").value,place_name:placeName(),lat:+$("#lat").value,lon:+$("#lon").value,tz:+$("#tz").value,
+  method,orb:$("#orb").value}}
+// ป๊อปอัพเลือกดวง — สร้างใหม่ทุกครั้งที่เปิด จึงไม่มีทางแสดงรายการที่ถูกลบไปแล้ว
+function fillSaved(){
+  const l=savedList(),box=$("#dlglist");box.innerHTML="";
+  if(!l.length){box.innerHTML=`<div class="dlgempty">ยังไม่มีดวงที่บันทึกไว้ — กรอกดวงแล้วกด "บันทึกดวง"</div>`;return}
+  l.forEach((c,i)=>{
+    const row=document.createElement("div");row.className="dlgrow";
+    row.innerHTML=`<button class="pick" data-i="${i}"><b>${esc(c.name)}</b><span>${esc(c.date)} ${esc(c.time)} · ${esc(c.place_name||"")}</span></button>`+
+      `<button class="rm" data-rm="${i}" title="ลบดวงนี้">ลบ</button>`;
+    box.append(row);
+  });
+}
+function closeLoad(){const d=$("#loaddlg");if(d.open)d.close()}
+async function applyChart(c){
+  $("#owner").value=c.name;$("#date").value=c.date;$("#time").value=c.time;
+  selectSavedPlace(c);
+  $("#lat").value=c.lat;$("#lon").value=c.lon;$("#tz").value=c.tz;
+  method=c.method||"mundo";[...$("#method").children].forEach(b=>b.classList.toggle("on",b.dataset.v===method));
+  if([...$("#orb").options].some(o=>o.value===String(c.orb)))$("#orb").value=String(c.orb);
+  $("#savemsg").textContent=`โหลด "${c.name}" แล้ว`;
+  invalidatePanels(); await drawChart();      // ทุกแผงขึ้นกับดวงกำเนิด ต้องคำนวณใหม่ทั้งหมด
+}
+// เลือกสถานที่เกิดของดวงที่โหลด: รายชื่อเมืองอาจเปลี่ยนลำดับ/หายไป — ยืนยันด้วย "ชื่อ" เสมอ ไม่เชื่อ index
+// หาไม่เจอก็ยังโหลดได้ โดยทำตัวเลือกชั่วคราวจากพิกัดที่บันทึกไว้ (ไม่เงียบ ๆ เปลี่ยนเป็นเมืองอื่น)
+function selectSavedPlace(c){
+  const sel=$("#place");
+  [...sel.querySelectorAll(`option[value="${SAVED_OPT}"]`)].forEach(o=>o.remove());
+  const byVal=[...sel.options].find(o=>o.value===c.place&&o.textContent===c.place_name);
+  const byName=byVal||[...sel.options].find(o=>o.textContent===c.place_name);
+  if(byName){sel.value=byName.value;return}
+  sel.append(new Option((c.place_name||"พิกัดที่บันทึกไว้")+" (จากดวงที่บันทึก)",SAVED_OPT));
+  sel.value=SAVED_OPT;
+}
+function ownerTag(){const n=$("#owner").value.trim();return n?`<span class="badge">ดวงของ ${esc(n)}</span>`:""}
 
 // ── แผนที่ equirectangular + ซูม/เลื่อน ─────────────────────
 const cv=$("#map"), ctx=cv.getContext("2d"), wrap=$("#mapwrap");
@@ -1187,7 +1269,7 @@ function guideHtml(){
     GUIDE_STEPS.map((t,i)=>`${i?" · ":""}<b>${i+1}. ${esc(t)}</b>`).join("")+
     ` · จบที่ <b>จังหวะเวลา</b> ที่แท็บ "ช่วงเวลา"</div></div>`;
   // ── ข้อ 1: สภาพดาว ────────────────────────────────────────────────
-  html+=`<h3>1. สภาพดาวในดวงกำเนิด — ${esc(b.place)}</h3>`+
+  html+=`<h3>1. สภาพดาวในดวงกำเนิด — ${esc(b.place)} ${ownerTag()}</h3>`+
     `<div class="hint">เกิด ${esc(b.date)} ${esc(b.time)} น. (UTC${b.tz>=0?"+":""}${b.tz}) · ${b.lat.toFixed(4)}, ${b.lon.toFixed(4)}</div>`+
     conditionHtml(r.condition);
   // ── ข้อ 2: เป้าหมาย ───────────────────────────────────────────────
@@ -1256,7 +1338,7 @@ function renderPanel(){renderPanelRaw();liftReadings($("#panel"))}
 function renderPanelRaw(){
   const d=cityData,p=$("#panel");
   if(tab==="guide"){p.innerHTML=guideHtml();return}   // ข้อ 1 เป็นเรื่องดวงกำเนิด ไม่ใช้ cityData — ต้องวาดได้แม้ /api/city ล้ม
-  const head=city?`<div class="cityhead"><h2>${esc(city.name)}</h2><span class="hint">${city.lat.toFixed(4)}, ${city.lon.toFixed(4)}</span></div>`:"";
+  const head=city?`<div class="cityhead"><h2>${esc(city.name)}</h2><span class="hint">${city.lat.toFixed(4)}, ${city.lon.toFixed(4)}</span> ${ownerTag()}</div>`:"";
   if(tab==="window"){p.innerHTML=head+windowHtml();return}   // ใช้ windowData อย่างเดียว ไม่ใช้ cityData เช่นกัน
   if(!d)return;
   if(tab==="near"){
@@ -1299,6 +1381,37 @@ for(const id of ["#ckTransit","#ckProg","#dynDate"])
   $(id).addEventListener("change",async()=>{invalidatePanels();await loadDynamic();if(city)await loadCity();await refreshTab()});
 $("#dynDate2").addEventListener("change",async()=>{invalidatePanels();await refreshTab()});
 $("#place").addEventListener("change",setBirthPlace);
+$("#owner").addEventListener("input",()=>{$("#savemsg").textContent="";if(chart)renderPanel()});
+$("#save").addEventListener("click",()=>{
+  const c=currentChart();
+  if(!c.name){alert("ใส่ชื่อเจ้าของดวงก่อนบันทึก");$("#owner").focus();return}
+  const l=savedList(),i=l.findIndex(x=>x.name===c.name);
+  if(i>=0&&!confirm(`มีดวงชื่อ "${c.name}" อยู่แล้ว — เขียนทับด้วยข้อมูลในฟอร์มตอนนี้?`))return;
+  if(i>=0)l[i]=c;else l.push(c);
+  if(!writeSaved(l))return;
+  fillSaved();
+  $("#savemsg").textContent=`บันทึก "${c.name}" แล้ว — เก็บในเบราว์เซอร์เครื่องนี้เท่านั้น`;
+});
+$("#load").addEventListener("click",()=>{
+  const d=$("#loaddlg"); if(d.open){d.close();return}
+  fillSaved(); d.show();                       // .show() ไม่ใช่ showModal() — หน้าจอไม่ถูกหรี่ (กติกาโปรเจกต์)
+});
+$("#dlgx").addEventListener("click",closeLoad);
+$("#dlglist").addEventListener("click",async e=>{
+  const pick=e.target.closest(".pick"), rm=e.target.closest(".rm");
+  const l=savedList();
+  if(rm){const i=+rm.dataset.rm,c=l[i]; if(!c)return;
+    if(!confirm(`ลบดวง "${c.name}" ออกจากเครื่องนี้? (กู้คืนไม่ได้)`))return;
+    l.splice(i,1); if(!writeSaved(l))return;
+    fillSaved(); $("#savemsg").textContent=`ลบ "${c.name}" แล้ว`; return}
+  if(!pick)return;
+  const c=l[+pick.dataset.i]; if(!c)return;
+  closeLoad(); await applyChart(c);
+});
+// ปิดง่าย: คลิกนอกป๊อปอัพ หรือกด Esc
+addEventListener("pointerdown",e=>{const d=$("#loaddlg");
+  if(d.open&&!d.contains(e.target)&&e.target!==$("#load"))closeLoad()});
+addEventListener("keydown",e=>{if(e.key==="Escape")closeLoad()});
 $("#orb").addEventListener("change",async()=>{invalidatePanels();if(city)await loadCity();await refreshTab()});
 $("#city").addEventListener("change",async()=>{const v=$("#city").value;if(v==="custom")return;city=placeOf(v);draw();
   invalidatePanels();loadCity();await refreshTab()});
@@ -1369,7 +1482,7 @@ addEventListener("resize",size);
     w.textContent="ชุดนี้ไม่ได้ใส่ไฟล์คำอ่าน (readings.json.gz) — เส้น/paran/ดวงย้ายเมืองคำนวณได้ครบ แต่จะไม่มีคำอ่านของเส้นและคำแนะนำตามเป้าหมาย";
     $(".wrap").prepend(w)}
   places=API.places();
-  fillSelect($("#place"),false);fillSelect($("#city"),true);
+  fillSelect($("#place"),false);fillSelect($("#city"),true);fillSaved();
   $("#place").value="th:"+places.th.findIndex(p=>p.name==="กรุงเทพมหานคร");setBirthPlace();
   $("#city").value="intl:"+places.intl.findIndex(p=>p.name.startsWith("โตเกียว"));city=placeOf($("#city").value);
   $("#dynDate").value=new Date().toISOString().slice(0,10);
@@ -1379,7 +1492,7 @@ addEventListener("resize",size);
 </script>
 <script>
 // ── ออฟไลน์: ลงทะเบียน service worker (แยกแคชจากแอปยูเรเนียน: urmap-v*) ──
-const MAP_CACHE="urmap-v5";
+const MAP_CACHE="urmap-v9";
 (function(){
   const el=document.createElement("div");el.className="hint";el.style.cssText="margin:6px 4px 0";el.id="swstat";
   document.querySelector(".wrap").append(el);

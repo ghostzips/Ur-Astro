@@ -412,7 +412,16 @@
     if (!fn) throw new Error("ไม่รู้จัก " + url);
     if (!body || typeof body !== "object" || Array.isArray(body)) throw new BadInput("ตัวคำขอต้องเป็น JSON object");
     try { return fn(body); }
-    catch (e) { if (e instanceof RangeError) throw new BadInput("คำนวณไม่ได้ที่พิกัดนี้ (ใกล้ขั้วโลกเกินไปสำหรับระบบเรือน): " + e.message); throw e; }
+    // RangeError มาได้ 2 ทาง: ละติจูดเหนือวงอาร์กติก (reading.assertHousable) และวันที่นอกช่วงตารางดาว (engine.js 1900–2099)
+    // เดิมใส่คำว่า "ใกล้ขั้วโลกเกินไป" ให้ทั้งสองแบบ — ผู้ใช้ที่กรอกปี 1879 จึงได้เหตุผลผิด (เจอจริง 21 ก.ย. 2026)
+    catch (e) {
+      if (e instanceof RangeError) {
+        throw new BadInput(/อาร์กติก|ขั้วโลก/.test(e.message)
+          ? "คำนวณไม่ได้ที่พิกัดนี้ (ใกล้ขั้วโลกเกินไปสำหรับระบบเรือน): " + e.message
+          : "คำนวณไม่ได้: " + e.message);
+      }
+      throw e;
+    }
   }
 
   root.API = { call, chart, dynamic, window: windowApi, reading, city, places, deg, BadInput, parseBirth, parseDate,

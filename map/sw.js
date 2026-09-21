@@ -6,7 +6,7 @@
  * ขนาดที่ต้องโหลดตอนติดตั้ง ≈ 16 MB: ตารางดาว 10.5 + ละติจูดดาว 3.1 + แผนที่ระดับหยาบ/กลาง 2.1 + ที่เหลือ <1
  * แผนที่ระดับละเอียด (1:10m, 8.9 MB) **ไม่บังคับโหลดตอนติดตั้ง** — ดึงครั้งแรกที่ซูมถึงตอนมีเน็ต แล้วเก็บไว้ใช้ออฟไลน์
  */
-const CACHE = "urmap-v5";
+const CACHE = "urmap-v9";
 const FILES = [
   "./",
   "./index.html",
@@ -58,6 +58,14 @@ self.addEventListener("install", (e) => {
 self.addEventListener("activate", (e) => {
   e.waitUntil((async () => {
     for (const k of await caches.keys()) if (k !== CACHE && k.startsWith("urmap-")) await caches.delete(k);
+    // เก็บกวาดสำเนาไฟล์ของแผนที่ที่หลงอยู่ในแคชของแอปอื่นบนโดเมนเดียวกัน (SW ของแอปยูเรเนียนขอบเขต /Ur-Astro/ เคยคุมหน้า /map/
+    // ก่อน SW นี้ติดตั้งสำเร็จ และเก็บทุกไฟล์ same-origin ลงแคชของมัน ~16 MB) — ลบเฉพาะ URL ใต้ขอบเขตของเรา ไม่แตะไฟล์ของแอปนั้น
+    const scope = self.registration.scope;
+    for (const k of await caches.keys()) {
+      if (k.startsWith("urmap-")) continue;
+      const c = await caches.open(k);
+      for (const req of await c.keys()) if (req.url.startsWith(scope)) await c.delete(req);
+    }
     await self.clients.claim();
   })());
 });
@@ -76,20 +84,23 @@ self.addEventListener("fetch", (e) => {
   if (NEVER_CACHE.test(path)) return;
   if (/^https?:\/\/tile\.openstreetmap\.org\//.test(e.request.url)) return;   // แผ่นภาพออนไลน์ไม่แคช (นโยบาย OSM)
   e.respondWith((async () => {
-    const hit = await caches.match(e.request, { ignoreSearch: true });
+    // ค้น**เฉพาะแคชของเรา** — caches.match() แบบรวมค้นทุกแคชของโดเมนตามลำดับที่สร้าง จึงเจอ /map/index.html ตัวเก่าในแคช
+    // urain-* ของแอปยูเรเนียนก่อนเสมอ → มือถือค้างหน้า v3 ทั้งที่ SW เป็น v5 และหน้าเก่าฟ้อง "ไฟล์ไม่ครบในแคช urmap-v3" (เจอจริง 21 ก.ย. 2026)
+    const mine = await caches.open(CACHE);
+    const hit = await mine.match(e.request, { ignoreSearch: true });
     if (hit && isFresh(e.request.url)) {
       e.waitUntil((async () => {
         try {
           const res = await fetch(e.request, { cache: "no-cache" });
           const key = new URL(e.request.url); key.search = "";
-          if (res.ok) (await caches.open(CACHE)).put(key.href, res.clone());
+          if (res.ok) mine.put(key.href, res.clone());
         } catch (err) { /* ออฟไลน์ก็ใช้ของเก่าต่อไป */ }
       })());
       return hit;
     }
     if (hit) return hit;
     const res = await fetch(e.request);
-    if (res.ok && ON_DEMAND.test(path)) (await caches.open(CACHE)).put(e.request, res.clone());
+    if (res.ok && ON_DEMAND.test(path)) mine.put(e.request, res.clone());
     return res;
   })());
 });
