@@ -1,0 +1,1271 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>แผนที่ดวง · ย้ายเมืองยูเรเนียน</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#24527f">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<style>
+  :root{
+    --bg:#f3f1ec;--card:#ffffff;--ink:#1d2127;--mute:#6a707a;--line:#e2ded5;--soft:#f7f5f0;
+    --accent:#24527f;--accent-2:#3a7bb8;--warn:#b0601c;--radius:12px;
+    --shadow:0 1px 2px rgba(20,30,40,.05),0 6px 20px rgba(20,30,40,.06);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:15px/1.55 -apple-system,"Sukhumvit Set","Noto Sans Thai",Tahoma,sans-serif;background:var(--bg);color:var(--ink)}
+  header{padding:14px 24px;background:linear-gradient(90deg,#1b3d60,#24527f 60%,#2f6696);color:#fff;display:flex;gap:14px;align-items:baseline;flex-wrap:wrap}
+  header h1{font-size:19px;margin:0;letter-spacing:.2px}
+  header span{opacity:.8;font-size:13px}
+  .wrap{max-width:1600px;margin:0 auto;padding:16px 24px 40px}
+  @media (max-width:700px){.wrap{padding:12px 16px 32px}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+  /* ฟอร์มแถวบน */
+  .form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 12px;padding:14px 16px;align-items:end}
+  .form .wide{grid-column:span 2}
+  @media (max-width:700px){.form .wide{grid-column:span 1}}
+  label{display:block;font-size:12.5px;color:var(--mute);margin:0 0 4px}
+  input,select,button{font:inherit;width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+  input:focus,select:focus{outline:2px solid #b9d2ea;border-color:var(--accent-2)}
+  .seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{border:0;border-radius:0;flex:1;cursor:pointer;background:#fff;font-size:13px;padding:8px 6px;white-space:nowrap}
+  .seg button.on{background:var(--accent);color:#fff}
+  button.primary{background:var(--accent);color:#fff;border:0;cursor:pointer;font-weight:600}
+  button.primary:hover{background:var(--accent-2)}
+  .hint{font-size:12px;color:var(--mute)}
+  .dyn{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .dyn .ck{display:flex;align-items:center;gap:5px;margin:0;font-size:13px;color:var(--ink);white-space:nowrap}
+  .dyn .ck input{width:auto;margin:0}
+  .dyn input[type=date]{width:auto;flex:1;min-width:140px;padding:6px 8px}
+  /* แผนที่ */
+  .mapcard{margin-top:14px;overflow:hidden}
+  .maptools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);background:var(--soft)}
+  .maptools .grp{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .chip{width:auto;padding:5px 11px;border-radius:16px;font-size:13px;cursor:pointer;background:#fff}
+  .chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .linebtn{display:inline-flex;width:auto;align-items:center;gap:4px;margin:2px 3px 2px 0;padding:2px 9px;border:1px solid #cfd6de;
+    border-radius:14px;background:#fff;font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap}
+  .linebtn:hover{border-color:var(--accent);background:#f2f6fb}
+  .linebtn .sw{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .lbtns{margin-top:3px;display:flex;flex-wrap:wrap;gap:2px}
+  .iconbtn{width:34px;height:32px;padding:0;font-size:18px;line-height:1;cursor:pointer;background:#fff}
+  .maptools select{width:auto;min-width:210px;padding:5px 8px}
+  .spacer{flex:1}
+  #mapwrap{position:relative;width:100%;aspect-ratio:2/1;background:#bcd6e6;cursor:grab;touch-action:none}
+  #mapwrap.drag{cursor:grabbing}
+  #map{width:100%;height:100%;display:block}
+  #flashtip{position:absolute;left:8px;top:8px;background:rgba(20,28,38,.86);color:#fff;font-size:12.5px;
+    padding:4px 10px;border-radius:14px;pointer-events:none}
+  #tip{position:absolute;pointer-events:none;background:rgba(18,24,31,.9);color:#fff;font-size:12.5px;padding:5px 9px;border-radius:7px;display:none;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+  #status{position:absolute;left:10px;bottom:8px;font-size:11.5px;color:#2b3a47;background:rgba(255,255,255,.7);padding:2px 7px;border-radius:6px}
+  .legend{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px;border-top:1px solid var(--line)}
+  .legend label{display:flex;align-items:center;gap:6px;margin:0;padding:4px 10px;border:1px solid var(--line);border-radius:16px;cursor:pointer;color:var(--ink);font-size:13px;background:#fff;user-select:none}
+  .legend label.off{opacity:.45}
+  .legend .legsep{flex-basis:100%;height:0}
+  .legend label.group{font-weight:600;background:#eef2f7}
+  .legend input{display:none}
+  .teach{margin-top:6px;font-size:12.5px}
+  .teach>summary{cursor:pointer;color:#2b5f9e;font-weight:600;list-style:none}
+  .teach>summary::-webkit-details-marker{display:none}
+  .teach>summary::before{content:"▸ ";}
+  .teach[open]>summary::before{content:"▾ ";}
+  .teach ul{margin:6px 0 0;padding-left:18px;color:#39434e;line-height:1.55}
+  .teach li{margin-bottom:5px}
+  .teach a{color:#2b5f9e;text-decoration:none;white-space:nowrap}
+  .teach a:hover{text-decoration:underline}
+  .rd{margin:6px 0 8px;font-size:13.5px;line-height:1.65;color:#2d3540}
+  .rd p{margin:0 0 5px}
+  .rd .note{background:#fbf6ea;border-left:3px solid #e0c894;padding:5px 9px;border-radius:0 6px 6px 0;font-size:12.5px;color:#6b5626}
+  .rd .mv{background:#ffe9a8;border-radius:4px;padding:0 3px;font-weight:600}
+  .gate{background:#eef4fb;border:1px solid #cfdfef;border-left:4px solid var(--accent);border-radius:8px;
+    padding:9px 12px;margin:16px 0 4px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .hw{font-size:10.5px;padding:1px 6px;border-radius:9px;vertical-align:1px}
+  .hw-เบา{background:#dff0e2;color:#276b3a}
+  .hw-หนัก{background:#f7e3e0;color:#93361f}
+  .dg-เกษตร,.dg-อุจ{color:#1d6b3a}
+  .dg-ประ,.dg-นิจ{color:#a33f22}
+  .ac-หนัก{color:#a33f22}
+  .ac-ช่วย{color:#1d6b3a}
+  .ac-ร่วม{color:#5c5348}
+  .sum5{background:#f4f7fb;border:1px solid #dbe5ef;border-radius:10px;padding:10px 14px;margin:6px 0 12px}
+  .sum5 .head{font-weight:600;margin:0 0 8px}
+  .sum5 ul{margin:2px 0 10px;padding-left:20px}
+  .sum5 ul.lite{margin:2px 0 6px;padding-left:16px;font-size:12.5px;color:#4a5462}
+  .sum5 p{margin:6px 0 2px}
+.cits{font-size:11.5px;color:#8b97a3}
+  .read{margin:6px 0 2px;font-size:13px}
+  .read ul{margin:0;padding-left:16px;line-height:1.6}
+  .read li{margin-bottom:4px}
+  .read li.w{color:#8a4a12}
+  .tg{display:inline-block;font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:9px;vertical-align:1px}
+  .tg.both{background:#dff0e2;color:#276b3a}
+  .tg.h{background:#e3ecf7;color:#2b5f9e}
+  .tg.a{background:#f5ead6;color:#8a6420}
+  .cits{overflow-wrap:anywhere}
+  .cits a{color:#7a8794;text-decoration:none;font-size:11.5px;margin-left:4px}
+  .cits a:hover{text-decoration:underline}
+  .teach.ac>summary{color:#7a5a20}
+  .teach.cat{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:6px;background:#fcfbf8}
+  .teach.cat>summary{font-size:14px}
+  .teach2>summary{cursor:pointer;color:#6b7683;font-weight:500;margin-top:4px}
+  .sw{width:16px;height:4px;border-radius:2px;display:inline-block;flex:none}
+  .keys{padding:0 12px 10px;font-size:12px;color:var(--mute)}
+  /* แผงข้อมูลเมือง */
+  .tabs{display:flex;gap:4px;flex-wrap:wrap;margin:18px 0 0}
+  .tabs button{width:auto;border:1px solid var(--line);border-bottom:0;border-radius:10px 10px 0 0;background:#ebe8e1;cursor:pointer;padding:8px 14px;color:var(--mute)}
+  .tabs button.on{background:var(--card);color:var(--ink);font-weight:600;position:relative;top:1px}
+  .panel{border-radius:0 var(--radius) var(--radius) var(--radius);padding:16px 18px}
+  .tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table.wide{min-width:640px}
+  table.wide2{min-width:430px}                       /* ตารางหลายคอลัมน์ — เลื่อนแนวนอนแทนการบีบจนอ่านไม่ออก */
+  .swipe{display:none;font-size:11.5px;color:var(--mute);margin:2px 0 6px}
+  @media (max-width:760px){.swipe{display:block}}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  td,th{overflow-wrap:anywhere}
+  td.num{white-space:nowrap;overflow-wrap:normal}          /* ตัวเลขระยะ/เวลา ห้ามแตกกลางคำเมื่อคอลัมน์ถูกบีบ */
+  td.num .hint{white-space:nowrap}
+  @media (max-width:520px){table{font-size:13px}th,td{padding:7px 4px}}
+  th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--mute);font-weight:500;font-size:12.5px}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media (max-width:1000px){.cols{grid-template-columns:1fr}}
+  .badge{display:inline-block;font-size:12px;padding:2px 8px;border-radius:10px;background:#e8f0f8;color:var(--accent);margin-left:6px;font-weight:500}
+  .warn{color:var(--warn);font-size:12px}
+  .meaning{color:#3b4047;font-size:13.5px;margin:4px 0 0}
+  .empty{color:var(--mute);font-size:14px;padding:8px 0}
+  .src{font-size:12.5px;color:#4b525c;background:var(--soft);border-left:3px solid #c9d8e6;padding:8px 10px;margin:10px 0 12px;border-radius:0 8px 8px 0}
+  .cityhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .cityhead h2{margin:0;font-size:18px}
+  h3{font-size:15px;margin:4px 0 6px}
+  .loading{opacity:.55;pointer-events:none}
+</style>
+</head>
+<body>
+<header>
+  <h1>แผนที่ดวง · ดวงย้ายเมืองยูเรเนียน</h1>
+  <span>คำนวณในเครื่องนี้ทั้งหมด (ไม่มีเซิร์ฟเวอร์) · เอนจินสอบเทียบกับฝั่ง PC ค่าต่อค่า · ออฟไลน์ได้</span>
+  <span id="boot" style="opacity:1;font-weight:600">กำลังโหลดตารางดาว…</span>
+</header>
+
+<div class="wrap">
+  <div class="card form" id="formcard">
+    <div><label for="date">วันเกิด (ค.ศ.)</label><input id="date" type="date" value="1987-09-20"></div>
+    <div><label for="time">เวลาเกิด</label><input id="time" type="time" value="11:16"></div>
+    <div class="wide"><label for="place">สถานที่เกิด</label><select id="place"></select></div>
+    <div><label for="lat">ละติจูด</label><input id="lat" type="number" step="0.0001"></div>
+    <div><label for="lon">ลองจิจูด</label><input id="lon" type="number" step="0.0001"></div>
+    <div><label for="tz">เขตเวลา (ชม.)</label><input id="tz" type="number" step="0.25"></div>
+    <div class="wide"><label>วิธีคำนวณเส้น</label>
+      <div class="seg" id="method">
+        <button data-v="mundo" class="on" title="มาตรฐาน Jim Lewis / astro.com">in mundo (สากล)</button>
+        <button data-v="eclpr" title="ไม่คิดละติจูดดาว ตรงกับลัคนา/MC ดวงปกติ">ecl. projection</button>
+      </div></div>
+    <div class="wide"><label for="orb">ระยะที่ถือว่า "ใกล้เมือง"</label>
+      <select id="orb">
+        <option value="240">240 กม. (astro.com)</option>
+        <option value="483">483 กม. (Helena Woods ระดับกลาง)</option>
+        <option value="966">966 กม. (Helena Woods สูงสุด)</option>
+      </select></div>
+    <div class="wide"><label>ชั้นเส้นเพิ่มเติม (คนละชั้นกับเส้นกำเนิด)</label>
+      <div class="dyn">
+        <label class="ck"><input type="checkbox" id="ckTransit"> เส้นจร</label>
+        <label class="ck"><input type="checkbox" id="ckProg"> เส้นโปรเกรส</label>
+        <input type="date" id="dynDate"> <span class="hint">ถึง</span> <input type="date" id="dynDate2">
+      </div></div>
+    <div><button class="primary" id="go">วาดแผนที่</button></div>
+  </div>
+  <div class="hint" style="margin:6px 4px 0">ต่างประเทศ: เขตเวลาที่เติมให้เป็นเวลามาตรฐาน ถ้าเกิดช่วงเวลาออมแสงต้องแก้เอง</div>
+
+  <div class="card mapcard">
+    <div class="maptools">
+      <div class="grp" id="regions"></div>
+      <div class="spacer"></div>
+      <div class="grp" id="layers">
+        <label class="chip on" id="ckDetail" title="เส้นแบ่งรัฐ/จังหวัด ชื่อเขต และเมืองทั่วโลก (ไฟล์ในเครื่อง)">รัฐ/จังหวัด + เมือง</label>
+        <label class="chip" id="ckTiles" title="แผ่นภาพแผนที่จาก OpenStreetMap — ต้องต่อเน็ต และคำขอจะออกไปยังเซิร์ฟเวอร์ของ OSM">แผ่นภาพออนไลน์</label>
+      </div>
+      <div class="grp">
+        <select id="city" title="เลือกเมือง"></select>
+        <button class="iconbtn" id="zin" title="ซูมเข้า">+</button>
+        <button class="iconbtn" id="zout" title="ซูมออก">−</button>
+        <button class="iconbtn" id="zreset" title="ทั้งโลก">⟲</button>
+      </div>
+    </div>
+    <div id="mapwrap"><canvas id="map"></canvas><div id="tip"></div><div id="status"></div><div id="flashtip" hidden></div></div>
+    <div class="legend" id="legend"></div>
+    <div class="keys">เส้นทึบ = MC (กลางฟ้า) / AC (ขึ้น) · เส้นประ = IC (ใต้เท้า) / DC (ตก) · เส้นจุดบาง = จร · เส้นขีดบาง = โปรเกรส · ลากเพื่อเลื่อน · ล้อเมาส์เพื่อซูม · คลิกเพื่อเลือกจุด<br>
+    รัฐ/จังหวัด เมือง 7,342 แห่ง และชื่อเขต มาจาก <b>Natural Earth</b> (สาธารณสมบัติ · ไฟล์ในเครื่อง ใช้ออฟไลน์ได้) · แผ่นภาพออนไลน์เป็นของ <b>OpenStreetMap</b> (© OpenStreetMap contributors) เปิดเมื่อต้องการเท่านั้น — ต้องต่อเน็ตและคำขอออกนอกเครื่อง</div>
+  </div>
+
+  <div id="citybox" hidden>
+    <div class="tabs" id="tabs">
+      <button data-t="guide" class="on">อ่านตามลำดับ</button>
+      <button data-t="near">เส้นใกล้เมือง</button>
+      <button data-t="window">ช่วงเวลา</button>
+      <button data-t="paran">Paran</button>
+      <button data-t="relA">ย้ายเมือง A · ย้ายดวง</button>
+      <button data-t="relB">ย้ายเมือง B · LM/LA</button>
+    </div>
+    <div class="card panel" id="panel"></div>
+  </div>
+</div>
+
+<script src="./glyphs.js"></script>
+<script src="./engine.js"></script>
+<script src="./acg.js"></script>
+<script src="./reading.js"></script>
+<script src="./meanings.js"></script>
+<script src="./places.js"></script>
+<script src="./timing.js"></script>
+<script src="./api.js"></script>
+<script>
+const COLORS={SU:"#e6a100",MO:"#8796a3",ME:"#23a070",VE:"#e0428f",MA:"#d8352a",JU:"#6a4fd0",SA:"#6b5440",UR:"#1a9ad9",NE:"#2d63c8",PL:"#9b2a5a",MN:"#9aa0a6",
+  CU:"#c2185b",HA:"#5d4037",ZE:"#ef6c00",KR:"#1565c0",AP:"#2e7d32",AD:"#6d4c41",VU:"#b71c1c",PO:"#00838f"};
+const TNP=["CU","HA","ZE","KR","AP","AD","VU","PO"];
+const REGIONS=[["ทั้งโลก",0,0,1],["เอเชียตะวันออกเฉียงใต้",110,8,4.2],["เอเชีย",100,32,2.4],["ยุโรป",15,50,4],["อเมริกาเหนือ",-98,42,3],["อเมริกาใต้",-60,-18,3],["แอฟริกา",20,2,2.8],["ออสเตรเลีย",140,-26,4]];
+const $=s=>document.querySelector(s);
+// โหลดข้อมูลที่เอนจินต้องใช้ทั้งหมด (ครั้งเดียวต่อการเปิดหน้า · service worker แคชไว้ให้ใช้ออฟไลน์)
+const bootReady=(async()=>{
+  await AISTRO.loadEphem("./ephem.bin.gz");          // ลองจิจูดดาว + เวลาดาราคติ + มุมเอียงโลก (ของแอปยูเรเนียน)
+  await AISTRO.loadEphem("./beta.bin.gz");           // ละติจูดดาว + ราหูเฉลี่ย (ของแผนที่ดวง — tools/gen_beta.py)
+  await AISTRO.loadDict("./dict.json.gz");           // ภาพดาว 2 ปัจจัย
+  window.HOUSE_DICT=await (await fetch("./house_dict.json")).json(); AISTRO.initHouseDict(window.HOUSE_DICT);
+  await MEANINGS.load("./readings.json.gz","./names.json");   // คำอ่าน (ตัวเลือก) + ชื่อดาว (บังคับ)
+})();
+// ข้อความทุกชิ้นที่มาจากไฟล์ข้อมูล/เซิร์ฟเวอร์ ต้องผ่าน esc() ก่อนต่อเป็น HTML
+const esc=v=>String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let places={th:[],intl:[]}, chart=null, cityData=null, city=null, land=null, method="mundo", tab="guide", showParan=false, hover=null;
+let dynamic=null;                       // {date_on, layers:{transit:[],progressed:[]}} — ชั้นแยก ไม่ปนเส้นกำเนิด
+const dynKinds=()=>[...($("#ckTransit").checked?["transit"]:[]),...($("#ckProg").checked?["progressed"]:[])];
+const DYN_STYLE={transit:{dash:[2,4],w:1.2},progressed:{dash:[6,3],w:1.2}};
+const hidden=new Set(TNP);   // ดาวสมมติยูเรเนียนซ่อนไว้ก่อน กดปุ่มกลุ่มเพื่อแสดง
+const view={cx:0,cy:0,k:1};
+
+// ── สถานที่ ───────────────────────────────────────────────
+function fillSelect(sel,withCustom){
+  sel.innerHTML="";
+  const g1=document.createElement("optgroup");g1.label="ไทย";places.th.forEach((p,i)=>g1.append(new Option(p.name,"th:"+i)));
+  const g2=document.createElement("optgroup");g2.label="ต่างประเทศ";places.intl.forEach((p,i)=>g2.append(new Option(p.name,"intl:"+i)));
+  sel.append(g1,g2); if(withCustom) sel.append(new Option("— จุดที่คลิกบนแผนที่ —","custom"));
+}
+const placeOf=v=>{const [k,i]=v.split(":");return places[k][+i]};
+function setBirthPlace(){const p=placeOf($("#place").value);$("#lat").value=p.lat;$("#lon").value=p.lon;$("#tz").value=p.tz}
+
+// ── แผนที่ equirectangular + ซูม/เลื่อน ─────────────────────
+const cv=$("#map"), ctx=cv.getContext("2d"), wrap=$("#mapwrap");
+let W=0,H=0;
+function size(){const r=wrap.getBoundingClientRect();const d=devicePixelRatio||1;W=r.width;H=r.height;cv.width=W*d;cv.height=H*d;ctx.setTransform(d,0,0,d,0,0);clampView();draw()}
+const X=lon=>(lon-view.cx)*view.k*W/360+W/2, Y=lat=>(view.cy-lat)*view.k*H/180+H/2;
+const LON=x=>(x-W/2)*360/(view.k*W)+view.cx, LAT=y=>view.cy-(y-H/2)*180/(view.k*H);
+function clampView(){view.k=Math.min(60,Math.max(1,view.k));const hx=180/view.k,hy=90/view.k;view.cx=Math.min(180-hx,Math.max(-180+hx,view.cx));view.cy=Math.min(90-hy,Math.max(-90+hy,view.cy))}
+function zoomAt(px,py,f){const lo=LON(px),la=LAT(py);view.k*=f;clampView();view.cx+=lo-LON(px);view.cy+=la-LAT(py);clampView();draw()}
+function setRegion(i){const r=REGIONS[i];view.cx=r[1];view.cy=r[2];view.k=r[3];clampView();[...$("#regions").children].forEach((b,j)=>b.classList.toggle("on",j===i));draw()}
+
+function path(pts,lonFirst){ // pts: [[lat,lon]] (เส้นดาว) หรือ [[lon,lat]] (ขอบทวีป)
+  pts.forEach((p,i)=>{const x=X(lonFirst?p[0]:p[1]),y=Y(lonFirst?p[1]:p[0]);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});
+}
+function draw(){
+  if(!W) return;
+  const ocean=ctx.createLinearGradient(0,0,0,H);ocean.addColorStop(0,"#b7d3e4");ocean.addColorStop(.5,"#cfe3ee");ocean.addColorStop(1,"#b7d3e4");
+  ctx.fillStyle=ocean;ctx.fillRect(0,0,W,H);
+  drawTiles();          // ถ้าเปิดแผ่นภาพออนไลน์ ให้เป็นพื้นหลังแทนสีพื้น (เส้นดาว/ป้ายวาดทับด้านบน)
+  // กริด
+  const step=view.k>=5?10:view.k>=2.5?15:30;
+  ctx.strokeStyle="rgba(40,70,100,.16)";ctx.lineWidth=1;ctx.font="11px sans-serif";ctx.fillStyle="rgba(30,55,80,.6)";
+  for(let lo=-180;lo<=180;lo+=step){const x=X(lo);if(x<-1||x>W+1)continue;ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();if(lo>-180&&lo<180)ctx.fillText((lo>0?lo+"°E":lo<0?-lo+"°W":"0°"),x+3,H-6)}
+  for(let la=-90+step;la<90;la+=step){const y=Y(la);if(y<0||y>H)continue;ctx.strokeStyle=la===0?"rgba(40,70,100,.32)":"rgba(40,70,100,.16)";ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();ctx.fillText((la>0?la+"°N":la<0?-la+"°S":"0°"),4,y-3)}
+  drawGeo();
+  drawDetail();
+  const badgeState={top:[],bottom:[],mid:[]};
+  const flashLine=flash&&chart?chart.lines.find(l=>l.body===flash.body&&l.angle===flash.angle):null;
+  if(dynamic){                      // วาดก่อนเส้นกำเนิด เพื่อให้เส้นกำเนิดเด่นกว่า
+    for(const [kind,lines] of Object.entries(dynamic.layers)){
+      const st=DYN_STYLE[kind];
+      for(const l of lines){
+        if(hidden.has(l.body))continue;
+        ctx.setLineDash(st.dash);
+        for(const seg of l.segments){
+          ctx.strokeStyle="rgba(255,255,255,.7)";ctx.lineWidth=st.w+2;ctx.beginPath();path(seg,false);ctx.stroke();
+          ctx.strokeStyle=COLORS[l.body];ctx.lineWidth=st.w;ctx.beginPath();path(seg,false);ctx.stroke();
+        }
+      }
+    }
+    ctx.setLineDash([]);
+  }
+  if(chart){
+    if(showParan){ctx.lineWidth=1;for(const p of chart.parans){if(hidden.has(p.a)||hidden.has(p.b))continue;const y=Y(p.lat);ctx.strokeStyle="rgba(110,70,160,.22)";ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}}
+    for(const l of chart.lines){
+      if(hidden.has(l.body))continue;
+      const isHover=hover&&hover.line===l, dash=l.angle==="IC"||l.angle==="DC"?[7,5]:[];
+      for(const s of l.segments){
+        ctx.setLineDash(dash);
+        ctx.strokeStyle="rgba(255,255,255,.75)";ctx.lineWidth=(isHover?5:3.4);ctx.beginPath();path(s,false);ctx.stroke();
+        ctx.strokeStyle=COLORS[l.body];ctx.lineWidth=isHover?3.2:(l.body==="MN"?1.2:l.group==="uranian"?1.4:1.8);ctx.beginPath();path(s,false);ctx.stroke();
+      }
+    }
+    ctx.setLineDash([]);
+    if(flashLine){        // เส้นที่ผู้ใช้กดจากคำแนะนำ — เรืองแสงเต้นเป็นจังหวะ ~1.4 ครั้ง/วินาที จนครบ 7 วินาที
+      const t=performance.now()/1000, pulse=(Math.sin(t*9)+1)/2;            // 0..1
+      ctx.setLineDash(flashLine.angle==="IC"||flashLine.angle==="DC"?[7,5]:[]);
+      for(const seg of flashLine.segments){
+        ctx.strokeStyle=`rgba(255,255,255,${.35+.5*pulse})`;ctx.lineWidth=9+7*pulse;
+        ctx.beginPath();path(seg,false);ctx.stroke();
+        ctx.strokeStyle=COLORS[flashLine.body];ctx.lineWidth=2.5+2.5*pulse;
+        ctx.beginPath();path(seg,false);ctx.stroke();
+      }
+      ctx.setLineDash([]);
+    }
+    // ป้ายสัญลักษณ์ดาว: MC ขอบบน · IC ขอบล่าง · AC/DC ที่ละติจูดกลางจอ — ป้ายที่ชนกันเลื่อนลงแถวถัดไป
+    // ป้าย: สัญลักษณ์ดาวตัวใหญ่ + อักษรมุม (MC/IC/AC/DC) ตัวเล็กห้อยท้าย · dashed = ชั้นจร/โปรเกรส
+    // ดาวสมมติยูเรเนียน: วาดจากเส้นขอบจริงของฟอนต์ (ไฟล์เดียวกับแอป)
+    // ต้องจัดกลางจาก bbox จริงของแต่ละตัว เพราะพิกัดในไฟล์ไม่ได้อยู่กลางกรอบ 0..1 (บางตัว y ถึง 1.16)
+    const uranPath=(code,x,y,size)=>{
+      const g=(globalThis.URAN_GLYPHS||{})[code]; if(!g||!g.length) return false;
+      let bb=uranPath.bb=uranPath.bb||{};
+      if(!bb[code]){ let x0=9,y0=9,x1=-9,y1=-9;
+        for(const c of g) for(let i=1;i<c.length;i+=2){const px=c[i],py=c[i+1];
+          if(px<x0)x0=px; if(px>x1)x1=px; if(py<y0)y0=py; if(py>y1)y1=py;}
+        bb[code]={x0,y0,w:x1-x0,h:y1-y0}; }
+      const b=bb[code], sc=size/Math.max(b.w,b.h);
+      ctx.save();ctx.translate(x-(b.x0+b.w/2)*sc, y-(b.y0+b.h/2)*sc);ctx.scale(sc,sc);ctx.beginPath();
+      for(const c of g){ if(c[0]==="M")ctx.moveTo(c[1],c[2]); else if(c[0]==="L")ctx.lineTo(c[1],c[2]);
+        else if(c[0]==="Q")ctx.quadraticCurveTo(c[1],c[2],c[3],c[4]);
+        else if(c[0]==="C")ctx.bezierCurveTo(c[1],c[2],c[3],c[4],c[5],c[6]); else if(c[0]==="Z")ctx.closePath(); }
+      ctx.fill();ctx.restore();return true;
+    };
+    window.__badge=(x,y,l,dash)=>{
+      const big=15, small=9, uran=l.group==="uranian";
+      ctx.font=`bold ${small}px sans-serif`; const aw=ctx.measureText(l.angle).width;
+      ctx.font=`bold ${big}px sans-serif`;   const gw=uran?big*0.9:ctx.measureText(l.glyph).width;
+      const bw=gw+aw+11, bh=21;
+      ctx.fillStyle=dash?"rgba(255,255,255,.82)":"#fff";ctx.strokeStyle=COLORS[l.body];ctx.lineWidth=dash?1:1.5;
+      ctx.setLineDash(dash?[3,2]:[]);
+      ctx.beginPath();ctx.roundRect?ctx.roundRect(x-bw/2,y-bh/2,bw,bh,10):ctx.rect(x-bw/2,y-bh/2,bw,bh);ctx.fill();ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle=COLORS[l.body];ctx.textAlign="left";ctx.textBaseline="middle";
+      const gx=x-bw/2+5;
+      // ถ้าไม่มีเส้นขอบ (เช่นไฟล์ glyphs.js โหลดไม่ได้) ต้องถอยไปใช้ตัวอักษร ไม่ปล่อยป้ายว่าง
+      if(!uran || !uranPath(l.body,gx+gw/2,y,big*1.05)){ctx.font=`bold ${big}px sans-serif`;ctx.fillText(l.glyph,gx,y+1)}
+      ctx.font=`bold ${small}px sans-serif`;ctx.fillText(l.angle,gx+gw+3,y+4);
+      ctx.textBaseline="alphabetic";ctx.textAlign="left";
+    };
+    const badge=window.__badge;
+    const placed=badgeState;
+    const put=(key,x,y0,dir)=>{let row=0;while(placed[key].some(p=>p.row===row&&Math.abs(p.x-x)<42))row++;placed[key].push({x,row});return y0+dir*row*23};
+    const items=[];
+    for(const l of chart.lines){
+      if(hidden.has(l.body))continue;
+      if(l.angle==="MC"||l.angle==="IC"){const x=X(l.segments[0][0][1]);if(x>=10&&x<=W-10)items.push({l,x,key:l.angle==="MC"?"top":"bottom"});continue}
+      let best=null;                      // จุดบนเส้นที่ละติจูดใกล้กลางจอที่สุด และอยู่ในจอ
+      for(const s of l.segments)for(const [la,lo] of s){const x=X(lo),y=Y(la);if(x<20||x>W-20||y<40||y>H-40)continue;const d=Math.abs(la-view.cy);if(!best||d<best.d)best={d,x,y}}
+      if(best)items.push({l,x:best.x,y:best.y,key:"mid"});
+    }
+    items.sort((a,b)=>a.x-b.x);
+    for(const it of items){
+      if(it.key==="top")badge(it.x,put("top",it.x,16,1),it.l);
+      else if(it.key==="bottom")badge(it.x,put("bottom",it.x,H-26,-1),it.l);
+      else{const row=placed.mid.filter(p=>Math.abs(p.x-it.x)<40&&Math.abs(p.y-it.y)<22).length;placed.mid.push({x:it.x,y:it.y,row:0});badge(it.x+22,it.y+row*22,it.l)}
+    }
+  }
+  // ป้ายชั้นจร/โปรเกรส — สัญลักษณ์เดียวกัน กรอบประ เพื่อไม่ให้สับสนกับเส้นกำเนิด
+  if(dynamic&&typeof drawDynBadges==="function") drawDynBadges(badgeState);
+  // จุดเกิด + เมืองที่เลือก
+  const bl=+$("#lat").value,bo=+$("#lon").value;
+  if(chart&&!isNaN(bl)){ctx.fillStyle="#fff";ctx.strokeStyle="#24527f";ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(X(bo),Y(bl),5,0,7);ctx.fill();ctx.stroke()}
+  if(city){const x=X(city.lon),y=Y(city.lat);
+    ctx.fillStyle="#d8352a";ctx.strokeStyle="#fff";ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,6.5,0,7);ctx.fill();ctx.stroke();
+    ctx.font="bold 13px sans-serif";const t=city.name;const tw=ctx.measureText(t).width;
+    ctx.fillStyle="rgba(255,255,255,.9)";ctx.fillRect(x+10,y-20,tw+10,19);ctx.fillStyle="#1d2127";ctx.fillText(t,x+15,y-6)}
+  $("#status").textContent=`ซูม ${view.k.toFixed(1)}× · กลาง ${view.cy.toFixed(0)}°, ${view.cx.toFixed(0)}°`;
+}
+// ── แผนที่โลกหลายระดับรายละเอียด (Natural Earth ผ่าน world-atlas 2.0.2 · ไฟล์ในเครื่อง ออฟไลน์) ─────────
+// ซูม <2.5 ใช้ 1:110 ล้าน · <7 ใช้ 1:50 ล้าน · ≥7 ใช้ 1:10 ล้าน (โหลดเมื่อซูมถึงครั้งแรก)
+// ถอด TopoJSON ในเบราว์เซอร์ → Path2D หน่วยองศา (x=ลองจิจูด, y=−ละติจูด) แล้ววาดด้วย setTransform จึงไม่ต้องคำนวณพิกัดทุกเฟรม
+// arc ที่ใช้ 2 ประเทศ = พรมแดน · ใช้ประเทศเดียว = ชายฝั่ง
+const GEO_LEVELS=[{name:"110m",maxK:2.5},{name:"50m",maxK:7},{name:"10m",maxK:Infinity}];
+const geo={}; let geoLoading={};
+function decodeTopo(t){
+  const [sx,sy]=t.transform.scale,[tx,ty]=t.transform.translate;
+  const arcs=t.arcs.map(a=>{let x=0,y=0;return a.map(([dx,dy])=>{x+=dx;y+=dy;return [x*sx+tx,y*sy+ty]})});
+  const use=new Array(arcs.length).fill(0), countries=[];
+  const idx=i=>i<0?~i:i;
+  for(const g of t.objects.countries.geometries){
+    const polys=g.type==="Polygon"?[g.arcs]:g.type==="MultiPolygon"?g.arcs:[];
+    const p=new Path2D(); let x0=180,x1=-180,y0=90,y1=-90,area=0,label=null;
+    for(const poly of polys)for(const [ri,ring] of poly.entries()){
+      const pts=[];for(const i of ring){const a=i<0?arcs[~i].slice().reverse():arcs[i];pts.push(...(pts.length?a.slice(1):a));use[idx(i)]++}
+      let ra=0,bx0=180,bx1=-180,by0=90,by1=-90;
+      pts.forEach(([x,y],j)=>{j?p.lineTo(x,-y):p.moveTo(x,-y);if(x<bx0)bx0=x;if(x>bx1)bx1=x;if(y<by0)by0=y;if(y>by1)by1=y;const q=pts[(j+1)%pts.length];ra+=x*q[1]-q[0]*y});
+      p.closePath();x0=Math.min(x0,bx0);x1=Math.max(x1,bx1);y0=Math.min(y0,by0);y1=Math.max(y1,by1);
+      if(ri===0&&Math.abs(ra)>area){area=Math.abs(ra);label={lon:(bx0+bx1)/2,lat:(by0+by1)/2,w:bx1-bx0}}
+    }
+    countries.push({name:(g.properties||{}).name||"",path:p,bbox:[x0,y0,x1,y1],label});
+  }
+  const coast=new Path2D(), border=new Path2D();
+  arcs.forEach((a,i)=>{const P=use[i]>1?border:coast;a.forEach(([x,y],j)=>j?P.lineTo(x,-y):P.moveTo(x,-y))});
+  return {countries,coast,border};
+}
+// ── ชั้นรายละเอียด: รัฐ/จังหวัด · ชื่อเขต · เมืองทั่วโลก (Natural Earth · ไฟล์ในเครื่อง ออฟไลน์) ─────
+// ไฟล์สร้างด้วย tools/build_geo.py — พิกัดเก็บเป็นจำนวนเต็มเดลตาหน่วย 1/scale องศา ถอดด้วย decodeRings
+// (สเปกเดียวกับ decode_ring ใน build_geo.py · เทสต์ tests/test_geo_build.py ตรวจว่าถอดแล้วตรงไฟล์ดิบ)
+const detail={states:{},cities:null,adm1:null}; const detailLoading={};
+const labelBoxes=[];      // กล่องป้ายที่วางแล้วในเฟรมนี้ (ประเทศ → เขต → เมืองทั่วไป → เมืองของแอป)
+const THAI_RE=/[\u0E00-\u0E7F]/;
+// ชื่อเขตที่จะแสดง: ถ้าข้อมูลต้นทางมีชื่อท้องถิ่นเป็นอักษรไทย ใช้ชื่อไทย (ตัดคำว่า "จังหวัด" ออกให้สั้น)
+// ที่ไม่ใช่อักษรไทย (ญี่ปุ่น รัสเซีย ฯลฯ) ใช้ชื่ออังกฤษเหมือนเดิม เพราะผู้ใช้อ่านไม่ออกเท่าอังกฤษ
+function adm1Name(a){
+  return (a.nl&&THAI_RE.test(a.nl)) ? a.nl.replace(/^จังหวัด\s*/,"") : a.n;
+}
+// เมืองในรายการของแอปมีชื่อไทยอยู่แล้ว (เช่น "สุรินทร์") — ถ้า Natural Earth มีเมืองเดียวกัน (ชื่ออังกฤษ)
+// ให้ข้ามของ Natural Earth ไม่งั้นจะเห็นชื่อซ้ำสองภาษาซ้อนกัน · 0.12° ≈ 13 กม.
+function nearAppPlace(lon,lat){
+  for(const p of [...places.th,...places.intl])
+    if(Math.abs(p.lat-lat)<0.12&&Math.abs(p.lon-lon)<0.12) return true;
+  return false;
+}
+let showDetail=true, showTiles=false;
+const STATE_LEVELS=[{name:"50m",maxK:7},{name:"10m",maxK:Infinity}];
+function decodeRings(data){
+  const sc=data.scale, out=[];
+  for(const f of data.states){
+    const p=new Path2D(); let x0=180,x1=-180,y0=90,y1=-90;
+    for(const enc of f.r){
+      let x=0,y=0;
+      for(let i=0;i<enc.length;i+=2){
+        x+=enc[i];y+=enc[i+1];const lon=x/sc,lat=y/sc;
+        i?p.lineTo(lon,-lat):p.moveTo(lon,-lat);
+        if(lon<x0)x0=lon;if(lon>x1)x1=lon;if(lat<y0)y0=lat;if(lat>y1)y1=lat;
+      }
+      p.closePath();
+    }
+    out.push({name:f.n,admin:f.a0,path:p,bbox:[x0,y0,x1,y1]});
+  }
+  return out;
+}
+async function loadDetail(kind,name){
+  const key=kind+(name||""); if(detailLoading[key])return; detailLoading[key]=true;
+  try{
+    const url=kind==="states"?`./geo/states-${name}.json`:kind==="cities"?"./geo/cities.json":"./geo/admin1-labels.json";
+    const j=await (await fetch(url)).json();
+    if(kind==="states")detail.states[name]=decodeRings(j);
+    else if(kind==="cities")detail.cities=j.cities; else detail.adm1=j.labels;
+    draw();
+  }catch(e){console.warn("โหลดชั้นรายละเอียดไม่ได้",key,e);delete detailLoading[key]}   // ปลดธงให้ draw() รอบหน้าลองโหลดใหม่
+}
+function stateSet(){
+  const want=STATE_LEVELS.find(l=>view.k<l.maxK).name;
+  if(!detail.states[want])loadDetail("states",want);
+  for(const n of [want,"50m","10m"])if(detail.states[n])return detail.states[n];
+  return null;
+}
+// วาดเส้นแบ่งรัฐ/จังหวัด (ซูม ≥2.2) · ชื่อเขต (ซูม ≥6) · เมืองทั่วโลก (ซูม ≥3 ตามอันดับความสำคัญ)
+// เมืองในรายการของแอป (กดเลือกได้) — วาดหลังชั้นรายละเอียด และเด่นกว่าเมืองทั่วไป
+function drawAppPlaces(){
+  if(view.k<4) return;
+  ctx.font="600 11px sans-serif";ctx.textAlign="left";
+  for(const p of [...places.th,...places.intl]){
+    const x=X(p.lon),y=Y(p.lat);if(x<0||x>W||y<0||y>H)continue;
+    ctx.fillStyle="#5b5446";ctx.beginPath();ctx.arc(x,y,2.6,0,7);ctx.fill();
+    if(view.k<6&&places.intl.indexOf(p)<0&&p.name!=="กรุงเทพมหานคร")continue;
+    const n=p.name.replace(/ \(.*\)$/,""),tw=ctx.measureText(n).width,b=[x+4,y-9,x+6+tw,y+3];
+    if(labelBoxes.some(o=>b[0]<o[2]&&b[2]>o[0]&&b[1]<o[3]&&b[3]>o[1]))continue;labelBoxes.push(b);
+    ctx.fillStyle="rgba(255,255,255,.8)";ctx.fillRect(b[0],b[1],b[2]-b[0],b[3]-b[1]);
+    ctx.fillStyle="#2f2a20";ctx.fillText(n,x+5,y+1);
+  }
+}
+function drawDetail(){
+  if(!showDetail){drawAppPlaces();return}
+  const d=devicePixelRatio||1, sx=view.k*W/360, sy=view.k*H/180;
+  if(view.k>=2.2){
+    const st=stateSet();
+    if(st){
+      const vx0=LON(0),vx1=LON(W),vy0=LAT(H),vy1=LAT(0);
+      ctx.save();
+      ctx.setTransform(d*sx,0,0,d*sy,d*(W/2-view.cx*sx),d*(H/2+view.cy*sy));
+      ctx.strokeStyle="rgba(150,130,100,.45)";ctx.lineWidth=.5/sx;ctx.lineJoin="round";
+      for(const f of st){const b=f.bbox;if(b[2]<vx0||b[0]>vx1||b[3]<vy0||b[1]>vy1)continue;ctx.stroke(f.path)}
+      ctx.restore();
+    }
+  }
+  if(view.k>=6){
+    if(!detail.adm1)loadDetail("adm1");
+    else{
+      const maxZ=view.k>=16?9:view.k>=10?7:5;
+      ctx.textAlign="center";
+      for(const a of detail.adm1){
+        if(a.z>maxZ)continue;
+        const x=X(a.lon),y=Y(a.lat);if(x<30||x>W-30||y<16||y>H-16)continue;
+        const nm=adm1Name(a), thai=THAI_RE.test(nm);
+        const txt=thai?nm:nm.toUpperCase();                       // อักษรไทยไม่มีตัวพิมพ์ใหญ่ ทำ uppercase แล้วสระลอย
+        ctx.font=thai?"600 12px sans-serif":"600 10.5px sans-serif";   // อักษรไทยมีสระบน-ล่าง ต้องใหญ่กว่าจึงอ่านออก
+        const tw=ctx.measureText(txt).width,b=[x-tw/2-3,y-9,x+tw/2+3,y+4];
+        if(labelBoxes.some(o=>b[0]<o[2]&&b[2]>o[0]&&b[1]<o[3]&&b[3]>o[1]))continue;labelBoxes.push(b);
+        ctx.fillStyle="rgba(120,100,70,.62)";ctx.fillText(txt,x,y);
+      }
+      ctx.textAlign="left";
+    }
+  }
+  if(view.k>=3){
+    if(!detail.cities)loadDetail("cities");
+    else{
+      // ยิ่งซูมยิ่งปล่อยเมืองอันดับรองลงมา: z ของ Natural Earth 0 = เมืองสำคัญสุด
+      const maxZ=view.k>=24?10:view.k>=12?8:view.k>=6?6:view.k>=4?4:2;
+      const boxes=[];ctx.font="11px sans-serif";ctx.textAlign="left";
+      for(const c of detail.cities){
+        if(c.z>maxZ)continue;
+        const x=X(c.lon),y=Y(c.lat);if(x<0||x>W||y<0||y>H)continue;
+        if(view.k>=4&&nearAppPlace(c.lon,c.lat))continue;         // เมืองเดียวกันกับรายการของแอป → ใช้ชื่อไทยแทน
+        const cn=(c.nl&&THAI_RE.test(c.nl))?c.nl:c.n;            // ชื่อไทยถ้ามี (เมืองไทยที่ไม่อยู่ในรายการ 77 จังหวัด)
+        ctx.font=THAI_RE.test(cn)?"12px sans-serif":"11px sans-serif";
+        const tw=ctx.measureText(cn).width,b=[x+3,y-8,x+7+tw,y+4];
+        if(labelBoxes.some(o=>b[0]<o[2]&&b[2]>o[0]&&b[1]<o[3]&&b[3]>o[1]))continue;labelBoxes.push(b);
+        ctx.fillStyle="rgba(70,62,50,.75)";ctx.beginPath();ctx.arc(x,y,1.6,0,7);ctx.fill();
+        ctx.fillStyle="rgba(60,54,44,.82)";ctx.fillText(cn,x+5,y+2);
+      }
+    }
+  }
+  drawAppPlaces();
+}
+
+// ── แผ่นภาพออนไลน์ (CARTO light_all = ข้อมูล OpenStreetMap) — ปิดไว้ก่อน ต้องกดเปิดเอง ─────
+// แผนที่ของเราเป็น equirectangular (ละติจูดเชิงเส้น) แต่แผ่นภาพเป็น Web Mercator จึงยืดไม่ตรงกัน
+// แก้ด้วยการหั่นแต่ละแผ่นเป็น 16 แถบแนวนอน แล้ววาดทีละแถบตามละติจูดจริงของแถบนั้น (คลาดน้อยกว่า 1 พิกเซล)
+// ใช้แผ่นภาพมาตรฐานของ OpenStreetMap: ไม่ต้องใช้คีย์ · ใช้ได้ตามนโยบายเมื่อเป็นการใช้งานส่วนตัวปริมาณน้อย
+// (เคยลอง CARTO light_all ก่อน แต่ตอนนี้เขาใส่ลายน้ำ "API KEY REQUIRED" ทับทุกแผ่น — เห็นจากภาพจริง)
+const TILE_URL=(z,x,y)=>`https://tile.openstreetmap.org/${z}/${x}/${y}.png`;
+const TILE_MAX_LAT=85.0511287798066, TILE_STRIPS=16;
+const tiles=new Map(); let tilePending=0;
+const merc=lat=>{const p=Math.max(-TILE_MAX_LAT,Math.min(TILE_MAX_LAT,lat))*Math.PI/180;
+  return (1-Math.log(Math.tan(p)+1/Math.cos(p))/Math.PI)/2};
+// ผกผันของ merc: แกม (Gudermannian) ต้องลบ π/2 ด้วย — ลืมไปตอนแรกแล้วทุกแถบได้ละติจูด 90° ภาพจึงไม่ขึ้นเลย
+const mercInv=t=>180/Math.PI*(2*Math.atan(Math.exp((1-2*t)*Math.PI))-Math.PI/2);
+function tileImg(z,x,y){
+  const k=`${z}/${x}/${y}`; let e=tiles.get(k);
+  if(!e){ e={img:new Image(),ok:false}; e.img.crossOrigin="anonymous";
+    e.img.onload=()=>{e.ok=true;if(--tilePending<=0)draw()};
+    e.img.onerror=()=>{e.bad=true;if(--tilePending<=0)draw()};
+    tilePending++; e.img.src=TILE_URL(z,x,y); tiles.set(k,e);
+    if(tiles.size>600){const it=tiles.keys();for(let i=0;i<200;i++)tiles.delete(it.next().value)}
+  }
+  return e;
+}
+function drawTiles(){
+  if(!showTiles) return;
+  const z=Math.max(0,Math.min(9,Math.round(Math.log2(view.k*W/256))));
+  const n=2**z, lon0=LON(0), lon1=LON(W);
+  const x0=Math.max(0,Math.floor((lon0+180)/360*n)), x1=Math.min(n-1,Math.ceil((lon1+180)/360*n));
+  const y0=Math.max(0,Math.floor(merc(LAT(0))*n)), y1=Math.min(n-1,Math.ceil(merc(LAT(H))*n));
+  ctx.imageSmoothingQuality="high";
+  for(let tx=x0;tx<=x1;tx++)for(let ty=y0;ty<=y1;ty++){
+    const e=tileImg(z,tx,ty); if(!e.ok) continue;
+    const dx=X(tx/n*360-180), dw=X((tx+1)/n*360-180)-dx;
+    for(let s=0;s<TILE_STRIPS;s++){
+      const ta=(ty+s/TILE_STRIPS)/n, tb=(ty+(s+1)/TILE_STRIPS)/n;
+      const ya=Y(mercInv(ta)), yb=Y(mercInv(tb));
+      if(yb<0||ya>H) continue;
+      const sh=e.img.height/TILE_STRIPS;
+      ctx.drawImage(e.img,0,s*sh,e.img.width,sh,dx,ya,dw,Math.max(.5,yb-ya));
+    }
+  }
+  ctx.font="10px sans-serif";ctx.textAlign="right";
+  const t="© OpenStreetMap contributors";
+  const tw=ctx.measureText(t).width;
+  ctx.fillStyle="rgba(255,255,255,.75)";ctx.fillRect(W-tw-10,H-16,tw+8,14);
+  ctx.fillStyle="rgba(40,40,40,.85)";ctx.fillText(t,W-6,H-5);ctx.textAlign="left";
+}
+async function loadGeo(name){
+  if(geo[name]||geoLoading[name])return;geoLoading[name]=true;
+  try{geo[name]=decodeTopo(await (await fetch(`./geo/countries-${name}.json`)).json());draw()}
+  catch(e){console.warn("โหลดแผนที่ไม่ได้",name,e);delete geoLoading[name]}
+}
+function geoLevel(){
+  const want=GEO_LEVELS.find(l=>view.k<l.maxK).name;
+  if(!geo[want])loadGeo(want);
+  for(const n of [want,"50m","110m","10m"])if(geo[n])return geo[n];   // ระหว่างโหลดใช้ระดับที่มีอยู่ก่อน
+  return null;
+}
+// ป้ายของชั้นจร/โปรเกรส (เรียกจาก draw หลังวาดป้ายเส้นกำเนิดแล้ว)
+function dynBadge(x,y,l,kind){ if(window.__badge) window.__badge(x,y,l,true) }
+function drawDynBadges(placed){
+  const put=(key,x,y0,dir)=>{let row=0;while(placed[key].some(p=>p.row===row&&Math.abs(p.x-x)<42))row++;
+    placed[key].push({x,row});return y0+dir*row*23};
+  for(const [kind,lines] of Object.entries(dynamic.layers)){
+    for(const l of lines){
+      if(hidden.has(l.body))continue;
+      if(l.angle==="MC"||l.angle==="IC"){
+        const x=X(l.segments[0][0][1]); if(x<10||x>W-10)continue;
+        dynBadge(x,put(l.angle==="MC"?"top":"bottom",x,l.angle==="MC"?16:H-26,l.angle==="MC"?1:-1),l,kind);
+      }else{
+        let best=null;
+        for(const s of l.segments)for(const [la,lo] of s){const x=X(lo),y=Y(la);
+          if(x<20||x>W-20||y<40||y>H-40)continue;const d=Math.abs(la-view.cy);if(!best||d<best.d)best={d,x,y}}
+        if(best){const row=placed.mid.filter(p=>Math.abs(p.x-best.x)<40&&Math.abs(p.y-best.y)<22).length;
+          placed.mid.push({x:best.x,y:best.y,row:0});dynBadge(best.x+22,best.y+row*22,l,kind)}
+      }
+    }
+  }
+}
+function drawGeo(){
+  const g=geoLevel(); if(!g) return;
+  const d=devicePixelRatio||1, sx=view.k*W/360, sy=view.k*H/180;
+  const vx0=LON(0),vx1=LON(W),vy0=LAT(H),vy1=LAT(0);
+  const vis=g.countries.filter(c=>c.bbox[2]>=vx0&&c.bbox[0]<=vx1&&c.bbox[3]>=vy0&&c.bbox[1]<=vy1);
+  ctx.save();
+  ctx.setTransform(d*sx,0,0,d*sy,d*(W/2-view.cx*sx),d*(H/2+view.cy*sy));   // Y(lat) = (cy−lat)·sy + H/2 และ path เก็บ y = −lat
+  if(!showTiles){                       // เปิดแผ่นภาพออนไลน์แล้วไม่ถมสีทับ ไม่งั้นบังภาพถนน/เมือง
+    ctx.shadowColor="rgba(40,60,80,.28)";ctx.shadowBlur=6*d;ctx.fillStyle="#f5f0e4";
+    for(const c of vis)ctx.fill(c.path,"evenodd");
+    ctx.shadowColor="transparent";
+  }
+  ctx.lineJoin="round";
+  if(view.k>=1.6){ctx.strokeStyle="rgba(150,120,90,.55)";ctx.lineWidth=(view.k>=5?.9:.6)/sx;ctx.setLineDash([3/sx,2/sx]);ctx.stroke(g.border);ctx.setLineDash([])}
+  ctx.strokeStyle="#8f8468";ctx.lineWidth=(view.k>=5?1:.7)/sx;ctx.stroke(g.coast);
+  ctx.restore();
+  // ชื่อประเทศ (ซูม ≥2.5) — แสดงเมื่อประเทศกว้างพอบนจอ ป้ายไม่ทับกัน
+  // labelBoxes ใช้ร่วมกับชื่อเขตและชื่อเมืองใน drawDetail() ที่วาดต่อจากนี้ ป้ายสามชั้นจึงไม่ทับกัน
+  labelBoxes.length=0;
+  if(view.k>=2.5){
+    ctx.font="600 11px sans-serif";ctx.textAlign="center";const boxes=labelBoxes;
+    for(const c of vis.slice().sort((a,b)=>(b.label?b.label.w:0)-(a.label?a.label.w:0))){
+      if(!c.label||!c.name||c.label.w*sx<40)continue;
+      const x=X(c.label.lon),y=Y(c.label.lat);if(x<30||x>W-30||y<20||y>H-20)continue;
+      const tw=ctx.measureText(c.name).width,b=[x-tw/2-2,y-10,x+tw/2+2,y+4];
+      if(boxes.some(o=>b[0]<o[2]&&b[2]>o[0]&&b[1]<o[3]&&b[3]>o[1]))continue;boxes.push(b);
+      ctx.fillStyle="rgba(95,80,60,.62)";ctx.fillText(c.name.toUpperCase(),x,y);
+    }
+    ctx.textAlign="left";
+  }
+}
+async function loadLand(){loadGeo("110m")}
+
+// ── เส้นที่ใกล้เคอร์เซอร์ (หน่วยพิกเซลบนจอ) ────────────────────
+function nearestLine(px,py){
+  if(!chart) return null; let best=null;
+  for(const l of chart.lines){ if(hidden.has(l.body))continue;
+    for(const s of l.segments){ for(let i=1;i<s.length;i++){
+      const ax=X(s[i-1][1]),ay=Y(s[i-1][0]),bx=X(s[i][1]),by=Y(s[i][0]);
+      const dx=bx-ax,dy=by-ay,L2=dx*dx+dy*dy; let t=L2?((px-ax)*dx+(py-ay)*dy)/L2:0; t=Math.max(0,Math.min(1,t));
+      const d=Math.hypot(px-(ax+t*dx),py-(ay+t*dy)); if(!best||d<best.d) best={d,line:l};
+    }}}
+  return best&&best.d<=9?best:null;
+}
+
+// ── API ─────────────────────────────────────────────────
+const birth=()=>({date:$("#date").value,time:$("#time").value,tz:+$("#tz").value,lat:+$("#lat").value,lon:+$("#lon").value,method,orb_km:+$("#orb").value});
+// เวอร์ชันมือถือ: ไม่มีเซิร์ฟเวอร์ — "post" คือเรียก API.call ในเบราว์เซอร์ (api.js ให้ JSON โครงเดียวกับ Flask ทุกฟิลด์)
+// คืน Promise เหมือน fetch เพื่อให้โค้ดหน้าเว็บที่ยกมาจาก PC ใช้ต่อได้โดยไม่แก้
+async function post(url,body){await bootReady;return API.call(url,JSON.parse(JSON.stringify(body)))}
+async function drawChart(){
+  $("#formcard").classList.add("loading"); invalidatePanels();
+  try{chart=await post("/api/chart",birth());buildLegend();draw();await loadDynamic();if(city)await loadCity();await refreshTab()}   // เส้นจรขึ้นกับดวงเกิด/วิธี ต้องโหลดใหม่ด้วย (ChatGPT รอบ 7)
+  catch(e){alert("คำนวณไม่สำเร็จ: "+e.message)}finally{$("#formcard").classList.remove("loading")}
+}
+let dynSeq=0;
+async function loadDynamic(){
+  const kinds=dynKinds(), my=++dynSeq;                 // คำตอบเก่าที่มาช้าห้ามทับของใหม่ (เปลี่ยนวันที่รัว ๆ)
+  if(!kinds.length||!$("#dynDate").value){dynamic=null;draw();return}
+  try{const d=await post("/api/dynamic",{...birth(),date_on:$("#dynDate").value,kinds});if(my!==dynSeq)return;dynamic=d}
+  catch(e){if(my!==dynSeq)return;dynamic=null;alert("คำนวณเส้นจร/โปรเกรสไม่สำเร็จ: "+e.message)}
+  draw();
+}
+let readingData=null;
+let goal=null;                       // เป้าหมายของข้อ 2 (null = ยังไม่เลือก)
+// loadReading/loadWindow "คืน" ข้อมูล ไม่เขียนตัวแปรเอง — refreshTab เป็นคนเขียนเมื่อแน่ใจว่าเป็นคำขอล่าสุด
+function loadReading(){
+  const pl=$("#place").selectedOptions[0];
+  return post("/api/reading",{...birth(),birth_place:pl?pl.textContent:"",goal,city,
+    date_from:$("#dynDate").value,date_to:$("#dynDate2").value||$("#dynDate").value,kinds:dynKinds()});
+}
+let windowData=null;
+async function loadWindow(){
+  if(!city||!chart) return null;
+  const kinds=dynKinds();
+  return post("/api/window",{...birth(),city,date_from:$("#dynDate").value,
+    date_to:$("#dynDate2").value||$("#dynDate").value,kinds});
+}
+// ── ข้อมูลของแท็บ "อ่านตามลำดับ"/"ช่วงเวลา" ขึ้นกับอินพุตทุกช่อง จึงต้องโหลดใหม่ทุกครั้งที่อินพุตเปลี่ยน ──
+// บั๊กที่เจอ 18 ก.ย. 2026 (จากหน้าเว็บจริง): เปลี่ยนวันเกิดแล้วกด "วาดแผนที่" · เปลี่ยนระยะ · เปลี่ยนวันที่จร
+// → แผนที่เปลี่ยน แต่แท็บอ่านตามลำดับยังโชว์ดวงเก่า/ระยะเก่า/ช่วงเก่า เพราะโหลดแค่ cityData แล้ว renderPanel
+// เอา readingData ที่ค้างมาวาดต่อ · ทางแก้: ทุกจุดที่อินพุตเปลี่ยนเรียก invalidatePanels()+refreshTab()
+// panelSeq/citySeq: คำตอบที่มาช้ากว่าคำขอล่าสุดถูกทิ้ง ไม่งั้นเปลี่ยนเมืองรัว ๆ แล้วเมืองเก่าทับเมืองใหม่ได้
+let panelSeq=0, citySeq=0;
+function invalidatePanels(){readingData=null;windowData=null}
+async function refreshTab(){
+  const my=++panelSeq;
+  if(tab==="guide"||tab==="window"){
+    $("#panel").classList.add("loading");
+    try{const r=await (tab==="guide"?loadReading():loadWindow()); if(my!==panelSeq) return;
+        if(tab==="guide") readingData=r; else windowData=r}
+    catch(err){if(my!==panelSeq) return; if(tab==="guide") readingData={error:err.message}; else windowData={error:err.message}}
+    finally{if(my===panelSeq) $("#panel").classList.remove("loading")}
+  }
+  renderPanel();
+}
+async function loadCity(){
+  if(!city||!chart) return; $("#citybox").hidden=false; $("#panel").classList.add("loading");
+  const my=++citySeq;
+  try{const d=await post("/api/city",{...birth(),city,date_on:$("#dynDate").value,kinds:dynKinds()});
+      if(my!==citySeq) return; cityData=d; renderPanel()}
+  catch(e){ if(my!==citySeq) return;
+    cityData=null;      // เดิมไม่ดัก error → แผงยังโชว์ข้อมูลเมืองก่อนหน้าโดยผู้ใช้ไม่รู้ว่าคนละเมือง
+    if(tab==="guide") return;   // แท็บอ่านตามลำดับไม่ได้ใช้ cityData — refreshTab จะรายงานผลของมันเอง
+    $("#panel").innerHTML=`<div class="cityhead"><h2>${esc(city.name)}</h2></div>`+
+      `<div class="src">อ่านข้อมูลเมืองนี้ไม่ได้: ${esc(e.message)}</div>`+
+      `<div class="empty">ลองเลือกจุดที่ไม่ใกล้ขั้วโลก หรือตรวจข้อมูลวันเกิด/เวลาเกิดอีกครั้ง</div>`;
+  }
+  finally{if(my===citySeq) $("#panel").classList.remove("loading")}
+}
+function buildLegend(){
+  const lg=$("#legend");lg.innerHTML="";
+  const bodies=[...new Set(chart.lines.map(l=>l.body))];
+  const add=b=>{const l=chart.lines.find(x=>x.body===b);
+    const lab=document.createElement("label");lab.className=hidden.has(b)?"off":"";lab.dataset.b=b;
+    lab.innerHTML=`<span class="sw" style="background:${COLORS[b]}"></span>${l.glyph} ${l.th}`;lg.append(lab)};
+  bodies.filter(b=>!TNP.includes(b)).forEach(add);
+  if(bodies.some(b=>TNP.includes(b))){
+    const br=document.createElement("div");br.className="legsep";lg.append(br);
+    const g=document.createElement("label");g.id="tnpToggle";g.className="group"+(TNP.every(b=>hidden.has(b))?" off":"");
+    g.innerHTML=`ดาวสมมติยูเรเนียน 8 ดวง`;lg.append(g);
+    bodies.filter(b=>TNP.includes(b)).forEach(add);
+  }
+  const pl=document.createElement("label");pl.id="paranToggle";pl.className=showParan?"":"off";pl.innerHTML=`<span class="sw" style="background:#8a63c4"></span> เส้น paran`;lg.append(pl);
+}
+$("#ckDetail").addEventListener("click",()=>{showDetail=!showDetail;$("#ckDetail").classList.toggle("on",showDetail);draw()});
+$("#ckTiles").addEventListener("click",()=>{showTiles=!showTiles;$("#ckTiles").classList.toggle("on",showTiles);
+  if(showTiles&&view.k<2)  $("#status").textContent="แผ่นภาพออนไลน์: ซูมเข้าเพื่อดูรายละเอียดถนน/เมือง";draw()});
+$("#legend").addEventListener("click",e=>{const lab=e.target.closest("label");if(!lab)return;
+  if(lab.id==="paranToggle"){showParan=!showParan;lab.classList.toggle("off",!showParan)}
+  else if(lab.id==="tnpToggle"){const allOff=TNP.every(b=>hidden.has(b));TNP.forEach(b=>allOff?hidden.delete(b):hidden.add(b));buildLegend()}
+  else{const b=lab.dataset.b;hidden.has(b)?hidden.delete(b):hidden.add(b);lab.classList.toggle("off",hidden.has(b))}draw()});
+
+// ── แผงข้อมูลเมือง (4 แท็บแยกกัน) ──────────────────────────
+const deg=x=>{const m=Math.round((((x%360)+360)%360)*60)%21600;const s=Math.floor(m/1800),r=m-s*1800;   // ปัดเป็นลิปดารวมก่อน (เดิม 29°59.6′ กลายเป็น "29°00′" เพราะ %60 ไม่ทดองศา)
+  return `${Math.floor(r/60)}°${String(r%60).padStart(2,"0")}′ ${["เมษ","พฤษภ","เมถุน","กรกฎ","สิงห์","กันย์","ตุลย์","พิจิก","ธนู","มังกร","กุมภ์","มีน"][s]}`};
+const ANG_TH={MC:"กลางฟ้า (MC)",IC:"ใต้เท้า (IC)",AC:"ขึ้น (AC)",DC:"ตก (DC)"};
+function singlesTable(rows,withMeaning){
+  if(!rows.length) return `<div class="empty">ไม่มีดาวเดี่ยวบนแกนนี้ (orb 1°)</div>`;
+  return `<div class="tw"><table><tr><th>ดาว</th><th>มุม</th><th>ห่าง</th></tr>`+rows.map(r=>`<tr><td><b>${esc(r.th)}</b>${withMeaning&&r.meaning?`<div class="meaning">${esc(r.key)}: ${esc(r.meaning)}</div>`:""}</td><td>${r.angle}°</td><td>${r.orb.toFixed(2)}°${r.over_taught_orb?`<div class="warn">เกิน 0.5° ของกลุ่มมุม 22.5</div>`:""}</td></tr>`).join("")+`</table></div>`;
+}
+const DYN_TH={transit:"เส้นจร",progressed:"เส้นโปรเกรส"};
+function dynTable(d){
+  const dy=d.dynamic_near||{}; const kinds=Object.keys(dy).filter(k=>dy[k].length);
+  if(!kinds.length) return "";
+  return kinds.map(k=>`<h3 style="margin-top:16px">${DYN_TH[k]}ที่ผ่านใกล้เมือง ณ ${esc($("#dynDate").value)}</h3>`+
+    `<div class="hint">ชั้นนี้เปลี่ยนตามวันที่ ไม่ใช่เส้นกำเนิด · คำแปลด้านบนเป็นความหมายของเส้นกำเนิด ไม่ใช่ของเส้นจร</div>`+
+    `<div class="tw"><table><tr><th>ดาว</th><th>เส้น</th><th>ระยะ</th></tr>`+
+    dy[k].map(h=>`<tr><td><span class="sw" style="background:${COLORS[h.body]}"></span> ${esc(h.glyph)} ${esc(h.th)}</td><td>${ANG_TH[h.angle]}</td><td>${Math.round(h.km)} กม.</td></tr>`).join("")+
+    `</table></div>`).join("");
+}
+function crossTable(d){
+  if(!d.crossings||!d.crossings.length) return "";
+  return `<h3 style="margin-top:16px">คู่เส้นที่ผ่านใกล้เมืองพร้อมกัน</h3>`+
+    `<div class="hint">astro.com เรียกบริเวณที่เส้นสองเส้นตัดกันว่า crossing และมีคำอธิบายรายคู่ดาว — ตารางนี้ยังไม่ได้คำนวณ<b>จุดตัดจริง</b> เพียงบอกว่าเส้นสองเส้นนี้ผ่านใกล้เมืองพร้อมกัน · คนละเรื่องกับ paran ซึ่งดูที่ละติจูด</div>`+
+    `<div class="tw"><table><tr><th>คู่เส้น</th><th>ระยะไกลสุดของคู่</th></tr>`+
+    d.crossings.map(c=>`<tr><td>${esc(c.a_th)} ${esc(c.a_angle)} × ${esc(c.b_th)} ${esc(c.b_angle)}${acBlock(c.astrocom)}</td><td>${Math.round(c.km)} กม.</td></tr>`).join("")+`</table></div>`;
+}
+const SRC_NOTE=`<div class="src" style="margin-top:10px">คำสอนทั้งหมดมาจากสกิล <b>Helena Woods</b> (สกัดจาก 146 คลิป ทุกข้อมีที่มา) — กดที่เวลาเพื่อเปิดคลิปตรงจุดนั้น · ตัวเลขระยะมาจากการคำนวณของโปรแกรม ไม่ใช่คำสอน</div>`;
+// ความแรงตามระยะ: Helena สอนว่า ≤150-300 ไมล์ = ปานกลาง · เต็มกำลังราว 100-150 ไมล์ (อ้างในสกิล ไฟล์ orbs-parans-localspace.md)
+const MI=1.609344;   // กม./ไมล์ ตัวเดียวกับ server.py (เดิม 1.609 → ที่ 482.75 กม. ฝั่ง Python ได้ 299.97 ไมล์ "ปานกลาง" แต่หน้าเว็บได้ 300.03 "อ่อน")
+function strength(km){const mi=km/MI;const t=mi<=150?"เต็มกำลัง (≤150 ไมล์)":mi<=300?"ปานกลาง (150-300 ไมล์)":"อ่อน (>300 ไมล์)";
+  return `<div class="hint">${Math.round(mi)} ไมล์ · ${t}</div>`}
+// คำแปลเนื้อเดียว (รวมสองสำนัก) — ข้อความหลักที่ผู้ใช้อ่าน
+function textBlock(t){
+  if(!t) return "";
+  const cit=[...t.cites.map(c=>`<a href="${esc(c.url)}" target="_blank" rel="noopener">▶${esc(c.ts)}</a>`),
+             ...t.astro_urls.map((u,i)=>`<a href="${esc(u)}" target="_blank" rel="noopener">astro:${esc(t.astro_keys[i])}</a>`)].join(" ");
+  return `<div class="rd"><p>${esc(t.text)}</p>`+
+    t.notes.map(n=>`<p class="note">${esc(n)}</p>`).join("")+
+    `<div class="cits">ที่มา: ${cit}</div></div>`;
+}
+// รายข้อแยกสำนัก — เก็บไว้ให้กดดูเมื่ออยากเทียบ
+function readBlock(rows){
+  if(!rows||!rows.length) return "";
+  const tag=r=>r.tag==="H+A"?`<span class="tg both" title="ทั้งสองสำนักตรงกัน">ตรงกัน</span>`
+    :r.tag==="H"?`<span class="tg h" title="คำสอน Helena Woods">H</span>`
+    :`<span class="tg a" title="สรุปจาก astro.com">A</span>`;
+  const src=r=>[...r.cites.map(c=>`<a href="${esc(c.url)}" target="_blank" rel="noopener">▶${esc(c.ts)}</a>`),
+                ...r.astro_urls.map((u,i)=>`<a href="${esc(u)}" target="_blank" rel="noopener">astro:${esc(r.astro_keys[i])}</a>`)].join(" ");
+  return `<details class="teach"><summary>ดูแยกทีละข้อ/ทีละสำนัก (${rows.length} ข้อ)</summary><div class="read"><ul>`+rows.map(r=>`<li class="${r.warn?"w":""}">${tag(r)} ${esc(r.text)} <span class="cits">${src(r)}</span></li>`).join("")+`</ul></div></details>`;
+}
+function acBlock(a){
+  if(!a) return "";
+  return `<details class="teach ac"><summary>astro.com · ${esc(a.title)}</summary><ul>${a.bullets.map(b=>`<li>${esc(b)}</li>`).join("")}`+
+    `<li class="hint"><a href="${esc(a.url)}" target="_blank" rel="noopener">อ่านต้นฉบับที่ astro.com ↗</a> — สรุปย่อด้วยคำของเราเอง ลิขสิทธิ์ข้อความต้นฉบับเป็นของ Astrodienst</li></ul></details>`;
+}
+function teachBlock(h,key){
+  const rows=(h.meanings||[]).concat(h.angle_meanings||[]);
+  if(!rows.length) return "";
+  const main=rows.filter(r=>r.kind==="สอน"&&r.scope!=="ดาวนี้ทั่วไป"), rest=rows.filter(r=>!main.includes(r));
+  const item=r=>`<li>${r.kind!=="สอน"?`<b>[${esc(r.kind)}]</b> `:""}${r.scope==="ดาวนี้ทั่วไป"?`<span class="hint">[ดาวนี้ทั่วไป]</span> `:""}${esc(r.text)} ${(r.cites||[]).map(c=>`<a href="${esc(c.url)}" target="_blank" rel="noopener">▶${esc(c.ts)}</a>`).join(" ")}</li>`;
+  return `<details class="teach"><summary>คำสอน ${rows.length} ข้อ</summary><ul>${main.map(item).join("")}</ul>`+
+    (rest.length?`<details class="teach2"><summary>อีก ${rest.length} ข้อ (ความหมายทั่วไปของดาว/มุม · เคส · ประเด็นที่ยังไม่ชัด)</summary><ul>${rest.map(item).join("")}</ul></details>`:"")+`</details>`;
+}
+function spanRows(list,kindTh){
+  if(!list.length) return `<div class="empty">ไม่มี${kindTh}ผ่านใกล้เมืองในช่วงนี้</div>`;
+  return `<div class="tw"><table><tr><th>ดาว/เส้น</th><th>ช่วงที่อยู่ในระยะ</th><th>ใกล้สุด</th></tr>`+
+    list.map(x=>`<tr><td><span class="sw" style="background:${COLORS[x.body]}"></span> ${esc(x.glyph)} ${esc(x.th)} · ${ANG_TH[x.angle]}`+
+      (x.reading?`<details class="teach"><summary>คำแปลของเส้นนี้</summary><div class="rd"><p>${esc(x.reading.text)}</p>`+
+        x.reading.notes.map(n=>`<p class="note">${esc(n)}</p>`).join("")+`</div></details>`:"")+
+      `</td><td class="num">${esc(x.from)} → ${esc(x.to)}<div class="hint">${hrTxt(x.hours)}</div></td>`+
+      `<td class="num">${esc(x.closest_date)}<div class="hint">${kmTxt(x.closest_km)}</div></td></tr>`).join("")+`</table></div>`;
+}
+// อ่านตามลำดับ — ทยอยเพิ่มทีละข้อตามที่ตกลงกันไว้
+// ลำดับนี้เรียงตามที่สำรวจจาก 8 แหล่ง (19 ก.ย. 2026): ทุกสำนักหลักเริ่มที่ "ดวงกำเนิด" ไม่ใช่ที่แผนที่
+// Helena Woods · Moses Siregar · Robert Currey · Kerykeion ตรงกันว่าต้องรู้สภาพดาวก่อนจึงอ่านเส้นได้ถูก
+const GUIDE_STEPS=["สภาพดาวในดวงกำเนิด (ต้องรู้ก่อนดูเส้น)","อยากได้อะไร → ควรดูเส้นไหน",
+  "เมืองเกิดของคุณ: เส้นที่พาดผ่าน","เส้นที่ส่งผลจริงที่เมืองที่เลือก","paran ที่ละติจูดนั้น",
+  "ดวงย้ายเมือง: เรือนปกติ + เรือนยูเรเนียน"];
+// คำอ่านเส้นของดาวสมมติยูเรเนียน — วางคำนิยามของดาว (AISTRO) คู่กับความหมายของมุม (แผนที่ดวง)
+// ผู้ใช้สั่ง 19 ก.ย. 2026 · ติดป้ายที่มาทุกก้อน ไม่หลอมเป็นประโยคเดียว เพราะเป็นคนละสำนัก
+function tnpBlock(t){
+  if(!t) return "";
+  const p=t.planet;
+  return `<details class="teach"><summary>คำอ่านของเส้นนี้ (ประกอบจาก 2 แหล่ง)</summary><div class="rd">`+
+    `<p><b>ดาว ${esc(p.th)}:</b> ${esc(p.core)}</p>`+
+    `<p>จุดแข็ง: ${esc(p.strength)}</p><p>จุดที่ต้องระวัง: ${esc(p.caution)}</p>`+
+    `<p class="hint">${esc(t.planet_source)}</p>`+
+    (t.angle.length?`<p><b>มุมนี้:</b></p><ul class="lite">`+
+      t.angle.map(a=>`<li>${esc(a.text)} ${citeLinks(a.cites||[])}</li>`).join("")+`</ul>`+
+      `<p class="hint">${esc(t.angle_source)}</p>`:"")+
+    `<p class="note">${esc(t.note)}</p></div></details>`;
+}
+function lineRow(h,showKm){
+  return `<tr><td><span class="sw" style="background:${COLORS[h.body]}"></span> ${esc(h.glyph)} ${esc(h.th)} · ${ANG_TH[h.angle]}`+
+    (h.reading?`<details class="teach"><summary>คำแปลของเส้นนี้</summary><div class="rd"><p>${esc(h.reading.text)}</p>`+
+      h.reading.notes.map(n=>`<p class="note">${esc(n)}</p>`).join("")+`</div></details>`:
+      (h.tnp?tnpBlock(h.tnp):`<div class="hint">${h.group==="uranian"?"ดาวสมมติยูเรเนียน — ไม่มีคำแปลเส้นในสองสำนักที่รวบรวมไว้":"ไม่มีคำแปลของเส้นนี้"}</div>`))+
+    `</td><td class="num">${Math.round(h.km)} กม.<div class="hint">${Math.round(h.km/MI)} ไมล์</div></td></tr>`;
+}
+// ── ปุ่ม "ไปดูเส้นนี้บนแผนที่" — กดแล้วเลื่อนขึ้นไปที่แผนที่ แล้วให้เส้นนั้นกะพริบ ─────────
+// ผู้ใช้สั่ง 18 ก.ย. 2026: ชื่อดาวในคำแนะนำของข้อ 2 ให้กดได้ เพื่อหาเส้นบนแผนที่ได้ง่าย
+let flash=null;                       // {body, angle, until} — ระหว่างกะพริบ draw() จะวาดเส้นนี้ซ้ำแบบเรืองแสง
+function lineBtn(body,angle){
+  const th=(chart&&chart.lines.find(l=>l.body===body)||{}).th||TH_FALLBACK[body]||body;
+  const gl=(chart&&chart.lines.find(l=>l.body===body)||{}).glyph||"";
+  return `<button class="linebtn" data-body="${esc(body)}" data-angle="${esc(angle)}" title="กดเพื่อดูเส้นนี้บนแผนที่">`+
+    `<span class="sw" style="background:${COLORS[body]||"#888"}"></span>${esc(gl)} ${esc(th)} ${ANG_TH[angle]?ANG_TH[angle].replace(/ .*/,""):esc(angle)} ▸</button>`;
+}
+const TH_FALLBACK={SU:"อาทิตย์",MO:"จันทร์",ME:"พุธ",VE:"ศุกร์",MA:"อังคาร",JU:"พฤหัส",SA:"เสาร์",UR:"ยูเรนัส",NE:"เนปจูน",PL:"พลูโต",MN:"ราหู(เฉลี่ย)"};
+function startFlash(body,angle){
+  if(!chart) return;
+  if(hidden.has(body)){hidden.delete(body);buildLegend()}     // ถ้าดาวดวงนี้ถูกซ่อนอยู่ ต้องเปิดก่อนไม่งั้นกะพริบแล้วไม่เห็น
+  flash={body,angle,until:performance.now()+7000};
+  $("#mapwrap").scrollIntoView({behavior:"smooth",block:"center"});
+  // ไม่ใช้ #status เพราะ draw() เขียนทับทุกเฟรม (ช่องบอกระดับซูม) — ใช้ป้ายลอยของตัวเองแทน
+  const tip=$("#flashtip"); tip.textContent=`กะพริบอยู่: ${(chart.lines.find(l=>l.body===body)||{}).th||body} ${ANG_TH[angle]||angle}`;
+  tip.hidden=false;
+  const tick=()=>{ if(!flash) return;
+    if(performance.now()>flash.until){flash=null;$("#flashtip").hidden=true;draw();return}
+    draw(); requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+$("#panel").addEventListener("click",e=>{const b=e.target.closest(".linebtn");if(!b)return;
+  startFlash(b.dataset.body,b.dataset.angle)});
+function goalBar(gs){
+  const btn=(k,th)=>`<button class="chip${goal===k?" on":""}" data-goal="${esc(k)}">${esc(th)}</button>`;
+  return `<div class="grp" id="goals" style="margin:4px 0 10px">`+
+    Object.entries(gs).map(([k,v])=>btn(k,v.th)).join("")+`</div>`;
+}
+function step2Html(s2){
+  if(!s2) return `<div class="hint">เลือกเป้าหมายด้านบนเพื่อดูว่าควรดูเส้นอะไร</div>`;
+  // คำแนะนำแต่ละข้อ: ตามด้วยปุ่มของคู่ดาว-มุมที่ข้อนั้นเอ่ยถึง (มาจากฟิลด์ pairs ของสกิล ไม่ได้อ่านจากข้อความ)
+  const ad=r=>`<li>${esc(r.text)} <span class="cits">${r.cites.map(c=>`<a href="${esc(c.url)}" target="_blank" rel="noopener">▶${esc(c.ts)}</a>`).join(" ")}</span>`+
+    ((r.pairs&&r.pairs.length)?`<div class="lbtns">${r.pairs.map(p=>lineBtn(p[0],p[1])).join("")}</div>`:"")+`</li>`;
+  let h=`<div class="rd"><p><b>เป้าหมาย: ${esc(s2.goal_th)}</b> → มุมที่ต้องดูคือ <b>${s2.angle?ANG_TH[s2.angle]:"ดูได้ทุกมุม"}</b></p>`+
+    (s2.angle_meanings.length?`<p class="hint">${s2.angle_meanings.map(m=>esc(m.text)).join(" · ")}</p>`:"")+
+    `<p class="note">${esc(s2.note)}</p>`;
+  h+=`<p><b>ดวงของคุณเป็นดวง${s2.sect==="day"?"กลางวัน":"กลางคืน"}</b> (อาทิตย์อยู่${s2.sun_alt>0?"เหนือ":"ใต้"}ขอบฟ้า ${Math.abs(s2.sun_alt).toFixed(1)}° ตอนเกิด)</p>`+
+    `<ul>${s2.sect_advice.slice(0,2).map(ad).join("")}</ul>`;
+  h+=`<p><b>คำแนะนำในตำราสำหรับเป้าหมายนี้</b></p>`+
+    (s2.advice.length?`<ul>${s2.advice.map(ad).join("")}</ul>`:`<p class="hint">ไม่มีคำแนะนำเจาะจงในตำรา</p>`)+`</div>`;
+  h+=`<div class="tw"><table><tr><th>เส้นที่ควรดู</th><th>เมืองในรายการที่ใกล้เส้นนี้</th></tr>`+
+    s2.candidates.map(c=>`<tr><td><span class="sw" style="background:${COLORS[c.body]}"></span> ${esc(c.glyph)} ${esc(c.th)} · ${ANG_TH[c.angle]} ${lineBtn(c.body,c.angle)}`+
+      (c.line_lon!=null?`<div class="hint">เส้นตรงที่ลองจิจูด ${c.line_lon.toFixed(1)}°</div>`:`<div class="hint">เส้นโค้ง (AC/DC) ไม่ใช่เส้นตรง</div>`)+
+      (c.reading?`<details class="teach"><summary>คำแปลของเส้นนี้</summary><div class="rd"><p>${esc(c.reading.text)}</p>`+
+        c.reading.notes.map(n=>`<p class="note">${esc(n)}</p>`).join("")+`</div></details>`:`<div class="hint">ไม่มีคำแปลของเส้นนี้</div>`)+
+      `</td><td>${c.cities.length?c.cities.map(x=>`${esc(x.name.replace(/ \(.*/,""))} <b>${Math.round(x.km)}</b> กม.${x.far?` <span class="hint">(เกินระยะที่ตั้งไว้)</span>`:""}`).join("<br>"):"—"}`+
+      `<div class="hint">ในระยะที่ตั้งไว้ ${c.in_orb} เมือง</div></td></tr>`).join("")+`</table></div>`;
+  return h;
+}
+function step3Html(s3){
+  if(!s3) return `<div class="empty">เลือกเมืองที่สนใจ (ช่องเมืองเหนือแผนที่) แล้วข้อนี้จะกรองเส้นให้</div>`;
+  const lvl=r=>r.level==="เต็มกำลัง"?`<b style="color:#1d6b3a">เต็มกำลัง</b>`:`<b style="color:#8a6420">ปานกลาง</b>`;
+  let h=`<div class="rd"><p><b>${esc(s3.city.name)}</b> — เก็บเฉพาะเส้นที่ระยะยังส่งผลตามตัวเลขในตำรา: `+
+    `ไม่เกิน ${s3.full_mi} ไมล์ = เต็มกำลัง · ไม่เกิน ${s3.mid_mi} ไมล์ = ปานกลาง · เกินกว่านั้นถือว่าอ่อนและตัดออก</p>`+
+    `<details class="teach"><summary>ที่มาของตัวเลขเกณฑ์ (${s3.rules.length} บรรทัดจากตำรา)</summary><ul>`+
+    s3.rules.map(x=>`<li>${esc(x.value)} — ${esc(x.what)} <span class="hint">${esc(x.who)}</span> `+
+      `<span class="cits">${x.cites.map(c=>`<a href="${esc(c.url)}" target="_blank" rel="noopener">▶${esc(c.ts)}</a>`).join(" ")}</span></li>`).join("")+
+    `</ul></details></div>`;
+  h+= s3.kept.length?`<div class="tw"><table><tr><th>เส้นที่ส่งผลจริง</th><th>ระยะ</th></tr>`+
+    s3.kept.map(c=>`<tr><td><span class="sw" style="background:${COLORS[c.body]}"></span> ${esc(c.glyph)} ${esc(c.th)} · ${ANG_TH[c.angle]}`+
+      (c.reading?`<details class="teach"><summary>คำแปลของเส้นนี้</summary><div class="rd"><p>${esc(c.reading.text)}</p>`+
+        c.reading.notes.map(n=>`<p class="note">${esc(n)}</p>`).join("")+`</div></details>`:
+        (c.tnp?tnpBlock(c.tnp):`<div class="hint">${c.group==="uranian"?"ดาวสมมติยูเรเนียน — ไม่มีคำแปลเส้นในสองสำนัก":"ไม่มีคำแปลของเส้นนี้"}</div>`))+
+      `</td><td class="num">${Math.round(c.mi)} ไมล์<div class="hint">${Math.round(c.km)} กม. · ${lvl(c)}</div></td></tr>`).join("")+`</table></div>`
+    :`<div class="empty">ไม่มีเส้นที่เข้าเกณฑ์ที่เมืองนี้ — ตามคำสอนให้ไปดู paran และ local space ต่อ (ข้อ 4)</div>`;
+  if(s3.weak.length) h+=`<div class="hint" style="margin-top:8px">ตัดออกเพราะไกลเกิน ${s3.mid_mi} ไมล์: `+
+    s3.weak.map(w=>`${esc(w.th)} ${w.angle} ${Math.round(w.mi)} ไมล์`).join(" · ")+`</div>`;
+  if(s3.no_reading.length) h+=`<div class="hint">เส้นที่เก็บไว้แต่ไม่มีคำแปลในสองสำนัก: ${s3.no_reading.map(esc).join(" · ")}</div>`;
+  return h;
+}
+// เส้นจรเคลื่อนต่อเนื่อง ถ้ากวาดผ่านเมืองในช่วงนั้น ระยะใกล้สุดจริงคือศูนย์ — บอกให้ตรง ไม่โชว์ "0 กม." ลอย ๆ
+function kmTxt(km){ return km<1 ? "ผ่านเมืองพอดี" : `${Math.round(km)} กม.`; }
+// ระยะเวลาที่เส้น/มุมอยู่ในระยะ — เซิร์ฟเวอร์ส่งเป็นชั่วโมงทศนิยม (ขอบเข้า-ออกจริง ไม่ใช่จำนวนจุดสุ่ม × ก้าว)
+function hrTxt(h){ return h>=48 ? `${Math.round(h/24)} วัน` : h>=10 ? `${Math.round(h)} ชม.` : `${h.toFixed(1)} ชม.`; }
+// เมือง/เส้นที่ควรไปในช่วงจร แยกตามหมวดเป้าหมาย (กดกางทีละหมวด)
+function whenWhereHtml(ww){
+  if(!ww) return `<div class="empty">ใส่ช่วงวันที่ในแถวบน (ช่องวันที่ … ถึง) แล้วข้อนี้จะบอกว่าช่วงนั้นควรไปเมืองไหน</div>`;
+  const kindTh={transit:"จร",progressed:"โปรเกรส"};
+  const win=w=>`${kindTh[w.kind]} ${ANG_TH[w.angle].replace(/ .*/,"")} ${esc(w.from)}→${esc(w.to)}`+
+    ` <span class="hint">ใกล้สุด ${esc(w.closest_date)} ${kmTxt(w.closest_km)}${w.hours<48?` · ${hrTxt(w.hours)}`:""}</span>`;
+  let h=`<div class="hint" style="margin:2px 0 8px">ช่วง ${esc(ww.date_from)} ถึง ${esc(ww.date_to)} (${ww.days} วัน) · `+
+    `ชั้นที่คิด: ${ww.kinds.map(k=>kindTh[k]).join(" + ")} · ระยะเส้น ${Math.round(ww.orb_km)} กม. · orb มุม ${ww.aspect_orb}°<br>`+
+    `ตารางนี้จับสามอย่างมารวมกัน: (1) เส้นกำเนิดผ่านเมืองนั้น (2) เส้นจรของดาวดวงเดียวกันเคลื่อนเข้าระยะเมือง `+
+    `(3) ดาวจรดวงนั้นทำมุม ร่วม/จัตุรัส/ตรงข้าม กับตำแหน่งกำเนิดของตัวเองภายใน ${ww.aspect_orb}° — ช่วงที่ (2) กับ (3) ซ้อนกันคือ ★ แรงที่สุดตามคำสอน</div>`+
+    (ww.timing_advice&&ww.timing_advice.length?`<details class="teach"><summary>คำสอนวิธีจับจังหวะ (${ww.timing_advice.length} ข้อ)</summary><ul>`+
+      ww.timing_advice.map(a=>`<li>${esc(a.text)} <span class="cits">`+
+        a.cites.map(c=>`<a href="${esc(c.url)}" target="_blank" rel="noopener">▶${esc(c.ts)}</a>`).join(" ")+`</span></li>`).join("")+`</ul></details>`:"");
+  for(const [k,c] of Object.entries(ww.categories)){
+    h+=`<details class="teach cat"><summary>${esc(c.th)} — เมืองในระยะ ${c.spots.length} · มีช่วงจร ${c.n_with_window} · ★ ซ้อนกับมุม ${c.n_with_best}</summary>`;
+    h+=`<div class="rd">`+(c.advice.length?`<ul>`+c.advice.map(a=>`<li>${esc(a.text)} <span class="cits">`+
+      a.cites.map(x=>`<a href="${esc(x.url)}" target="_blank" rel="noopener">▶${esc(x.ts)}</a>`).join(" ")+`</span></li>`).join("")+`</ul>`
+      :`<p class="hint">ตำราไม่ได้ระบุคู่ดาว-มุมสำหรับหมวดนี้ — ใช้มุมของหมวด (${c.angle?ANG_TH[c.angle]:"ทุกมุม"}) กับดาวที่ตำราแนะนำให้มือใหม่ดูก่อน</p>`)+`</div>`;
+    h+= c.spots.length?`<div class="tw"><table><tr><th>เมือง / เส้นกำเนิด</th><th>ช่วงที่ถูกกระตุ้น</th></tr>`+
+      c.spots.map(sp=>`<tr><td><b>${esc(sp.city.replace(/ \(.*/,""))}</b> <span class="hint">${esc(sp.city.match(/\((.*)\)/)?sp.city.match(/\((.*)\)/)[1]:"")}</span><br>`+
+        `<span class="sw" style="background:${COLORS[sp.body]}"></span> ${esc(sp.glyph)} ${esc(sp.th)} · ${ANG_TH[sp.angle]} <b>${Math.round(sp.km)}</b> กม.`+
+        (sp.reading?`<details class="teach"><summary>คำแปลของเส้นนี้</summary><div class="rd"><p>${esc(sp.reading.text)}</p>`+
+          sp.reading.notes.map(n=>`<p class="note">${esc(n)}</p>`).join("")+`</div></details>`:`<div class="hint">ไม่มีคำแปลของเส้นนี้</div>`)+
+        `</td><td>${sp.best.length?`<div class="rd"><p class="note">★ ช่วงที่แรงที่สุด: `+
+            sp.best.slice(0,2).map(b=>`${esc(b.line.from)}→${esc(b.line.to)} (เส้นจรเข้าระยะ) ซ้อนกับมุม${esc(b.aspect.aspect_th)} แน่นสุด ${esc(b.aspect.exact_date)}`).join(" · ")+`</p></div>`:""}`+
+          `${sp.windows.length?`<ul style="margin:0;padding-left:16px">`+sp.windows.slice(0,3).map(w=>`<li>${win(w)}</li>`).join("")+`</ul>`
+          :`<span class="hint">เส้นจรของดาวดวงนี้ไม่เข้าระยะเมืองในช่วงที่เลือก</span>`}`+
+          `${sp.aspects.length?`<details class="teach"><summary>มุมจรกับดาวกำเนิด (${sp.aspects.length} ช่วง)</summary><ul>`+
+            sp.aspects.slice(0,6).map(a=>`<li>${kindTh[a.kind]} ${esc(a.aspect_th)} ${esc(a.from)}→${esc(a.to)} `+
+              `<span class="hint">แน่นสุด ${esc(a.exact_date)} คลาด ${a.off_deg}°${a.hours<48?` · ${hrTxt(a.hours)}`:""}</span></li>`).join("")+`</ul></details>`
+            :`<div class="hint">ไม่มีมุมจรเข้า orb ${ww.aspect_orb}° ในช่วงนี้</div>`}</td></tr>`).join("")+`</table></div>`
+      :`<div class="empty">ไม่มีเมืองในรายการที่อยู่ในระยะเส้นของหมวดนี้</div>`;
+    h+=`</details>`;
+  }
+  return h;
+}
+const citeLinks=cs=>`<span class="cits">${cs.map(c=>`<a href="${esc(c.url)}" target="_blank" rel="noopener">▶${esc(c.ts)}</a>`).join(" ")}</span>`;
+// ข้อ 4 — paran ที่ละติจูดเมือง (±1°) · คำแปลรายคู่มีเท่าที่สกิลมี (8 คู่) คู่อื่นบอกตรง ๆ ว่าไม่มี
+function step4Html(s4){
+  if(!s4) return `<div class="empty">เลือกเมืองที่สนใจก่อน (เหมือนข้อ 3)</div>`;
+  let h=`<div class="rd"><p><b>${esc(s4.city.name)}</b> ละติจูด ${s4.city.lat.toFixed(2)}° — paran คือละติจูดที่ดาวสองดวงอยู่บนมุมพร้อมกัน `+
+    `เป็นแถบแนวนอนทั้งโลก ไม่ขึ้นกับลองจิจูด · นับเฉพาะที่ห่างไม่เกิน ±${s4.orb_deg}° (≈${Math.round(s4.orb_deg*111/MI)} ไมล์) ตามที่ Helena ใช้</p>`+
+    `<details class="teach"><summary>ตัวเลข orb ของ paran ในตำรา (${s4.rules.length} บรรทัด)</summary><ul>`+
+    s4.rules.map(x=>`<li>${esc(x.value)} — ${esc(x.what)} <span class="hint">${esc(x.who)}</span> ${citeLinks(x.cites)}</li>`).join("")+`</ul></details></div>`;
+  if(!s4.parans.length) return h+`<div class="empty">ไม่มี paran ในระยะ ±${s4.orb_deg}° ของละติจูดนี้ — ตามคำสอน ไม่มี paran ไม่ได้แปลว่าไม่มีพลังงาน ให้ยึดเส้นในข้อ 3 เป็นหลัก</div>`;
+  h+=`<div class="tw"><table><tr><th>คู่ดาวบนมุมพร้อมกัน</th><th>ละติจูด paran</th><th>ห่างเมือง</th></tr>`+
+    s4.parans.map(p=>`<tr><td><span class="sw" style="background:${COLORS[p.a]}"></span> ${esc(p.a_glyph)} ${esc(p.a_th)} ${ANG_TH[p.ang_a].replace(/ .*/,"")} × `+
+      `<span class="sw" style="background:${COLORS[p.b]}"></span> ${esc(p.b_glyph)} ${esc(p.b_th)} ${ANG_TH[p.ang_b].replace(/ .*/,"")}`+
+      (p.meanings.length?`<details class="teach"><summary>คำสอนของคู่ ${esc(p.a_th)}–${esc(p.b_th)} (${p.meanings.length})</summary><ul>`+
+        p.meanings.map(m=>`<li>${esc(m.text)} ${citeLinks(m.cites)}</li>`).join("")+`</ul></details>`
+        :`<div class="hint">ไม่มีคำสอนของคู่ดาวนี้ในสกิล (มีเฉพาะ ${s4.taught_pairs.map(x=>x.join("–")).join(", ")})</div>`)+
+      `</td><td>${p.lat.toFixed(2)}°</td><td>${Math.round(p.km)} กม.<div class="hint">${Math.round(p.mi)} ไมล์</div></td></tr>`).join("")+`</table></div>`+
+    `<div class="hint">มีคำสอนรายคู่ ${s4.n_with_teaching} จาก ${s4.parans.length} คู่ · ที่เหลืออ่านจากความหมายของดาวและมุมทั้งสองประกอบกันเอง ระบบไม่แต่งให้</div>`;
+  return h;
+}
+// ข้อ 5 — ดวงย้ายเมือง (วิธี A) เทียบดวงกำเนิด จัดเป็นเรือนยูเรเนียน
+// สรุปใจความของข้อ 5 — "ย้ายแล้วอะไรเปลี่ยน" ประกอบจากผลคำนวณ + คำแปลที่มีอยู่แล้วเท่านั้น
+function step5Summary(sm){
+  if(!sm) return "";
+  const fx=f=>`<b>${esc(f.th)}</b>${f.from_house?` <span class="hint">(เดิมเรือน ${f.from_house})</span>`:""}`;
+  const house=(g,dir)=>`<li>เรือน <b>${g.house}</b>${g.theme?` — ${esc(g.theme.split(" · ")[0])}`:""}: `+
+    g.factors.map(dir==="in"?fx:f=>`<b>${esc(f.th)}</b>${f.to_house?` <span class="hint">(ไปเรือน ${f.to_house})</span>`:""}`).join(" · ")+
+    (dir==="in"?`<ul class="lite">`+g.factors.filter(f=>f.meaning).map(f=>`<li>${esc(f.th)}: ${esc(f.meaning)}</li>`).join("")+`</ul>`:"")+`</li>`;
+  const pic=(l,t)=>l.length?`<p><b>${t}</b></p><ul class="lite">`+l.map(p=>`<li>${esc(p.codes.join("+"))} — ${esc(p.meaning)}</li>`).join("")+`</ul>`:"";
+  return `<div class="sum5"><p class="head">${esc(sm.headline)}</p>`+
+    (sm.gained.length?`<p><b>เรื่องที่เด่นขึ้น</b> (เรือนที่ได้ปัจจัยเพิ่ม ${sm.n_gained_houses} เรือน)</p><ul>`+
+      sm.gained.map(g=>house(g,"in")).join("")+`</ul>`:"")+
+    (sm.faded.length?`<p><b>เรื่องที่จางลง</b> (เรือนที่ปัจจัยย้ายออก ${sm.n_faded_houses} เรือน)</p><ul>`+
+      sm.faded.map(g=>house(g,"out")).join("")+`</ul>`:"")+
+    pic(sm.pictures_new,"ภาพดาวที่เกิดใหม่กับ MC/AS ของเมืองนี้")+
+    pic(sm.pictures_lost,"ภาพดาวที่หายไปเมื่อย้าย")+
+    (sm.no_reading.length?`<p class="hint">ไม่มีคำอ่านในพจนานุกรมสำหรับ: ${sm.no_reading.map(esc).join(" · ")}</p>`:"")+
+    `<p class="hint">ใจความย่อมาจากคำอ่านเต็ม — อ่านฉบับเต็มได้ที่หัวข้อ "ดาวที่ย้ายเรือนเมื่อไปเมืองนี้" ด้านล่าง</p>`+
+    `<p class="note">${esc(sm.source_note)}</p></div>`;
+}
+// ดวงย้ายเมืองแบบเรือนปกติ (สาย Lewis/Helena/Siregar) — คนละระบบกับเรือนยูเรเนียนด้านล่าง
+function classicRelocHtml(k){
+  if(!k) return "";
+  let h=`<div class="rd"><p><b>ลัคนา</b> ${esc(k.natal_asc_txt)} → <b>${esc(k.city_asc_txt)}</b>`+
+    ` · <b>MC</b> ${esc(k.natal_mc_txt)} → ${esc(k.city_mc_txt)} · ปัจจัย <b>${k.n_moved}</b> ตัวเปลี่ยนเรือน</p>`+
+    `<p><b>เจ้าเรือนลัคนาที่เมืองนี้คือ ${esc(k.asc_ruler.th)}</b> — อยู่ราศี${esc(k.asc_ruler.sign_th)} เรือน ${k.asc_ruler.house}`+
+    (k.asc_ruler.weight?` (เรือน${esc(k.asc_ruler.weight)})`:"")+
+    (k.asc_ruler.dignity.length?` · ${esc(k.asc_ruler.dignity.join(" + "))}`:"")+`</p>`+
+    `<p class="hint">${esc(k.ruler_note)}</p><p class="note">${esc(k.note)}</p></div>`;
+  h+=`<div class="swipe">← ปัดซ้าย-ขวาเพื่อดูคอลัมน์ที่เหลือ →</div>`+
+    `<div class="tw"><table class="wide2"><tr><th>ดาว</th><th>ราศี</th><th>เรือนที่เมืองเกิด</th><th>เรือนที่เมืองนี้</th></tr>`+
+    k.rows.map(r=>`<tr><td><span class="sw" style="background:${COLORS[r.code]}"></span> ${esc(r.glyph)} ${esc(r.th)}</td>`+
+      `<td class="num">${esc(r.sign_th)}</td><td class="num">${r.natal_house}${r.natal_weight?` <span class="hw hw-${esc(r.natal_weight)}">${esc(r.natal_weight)}</span>`:""}</td>`+
+      `<td class="num">${r.moved?`<span class="mv">${r.city_house}</span>`:r.city_house}`+
+      (r.city_weight?` <span class="hw hw-${esc(r.city_weight)}">${esc(r.city_weight)}</span>`:"")+`</td></tr>`).join("")+
+    `</table></div><div class="hint"><span class="mv">ตัวเน้น</span> = เรือนเปลี่ยนเมื่อย้ายมาเมืองนี้</div>`;
+  return h;
+}
+function step5Html(s5){
+  if(!s5) return `<div class="empty">เลือกเมืองที่สนใจก่อน (เหมือนข้อ 3)</div>`;
+  const ax=s5.axes, sh=v=>`${v.shift>=0?"+":""}${v.shift.toFixed(2)}°`;
+  const fac=(codes,mark)=>codes.length?codes.map(c=>`<span class="${mark&&mark.includes(c)?"mv":""}">${esc(c)}</span>`).join(" "):"—";
+  // (ก) แบบเรือนปกติ = สิ่งที่สำนักแผนที่ดวงหมายถึงเมื่อพูดว่า "ดวงย้ายเมือง" · (ข) แบบยูเรเนียน = อีกสำนัก
+  let h=`<h4 style="margin:6px 0 4px">(ก) แบบเรือนปกติ — สายแผนที่ดวง (Lewis / Helena / Siregar)</h4>`+
+    classicRelocHtml(s5.classic)+
+    `<h4 style="margin:16px 0 4px">(ข) แบบเรือนยูเรเนียน — พจนานุกรม AISTRO (คนละสำนัก)</h4>`+
+    step5Summary(s5.summary)+`<div class="rd"><p class="note">${esc(s5.note)}</p>`+
+    `<p><b>สิ่งที่เปลี่ยนเมื่อย้ายไป ${esc(s5.city.name)}:</b> MC ${esc(ax.MC.natal_txt)} → ${esc(ax.MC.city_txt)} (${sh(ax.MC)}) · `+
+    `ลัคนา ${esc(ax.AS.natal_txt)} → ${esc(ax.AS.city_txt)} (${sh(ax.AS)}) · ปัจจัยอีก 20 ตัวอยู่ที่เดิม</p></div>`;
+  h+=`<div class="tw"><table><tr><th>เรือน</th><th>เรื่องของเรือน</th><th>ดวงกำเนิด</th><th>ย้ายเมือง</th></tr>`+
+    s5.houses.map(x=>`<tr><td><b>${x.house}</b></td><td>${x.theme?esc(x.theme):`<span class="hint">ไม่มีธีมในพจนานุกรม</span>`}</td>`+
+      `<td>${fac(x.natal,x.moved_out)}</td><td>${fac(x.city,x.moved_in)}</td></tr>`).join("")+`</table></div>`+
+    `<div class="hint"><span class="mv">ตัวเน้น</span> = ปัจจัยที่ย้ายออกจาก/เข้ามาในเรือนนี้เมื่อย้ายเมือง</div>`;
+  h+= s5.house_moves.length?`<details class="teach" open><summary>ดาวที่ย้ายเรือนเมื่อไปเมืองนี้ (${s5.house_moves.length}) — คำอ่านดาวในเรือนใหม่จากพจนานุกรม AISTRO</summary><ul>`+
+      s5.house_moves.map(m=>`<li><b>${esc(m.th)}</b> เรือน ${m.natal_house} → <b>${m.city_house}</b>`+
+        (m.meaning_city_house?`<div class="rd"><p>${esc(m.meaning_city_house)}</p></div>`:`<div class="hint">ไม่มีคำอ่านของดาวนี้ในเรือนนี้</div>`)+`</li>`).join("")+`</ul></details>`
+    :`<div class="empty">ไม่มีดาวย้ายเรือน — แกนเรือนของเมืองนี้ใกล้เคียงเมืองเกิด</div>`;
+  const pic=(t,l)=>l.length?`<details class="teach"><summary>${t} (${l.length})</summary><ul>`+l.map(x=>`<li>${esc(x.codes.join("+"))}${x.meaning?` — ${esc(x.meaning)}`:` <span class="hint">ไม่มีในพจนานุกรม</span>`}</li>`).join("")+`</ul></details>`:"";
+  h+=pic("ภาพดาวที่เกิดใหม่กับ MC/AS ของเมือง",s5.pictures_new)+pic("ภาพดาวกับ MC/AS ที่หายไป",s5.pictures_lost);
+  h+=`<details class="teach"><summary>ตำแหน่งดวงกำเนิด 22 ปัจจัย (ยูเรเนียน)</summary><div class="tw"><table><tr><th>ปัจจัย</th><th>ดวงกำเนิด</th><th>ที่เมืองนี้</th></tr>`+
+    s5.positions.map(x=>`<tr><td>${esc(x.code)} ${esc(x.th)}</td><td>${esc(x.txt)}</td><td>${x.city_txt?`<b>${esc(x.city_txt)}</b>`:`<span class="hint">เท่าเดิม</span>`}</td></tr>`).join("")+`</table></div></details>`;
+  h+=`<div class="hint" style="margin-top:6px">วิธี B (LM/LA ประจำเมือง): LM ${s5.B.points.LM.toFixed(2)}° · LA ${s5.B.points.LA.toFixed(2)}° · ${esc(s5.B.note)} — ดูรายละเอียดที่แท็บ "ย้ายเมือง B"</div>`;
+  return h;
+}
+// ข้อ 6 — จังหวะเวลาที่เมืองปลายทาง: คำตอบเต็มอยู่ที่แท็บ "ช่วงเวลา" (ผู้ใช้สั่งย้าย 19 ก.ย. 2026)
+// ในข้อนี้เหลือแค่ตัวเลขสรุปกับปุ่มไปแท็บนั้น — ไม่ทำซ้ำตารางสองที่
+function step6Html(s6){
+  if(!s6) return `<div class="empty">เลือกเมือง และใส่ช่วงวันที่ (ช่องวันที่ … ถึง) แล้วดูคำตอบที่แท็บ <b>ช่วงเวลา</b> <button class="chip" id="goWindow">เปิดแท็บช่วงเวลา ▸</button></div>`;
+  const kindTh={transit:"จร",progressed:"โปรเกรส"};
+  const nSpan=s6.kinds.reduce((n,k)=>n+(s6.spans[k]||[]).length,0);
+  const woke=s6.natal_lines.filter(x=>x.windows.length||x.aspects.length).length, star=s6.natal_lines.filter(x=>x.best.length).length;
+  return `<div class="rd"><p><b>${esc(s6.city.name)}</b> ระหว่าง ${esc(s6.date_from)} ถึง ${esc(s6.date_to)} (${s6.days} วัน) · ชั้นที่คิด: ${s6.kinds.map(k=>kindTh[k]).join(" + ")}</p>`+
+    `<p>เส้นจร/โปรเกรสที่จะเข้าระยะเมือง <b>${nSpan}</b> ช่วง · เส้นกำเนิดที่ผ่านเมือง (ข้อ 3) ถูกปลุก <b>${woke}</b> จาก ${s6.natal_lines.length} เส้น · ★ ซ้อนกับมุมจร <b>${star}</b> เส้น</p>`+
+    `<p>คำตอบเต็ม (ตารางช่วง วันใกล้สุด มุมจร) อยู่ที่แท็บ <b>ช่วงเวลา</b> <button class="chip" id="goWindow">เปิดแท็บช่วงเวลา ▸</button></p></div>`;
+}
+// (ข) ของจังหวะเวลา — เส้นกำเนิดที่ผ่านเมืองถูกปลุกเมื่อไร (แสดงในแท็บ "ช่วงเวลา")
+function awakenedHtml(t,kinds){
+  const kindTh={transit:"จร",progressed:"โปรเกรส"};
+  let h=`<h3 style="margin-top:16px">เส้นกำเนิดที่ผ่านเมืองนี้ ถูกปลุกเมื่อไร</h3>`+
+    `<div class="hint">เส้นกำเนิดที่ระยะยังส่งผล (≤${t.mid_mi} ไมล์ ตามข้อ 3) ถูกปลุกเมื่อดาวดวงเดียวกันจรเข้าระยะเมือง หรือทำมุม ร่วม/จัตุรัส/ตรงข้าม กับตัวเองในดวงกำเนิดภายใน ${t.aspect_orb}° — ซ้อนกัน = ★ แรงที่สุดตามคำสอน</div>`+
+    (t.timing_advice.length?`<details class="teach"><summary>คำสอนวิธีจับจังหวะ (${t.timing_advice.length} ข้อ)</summary><ul>`+
+      t.timing_advice.map(a=>`<li>${esc(a.text)} ${citeLinks(a.cites)}</li>`).join("")+`</ul></details>`:"");
+  if(!t.natal_lines.length) return h+`<div class="empty">ไม่มีเส้นกำเนิดที่เข้าเกณฑ์ข้อ 3 ที่เมืองนี้ จึงไม่มีอะไรให้ปลุก</div>`;
+  const win=w=>`${kindTh[w.kind]} ${ANG_TH[w.angle].replace(/ .*/,"")} ${esc(w.from)}→${esc(w.to)} <span class="hint">ใกล้สุด ${esc(w.closest_date)} ${kmTxt(w.closest_km)}</span>`;
+  h+=`<div class="tw"><table><tr><th>เส้นกำเนิด</th><th>ช่วงที่ถูกปลุก</th></tr>`+
+    t.natal_lines.map(x=>`<tr><td><span class="sw" style="background:${COLORS[x.body]}"></span> ${esc(x.glyph)} ${esc(x.th)} · ${ANG_TH[x.angle]} <span class="hint">${Math.round(x.km)} กม.</span>`+
+      (x.reading?`<details class="teach"><summary>คำแปลของเส้นนี้</summary><div class="rd"><p>${esc(x.reading.text)}</p>${x.reading.notes.map(n=>`<p class="note">${esc(n)}</p>`).join("")}</div></details>`:tnpBlock(x.tnp))+
+      `</td><td>${x.no_timing?`<span class="hint">ดาวสมมติยูเรเนียน — สกิลไม่มีกฎจังหวะจรของดาวกลุ่มนี้</span>`:
+        (x.best.length?`<div class="rd"><p class="note">★ แรงที่สุด: `+x.best.slice(0,2).map(b=>`${esc(b.line.from)}→${esc(b.line.to)} ซ้อนกับมุม${esc(b.aspect.aspect_th)} แน่นสุด ${esc(b.aspect.exact_date)}`).join(" · ")+`</p></div>`:"")+
+        (x.windows.length?`<ul style="margin:0;padding-left:16px">${x.windows.slice(0,4).map(w=>`<li>${win(w)}</li>`).join("")}</ul>`:`<span class="hint">เส้นจรของดาวนี้ไม่เข้าระยะเมืองในช่วงที่เลือก</span>`)+
+        (x.aspects.length?`<details class="teach"><summary>มุมจรกับตัวเองในดวงกำเนิด (${x.aspects.length})</summary><ul>`+
+          x.aspects.slice(0,6).map(a=>`<li>${kindTh[a.kind]} ${esc(a.aspect_th)} ${esc(a.from)}→${esc(a.to)} <span class="hint">แน่นสุด ${esc(a.exact_date)} คลาด ${a.off_deg}°</span></li>`).join("")+`</ul></details>`
+          :`<div class="hint">ไม่มีมุมจรเข้า orb ${t.aspect_orb}° ในช่วงนี้</div>`)}</td></tr>`).join("")+`</table></div>`;
+  return h;
+}
+// ข้อ 1 — สภาพดาวในดวงกำเนิด · แสดงเฉพาะข้อเท็จจริงที่ engine คำนวณ + กฎการดูที่ตำราบอก ไม่ตีความแทน
+function conditionHtml(c){
+  if(!c) return "";
+  const asp=a=>`<span class="ac-${esc(a.kind)}">${esc(a.other_glyph)} ${esc(a.aspect_th)} ${a.orb.toFixed(1)}°</span>`;
+  const dg=r=>r.dignity.length?r.dignity.map(d=>`<b class="dg-${esc(d)}">${esc(d)}</b>`).join(" + ")
+    :(r.has_dignity_table?`<span class="hint">ไม่ได้/ไม่เสียเกณฑ์</span>`:`<span class="hint">ไม่มีเกณฑ์ในตำราคลาสสิก</span>`);
+  let h=`<div class="rd"><p><b>ดวง${c.sect==="day"?"กลางวัน":"กลางคืน"}</b> · ลัคนา ${esc(c.asc_txt)} · MC ${esc(c.mc_txt)}</p>`+
+    `<p class="note">${esc(c.rules_note)}</p>`+
+    (c.sect_advice&&c.sect_advice.length?`<ul>`+c.sect_advice.slice(0,2).map(a=>`<li>${esc(a.text)} ${citeLinks(a.cites)}</li>`).join("")+`</ul>`:"")+
+    `</div>`;
+  h+=`<div class="swipe">← ปัดซ้าย-ขวาเพื่อดูคอลัมน์ที่เหลือ →</div>`+
+    `<div class="tw"><table class="wide"><tr><th>ดาว</th><th>ราศี · องศา</th><th>เกณฑ์</th><th>เรือน</th><th>เจ้าเรือน</th><th>มุมที่มากระทบ (กระชับสุดก่อน)</th></tr>`+
+    c.rows.map(r=>`<tr><td><span class="sw" style="background:${COLORS[r.code]}"></span> ${esc(r.glyph)} ${esc(r.th)}`+
+      (r.sect_role?`<div class="hint"><b>${esc(r.sect_role)}</b></div>`:"")+`</td>`+
+      `<td class="num">${esc(r.sign_th)} ${r.deg_in_sign.toFixed(2)}°</td>`+
+      `<td>${dg(r)}${r.dignity_note.map(n=>`<div class="hint">${esc(n)}</div>`).join("")}</td>`+
+      `<td class="num">${r.house}${r.house_weight?` <span class="hw hw-${esc(r.house_weight)}">${esc(r.house_weight)}</span>`:""}</td>`+
+      `<td class="num">${r.rules.length?r.rules.join(", "):`<span class="hint">—</span>`}</td>`+
+      `<td>${r.aspects.length?r.aspects.slice(0,4).map(asp).join(" · "):`<span class="hint">ไม่มีมุมหลักใน orb</span>`}</td></tr>`).join("")+
+    `</table></div>`+
+    `<div class="hint" style="margin-top:6px">เรือนเบา = 5, 9, 11 · เรือนหนัก = 6, 8, 12 (ตามที่ตำราระบุ) · `+
+    `<span class="ac-หนัก">มุมหนัก</span> = จัตุรัส/ตรงข้าม · <span class="ac-ช่วย">มุมช่วย</span> = ตรีโกณ/โยค · `+
+    `<span class="ac-ร่วม">ร่วม</span> = ขึ้นกับว่าร่วมกับดาวอะไร</div>`+
+    `<div class="hint">${esc(c.system_note)}</div>`;
+  return h;
+}
+function guideHtml(){
+  const r=readingData;
+  if(!r) return `<div class="empty">กำลังโหลดคำอ่าน…</div>`;
+  if(r.error) return `<div class="src">อ่านไม่สำเร็จ: ${esc(r.error)}</div>`;
+  const s1=r.step1, b=s1.birth;
+  let html=`<div class="src">ลำดับนี้เรียงตามที่สำนักหลักของแผนที่ดวงสอนตรงกัน — <b>เริ่มที่ดวงกำเนิด ไม่ใช่ที่แผนที่</b><div class="hint">`+
+    GUIDE_STEPS.map((t,i)=>`${i?" · ":""}<b>${i+1}. ${esc(t)}</b>`).join("")+
+    ` · จบที่ <b>จังหวะเวลา</b> ที่แท็บ "ช่วงเวลา"</div></div>`;
+  // ── ข้อ 1: สภาพดาว ────────────────────────────────────────────────
+  html+=`<h3>1. สภาพดาวในดวงกำเนิด — ${esc(b.place)}</h3>`+
+    `<div class="hint">เกิด ${esc(b.date)} ${esc(b.time)} น. (UTC${b.tz>=0?"+":""}${b.tz}) · ${b.lat.toFixed(4)}, ${b.lon.toFixed(4)}</div>`+
+    conditionHtml(r.condition);
+  // ── ข้อ 2: เป้าหมาย ───────────────────────────────────────────────
+  html+=`<h3 style="margin-top:18px">2. อยากได้อะไร → ควรดูเส้นไหน</h3>`+goalBar(r.goals||{})+step2Html(r.step2);
+  // ── ข้อ 3: เมืองเกิด (ใช้ตรวจว่าวิธีนี้ตรงกับชีวิตจริงของคุณไหม) ────────
+  html+=`<h3 style="margin-top:18px">3. เมืองเกิดของคุณ: เส้นที่พาดผ่าน</h3>`+
+    `<div class="hint">ใช้ตรวจสอบกับประสบการณ์จริง — ตำราแนะนำให้ดูที่ที่เคยอยู่ก่อน ว่าธีมของเส้นตรงกับที่เกิดขึ้นจริงไหม `+
+    `· ระยะที่ถือว่าใกล้ ${Math.round(s1.orb_km)} กม.</div>`+
+    (s1.near.length
+      ? `<div class="tw"><table><tr><th>เส้นที่พาดผ่านเมืองเกิด</th><th>ระยะ</th></tr>`+s1.near.map(h=>lineRow(h)).join("")+`</table></div>`
+      : `<div class="empty">ไม่มีเส้นดาวพาดผ่านเมืองเกิดในระยะนี้ — ตามคำสอน ไม่มีเส้นไม่ได้แปลว่าไม่มีพลังงาน ให้ดู paran ต่อ (ข้อ 5)</div>`)+
+    `<details class="teach"><summary>เส้นที่ใกล้เมืองเกิดที่สุด (แม้เกินระยะ)</summary>`+
+    `<div class="tw"><table><tr><th>เส้น</th><th>ระยะ</th></tr>`+s1.nearest.map(h=>lineRow(h)).join("")+`</table></div></details>`;
+  // ── จุดเปลี่ยนโหมด: ระดับโลก → ระดับเมือง ───────────────────────────
+  html+=cityGate(r.step3);
+  html+=`<h3 style="margin-top:14px">4. เส้นที่ส่งผลจริงที่เมืองที่เลือก</h3>`+step3Html(r.step3);
+  html+=`<h3 style="margin-top:18px">5. paran ที่ละติจูดนั้น</h3>`+step4Html(r.step4);
+  html+=`<h3 style="margin-top:18px">6. ดวงย้ายเมืองเทียบดวงกำเนิด</h3>`+step5Html(r.step5);
+  html+=`<h3 style="margin-top:18px">จังหวะเวลา: ดาวจรช่วงที่จะไป <span class="hint">(คำตอบเต็มอยู่ที่แท็บ "ช่วงเวลา")</span></h3>`+step6Html(r.step6);
+  html+=`<h3 style="margin-top:18px">เมืองที่ควรไปในช่วงจร (แยกตามหมวด)</h3>`+whenWhereHtml(r.when_where);
+  return html;
+}
+// แถบคั่น "ข้อ 1-3 ระดับโลก → ข้อ 4-6 ต้องเลือกเมืองก่อน" — เดิมผู้ใช้ไม่รู้ว่าต้องไปกดช่องเมืองเหนือแผนที่
+function cityGate(s3){
+  const nm=s3?s3.city.name:null;
+  return `<div class="gate">`+
+    (nm?`<b>กำลังดูเมือง: ${esc(nm)}</b> <span class="hint">ข้อ 4–6 ด้านล่างเป็นของเมืองนี้ · เปลี่ยนได้ที่ช่องเมืองเหนือแผนที่</span>`
+       :`<b>ข้อ 4–6 ต้องเลือกเมืองก่อน</b> <span class="hint">เลือกที่ช่องเมืองเหนือแผนที่ หรือคลิกจุดใดก็ได้บนแผนที่</span>`)+
+    ` <button class="chip" id="goCity">ไปที่ช่องเลือกเมือง ▸</button></div>`;
+}
+function windowHtml(){
+  const w=windowData;
+  if(!w) return `<div class="empty">เลือกเมืองแล้วกดแท็บนี้อีกครั้ง</div>`;
+  if(w.error) return `<div class="src">อ่านข้อมูลช่วงเวลาไม่ได้: ${esc(w.error)}</div>`;
+  const kinds=w.kinds||Object.keys(w.spans||{});
+  let html=`<div class="src"><b>ถ้าไป ${esc(w.city.name)} ระหว่าง ${esc(w.date_from)} ถึง ${esc(w.date_to)}</b> (${w.days} วัน) `+
+    `จะเจอเส้นเหล่านี้ในระยะ ${Math.round(w.orb_km)} กม. · เส้นจรไล่ทุก 6 ชม. เวลา UT แล้วหาเวลาเข้า-ออกจริงด้วยการแบ่งครึ่ง · เส้นกำเนิดอยู่กับที่ตลอดช่วง`+
+    (w.kinds_defaulted?` · <b>ยังไม่ได้ติ๊กชั้นเส้นจร/โปรเกรส</b> จึงใช้เส้นจรเป็นค่าเริ่ม (ติ๊ก "เส้นโปรเกรส" ในแถวบนถ้าต้องการ)`:"")+`</div>`;
+  html+=`<h3>เส้นกำเนิด (เจอทุกวันที่อยู่ที่นั่น)</h3>`+
+    (w.natal_near.length?`<div class="tw"><table><tr><th>ดาว/เส้น</th><th>ระยะ</th></tr>`+
+      w.natal_near.map(h=>`<tr><td><span class="sw" style="background:${COLORS[h.body]}"></span> ${esc(h.glyph)} ${esc(h.th)} · ${ANG_TH[h.angle]}`+
+        (h.reading?`<details class="teach"><summary>คำแปลของเส้นนี้</summary><div class="rd"><p>${esc(h.reading.text)}</p>`+
+          h.reading.notes.map(n=>`<p class="note">${esc(n)}</p>`).join("")+`</div></details>`:
+          (h.tnp?tnpBlock(h.tnp):`<div class="hint">ไม่มีคำแปลของเส้นนี้ในสองสำนักที่รวบรวมไว้</div>`))+
+        `</td><td class="num">${Math.round(h.km)} กม.</td></tr>`).join("")+`</table></div>`
+      :`<div class="empty">ไม่มีเส้นกำเนิดในระยะนี้</div>`);
+  for(const k of kinds) html+=`<h3 style="margin-top:16px">${DYN_TH[k]}ที่จะผ่านเมืองนี้ในช่วงนั้น</h3>`+
+    `<div class="hint">คำแปลที่แสดงเป็นความหมายของเส้นดาวดวงนั้นตามตำรา ใช้เป็นธีมชั่วคราวของช่วงที่ดาวจรผ่าน</div>`+
+    spanRows(w.spans[k]||[],DYN_TH[k]);
+  if(w.timing) html+=awakenedHtml(w.timing,kinds);   // ข้อ 6 ของการอ่านตามลำดับ ย้ายมาอยู่ที่นี่
+  return html;
+}
+function renderPanel(){
+  const d=cityData,p=$("#panel");
+  if(tab==="guide"){p.innerHTML=guideHtml();return}   // ข้อ 1 เป็นเรื่องดวงกำเนิด ไม่ใช้ cityData — ต้องวาดได้แม้ /api/city ล้ม
+  const head=city?`<div class="cityhead"><h2>${esc(city.name)}</h2><span class="hint">${city.lat.toFixed(4)}, ${city.lon.toFixed(4)}</span></div>`:"";
+  if(tab==="window"){p.innerHTML=head+windowHtml();return}   // ใช้ windowData อย่างเดียว ไม่ใช้ cityData เช่นกัน
+  if(!d)return;
+  if(tab==="near"){
+    p.innerHTML=head+`<div class="src">เส้นดาวกำเนิด (${d.method==="mundo"?"in mundo":"ecl. projection"}) ที่ห่างเมืองไม่เกิน ${d.orb_km} กม. · เป็นวิธีของ Jim Lewis/astro.com ไม่ใช่ยูเรเนียน<br>คำแปลรวมสองสำนัก: <span class="tg both">ตรงกัน</span> ทั้งคู่พูดตรงกัน · <span class="tg h">H</span> Helena Woods · <span class="tg a">A</span> astro.com (สรุปย่อ) — กดที่ ▶เวลา หรือ astro: เพื่อเปิดต้นฉบับ</div>`+
+      (d.lines_near.length?`<div class="tw"><table><tr><th>ดาว</th><th>เส้น</th><th>ระยะ</th></tr>`+d.lines_near.map((h,i)=>`<tr><td><span class="sw" style="background:${COLORS[h.body]}"></span> ${esc(h.glyph)} ${esc(h.th)}${h.group==="uranian"?` <span class="hint">(ดาวสมมติยูเรเนียน · ไม่มีคำสอนความหมายของดาวดวงนี้ · มีเฉพาะความหมายของมุม)</span>`:""}${textBlock(h.text_reading)}${h.text_reading?"":tnpBlock(h.tnp)}${readBlock(h.reading)}${teachBlock(h,i)}${acBlock(h.astrocom)}</td><td>${ANG_TH[h.angle]}</td><td class="num">${Math.round(h.km)} กม.${strength(h.km)}</td></tr>`).join("")+`</table></div>`+SRC_NOTE:`<div class="empty">ไม่มีเส้นในระยะนี้ — ลองขยายระยะที่ช่อง "ระยะที่ถือว่าใกล้เมือง"</div>`)+
+      crossTable(d)+dynTable(d);   // เส้นจรเป็นชั้นแยก ต้องขึ้นแม้ไม่มีเส้นกำเนิด (ซิดนีย์ 12 ม.ค. 2026: จันทร์ MC จร 95 กม. เคยหายจากจอ)
+  }else if(tab==="paran"){
+    p.innerHTML=head+`<div class="src">ดาวสองดวงอยู่บนแกนพร้อมกัน ที่ละติจูดห่างเมืองไม่เกิน 1° (≈111 กม. · Helena Woods ใช้ 1°)</div>`+
+      (d.parans_near.length?`<div class="tw"><table><tr><th>คู่ดาว</th><th>ละติจูด paran</th><th>ห่าง</th></tr>`+d.parans_near.map((x,i)=>`<tr><td>${esc(x.a_th)} ${ANG_TH[x.ang_a]} · ${esc(x.b_th)} ${ANG_TH[x.ang_b]}${teachBlock({meanings:x.meanings,angle_meanings:[]},"p"+i)}</td><td>${x.lat.toFixed(2)}°</td><td>${x.dlat.toFixed(2)}°<div class="hint">${Math.round(x.dlat*111)} กม.</div></td></tr>`).join("")+`</table></div>`+SRC_NOTE:`<div class="empty">ไม่มี paran ในระยะ 1° ละติจูด</div>`);
+  }else if(tab==="relA"){
+    const A=d.relocation.A;
+    const col=ax=>{const v=A.axes[ax],now=A.singles[ax].map(r=>r.code),was=A.singles_birthplace[ax];
+      const th=c=>(A.singles[ax].find(r=>r.code===c)||{}).th||c;
+      return `<div><h3>${ax==="MC"?"เมริเดียน (MC)":"ลัคนา (AS)"}<span class="badge">${deg(v.city)}</span></h3><div class="hint">เลื่อนจากเมืองเกิด ${v.shift>=0?"+":""}${v.shift.toFixed(2)}°</div>${singlesTable(A.singles[ax],true)}<div class="hint" style="margin-top:6px">เทียบเมืองเกิด → ได้เพิ่ม: ${now.filter(c=>!was.includes(c)).map(th).join(", ")||"-"} · หายไป: ${was.filter(c=>!now.includes(c)).join(", ")||"-"}</div></div>`};
+    p.innerHTML=head+`<div class="src"><b>วิธี A ย้ายดวง</b> — เวลาเกิดเดิม เปลี่ยนเป็นพิกัดเมืองนี้ แล้วดู MC/ลัคนาใหม่ · เฉพาะดาวเดี่ยวบนแกน (ลำดับความแรง: ดาวเดียว &gt; ศูนย์รังสี &gt; จุดอิทธิพล) · คำแปลจากพจนานุกรม AISTRO บริบทบุคคล · หลักฐานในสำนัก: Witte ให้เรือนลัคนา = สถานที่</div><div class="cols">${col("MC")}${col("AS")}</div>`+
+      `<h3 style="margin-top:16px">สูตรที่มี MC/ลัคนา เปลี่ยนเมื่อย้ายมา</h3><div class="hint">เกิดใหม่: ${A.pictures_new.map(x=>x.codes.join("=")).join(", ")||"-"} · หายไป: ${A.pictures_lost.map(x=>x.codes.join("=")).join(", ")||"-"} · ย้ายเรือนยูเรเนียน ${A.house_moves.length} ปัจจัย</div>`;
+  }else{
+    const B=d.relocation.B;
+    const col=k=>`<div><h3>${k}<span class="badge">${deg(B.points[k])}</span></h3>${singlesTable(B.singles[k],false)}</div>`;
+    p.innerHTML=head+`<div class="src"><b>วิธี B LM/LA ประจำเมือง</b> — องศาคงที่ของพิกัด ไม่ขึ้นกับเวลาเกิด · ดวงกำเนิดไม่เปลี่ยน · หลักฐานในสำนัก: Ruth Brummund (1979) · <b>${B.note}</b></div><div class="cols">${col("LM")}${col("LA")}</div>`;
+  }
+}
+function switchTab(t){tab=t;[...$("#tabs").children].forEach(b=>b.classList.toggle("on",b.dataset.t===t));return refreshTab()}
+$("#panel").addEventListener("click",async e=>{      // ปุ่ม "เปิดแท็บช่วงเวลา" ของข้อ 6
+  if(e.target.closest("#goWindow")){await switchTab("window");$("#tabs").scrollIntoView({behavior:"smooth",block:"start"})}
+  if(e.target.closest("#goCity")){$("#city").scrollIntoView({behavior:"smooth",block:"center"});$("#city").focus()}});
+$("#panel").addEventListener("click",async e=>{      // ปุ่มเป้าหมายของข้อ 2
+  const b=e.target.closest("#goals button"); if(!b)return;
+  goal=goal===b.dataset.goal?null:b.dataset.goal;
+  invalidatePanels(); await refreshTab();
+});
+$("#tabs").addEventListener("click",async e=>{const t=e.target.dataset.t;if(!t)return;tab=t;
+  [...$("#tabs").children].forEach(b=>b.classList.toggle("on",b.dataset.t===t));
+  await refreshTab()});   // (โครงเดียวกับ switchTab — คงไว้ให้เทสต์เดิมจับได้)
+
+// ── เหตุการณ์ — อินพุตที่กระทบผลอ่านทุกช่อง ต้องผ่าน invalidatePanels()+refreshTab() ─────────
+$("#method").addEventListener("click",e=>{const v=e.target.dataset.v;if(!v)return;method=v;[...$("#method").children].forEach(b=>b.classList.toggle("on",b.dataset.v===v));if(chart)drawChart()});
+$("#go").addEventListener("click",drawChart);
+for(const id of ["#ckTransit","#ckProg","#dynDate"])
+  $(id).addEventListener("change",async()=>{invalidatePanels();await loadDynamic();if(city)await loadCity();await refreshTab()});
+$("#dynDate2").addEventListener("change",async()=>{invalidatePanels();await refreshTab()});
+$("#place").addEventListener("change",setBirthPlace);
+$("#orb").addEventListener("change",async()=>{invalidatePanels();if(city)await loadCity();await refreshTab()});
+$("#city").addEventListener("change",async()=>{const v=$("#city").value;if(v==="custom")return;city=placeOf(v);draw();
+  invalidatePanels();loadCity();await refreshTab()});
+$("#zin").addEventListener("click",()=>zoomAt(W/2,H/2,1.6));
+$("#zout").addEventListener("click",()=>zoomAt(W/2,H/2,1/1.6));
+$("#zreset").addEventListener("click",()=>setRegion(0));
+
+let drag=null;
+wrap.addEventListener("pointerdown",e=>{const r=cv.getBoundingClientRect();drag={x:e.clientX,y:e.clientY,cx:view.cx,cy:view.cy,moved:false,rx:r.left,ry:r.top};wrap.setPointerCapture(e.pointerId)});
+wrap.addEventListener("pointermove",e=>{
+  const r=cv.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top;
+  if(drag&&(drag.moved||Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>4)){
+    drag.moved=true;wrap.classList.add("drag");
+    view.cx=drag.cx-(e.clientX-drag.x)*360/(view.k*W);view.cy=drag.cy+(e.clientY-drag.y)*180/(view.k*H);clampView();
+    [...$("#regions").children].forEach(b=>b.classList.remove("on"));$("#tip").style.display="none";draw();return;
+  }
+  const n=nearestLine(px,py); if((n&&n.line)!==(hover&&hover.line)){hover=n;draw()}
+  const t=$("#tip");t.style.display="block";t.style.left=Math.min(px+14,W-190)+"px";t.style.top=(py+14)+"px";
+  t.textContent=(n?`${n.line.glyph} ${n.line.th} · ${ANG_TH[n.line.angle]} · `:"")+`${LAT(py).toFixed(1)}°, ${LON(px).toFixed(1)}°`;
+});
+wrap.addEventListener("pointerup",e=>{
+  const wasDrag=drag&&drag.moved;wrap.classList.remove("drag");
+  if(drag&&!wasDrag){const r=cv.getBoundingClientRect();const lon=LON(e.clientX-r.left),lat=LAT(e.clientY-r.top);
+    city={name:`จุดที่เลือก ${lat.toFixed(2)}, ${lon.toFixed(2)}`,lat:+lat.toFixed(4),lon:+lon.toFixed(4),tz:+$("#tz").value};$("#city").value="custom";draw();
+    invalidatePanels();loadCity();refreshTab()}
+  drag=null;
+});
+wrap.addEventListener("pointerleave",()=>{$("#tip").style.display="none";if(hover){hover=null;draw()}});
+wrap.addEventListener("wheel",e=>{e.preventDefault();const r=cv.getBoundingClientRect();zoomAt(e.clientX-r.left,e.clientY-r.top,e.deltaY<0?1.2:1/1.2);[...$("#regions").children].forEach(b=>b.classList.remove("on"))},{passive:false});
+addEventListener("resize",size);
+
+(async()=>{
+  REGIONS.forEach((r,i)=>{const b=document.createElement("button");b.className="chip"+(i===0?" on":"");b.textContent=r[0];b.onclick=()=>setRegion(i);$("#regions").append(b)});
+  try{await bootReady}catch(e){$("#boot").textContent="❌ โหลดตารางดาวไม่สำเร็จ: "+e.message;return}
+  $("#boot").remove();
+  if(MEANINGS.missing()){const w=document.createElement("div");w.className="src";w.style.marginTop="8px";
+    w.textContent="ชุดนี้ไม่ได้ใส่ไฟล์คำอ่าน (readings.json.gz) — เส้น/paran/ดวงย้ายเมืองคำนวณได้ครบ แต่จะไม่มีคำอ่านของเส้นและคำแนะนำตามเป้าหมาย";
+    $(".wrap").prepend(w)}
+  places=API.places();
+  fillSelect($("#place"),false);fillSelect($("#city"),true);
+  $("#place").value="th:"+places.th.findIndex(p=>p.name==="กรุงเทพมหานคร");setBirthPlace();
+  $("#city").value="intl:"+places.intl.findIndex(p=>p.name.startsWith("โตเกียว"));city=placeOf($("#city").value);
+  $("#dynDate").value=new Date().toISOString().slice(0,10);
+  $("#dynDate2").value=new Date(Date.now()+30*864e5).toISOString().slice(0,10);
+  size();loadLand();await drawChart();   // drawChart โหลดแท็บที่เปิดอยู่ให้ด้วย (แท็บ "อ่านตามลำดับ" เป็นค่าเริ่ม)
+})();
+</script>
+<script>
+// ── ออฟไลน์: ลงทะเบียน service worker (แยกแคชจากแอปยูเรเนียน: urmap-v*) ──
+const MAP_CACHE="urmap-v1";
+(function(){
+  const el=document.createElement("div");el.className="hint";el.style.cssText="margin:6px 4px 0";el.id="swstat";
+  document.querySelector(".wrap").append(el);
+  const say=(t,ok)=>{el.textContent=t;el.style.color=ok?"#1d6b3a":"#8a4a12"};
+  if(location.protocol==="file:"){say("เปิดจากไฟล์ตรง ๆ — ออฟไลน์ผ่าน service worker ใช้ไม่ได้ ต้องเปิดผ่านเว็บ (GitHub Pages / ./serve_map.sh)",false);return}
+  if(!("serviceWorker" in navigator)){say("เบราว์เซอร์นี้ไม่รองรับ service worker",false);return}
+  addEventListener("load",async()=>{
+    try{
+      // updateViaCache:"none" — บังคับถาม sw.js กับเซิร์ฟเวอร์เสมอ ไม่งั้นรุ่นใหม่ไม่มีวันถูกเห็น (บทเรียนจากแอป)
+      const reg=await navigator.serviceWorker.register("sw.js",{updateViaCache:"none"});
+      const ready=()=>say("พร้อมใช้ออฟไลน์ (แคช "+MAP_CACHE+") — ปิดเน็ตแล้วเปิดใหม่ได้",true);
+      reg.addEventListener("updatefound",()=>{const w=reg.installing;if(!w)return;say("กำลังโหลดไฟล์สำหรับใช้ออฟไลน์ (~16 MB)…",true);
+        w.addEventListener("statechange",()=>{if(w.state==="activated")ready();else if(w.state==="redundant")say("ติดตั้งออฟไลน์ไม่สำเร็จ — ลองรีโหลดตอนมีเน็ต",false)})});
+      if(navigator.serviceWorker.controller)ready();
+    }catch(e){say("ลงทะเบียน service worker ไม่ได้: "+e.message,false)}
+  });
+})();
+</script>
+</body>
+</html>
