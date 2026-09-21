@@ -162,14 +162,14 @@
     <div><label for="tz">เขตเวลา (ชม.)</label><input id="tz" type="number" step="0.25"></div>
     <div class="wide"><label>วิธีคำนวณเส้น</label>
       <div class="seg" id="method">
-        <button data-v="mundo" class="on" title="มาตรฐาน Jim Lewis / astro.com">in mundo (สากล)</button>
+        <button data-v="mundo" class="on" title="มาตรฐาน Jim Lewis / ตำราสากล">in mundo (สากล)</button>
         <button data-v="eclpr" title="ไม่คิดละติจูดดาว ตรงกับลัคนา/MC ดวงปกติ">ecl. projection</button>
       </div></div>
     <div class="wide"><label for="orb">ระยะที่ถือว่า "ใกล้เมือง"</label>
       <select id="orb">
-        <option value="240">240 กม. (astro.com)</option>
-        <option value="483">483 กม. (Helena Woods ระดับกลาง)</option>
-        <option value="966">966 กม. (Helena Woods สูงสุด)</option>
+        <option value="240">240 กม. (ตำราสากล)</option>
+        <option value="483">483 กม. (สายคำสอน ระดับกลาง)</option>
+        <option value="966">966 กม. (สายคำสอน สูงสุด)</option>
       </select></div>
     <div class="wide"><label>ชั้นเส้นเพิ่มเติม (คนละชั้นกับเส้นกำเนิด)</label>
       <div class="dyn">
@@ -713,7 +713,15 @@ function nearestLine(px,py,tol){ nearestLine.tol=tol||9;
 const birth=()=>({date:$("#date").value,time:$("#time").value,tz:+$("#tz").value,lat:+$("#lat").value,lon:+$("#lon").value,method,orb_km:+$("#orb").value});
 // เวอร์ชันมือถือ: ไม่มีเซิร์ฟเวอร์ — "post" คือเรียก API.call ในเบราว์เซอร์ (api.js ให้ JSON โครงเดียวกับ Flask ทุกฟิลด์)
 // คืน Promise เหมือน fetch เพื่อให้โค้ดหน้าเว็บที่ยกมาจาก PC ใช้ต่อได้โดยไม่แก้
-async function post(url,body){await bootReady;return API.call(url,JSON.parse(JSON.stringify(body)))}
+// ข้อความที่โมดูล JS ประกอบขึ้นตอนรัน (เช่น angle_source) ก็ต้องไม่เอ่ยชื่อแหล่ง — กรองที่ปลายทางนี้ที่เดียว
+// ไม่แตะ api.js/meanings.js เพราะ selftest เทียบผลของมันกับฝั่ง Python คำต่อคำ · เส้น/เรขาคณิต (chart, dynamic) ไม่มีข้อความ ข้ามได้
+// (เขียน regex แบบต่อสตริง เพราะตัวสร้างหน้าแทนคำพวกนี้ทั้งไฟล์ — เขียนตรง ๆ แล้วจะถูกแทนไปด้วย)
+const NEUTRAL=[[new RegExp("Hel"+"ena( Wo"+"ods)?","g"),"สายคำสอน"],[new RegExp("astro"+"\.com","g"),"ตำราสากล"]];
+const neutral=(x,k)=>typeof x==="string"?(k==="url"?x:NEUTRAL.reduce((t,[r,to])=>t.replace(r,to),x))
+  :Array.isArray(x)?(k==="astro_urls"?x:x.map(v=>neutral(v,k)))
+  :x&&typeof x==="object"?Object.fromEntries(Object.entries(x).map(([kk,v])=>[kk,neutral(v,kk)])):x;
+async function post(url,body){await bootReady;const r=await API.call(url,JSON.parse(JSON.stringify(body)));   // await ก่อนกรอง — ลืมแล้วได้วัตถุว่าง (เจอจริง)
+  return /\/api\/(chart|dynamic)$/.test(url)?r:neutral(r)}
 async function drawChart(){
   $("#formcard").classList.add("loading"); invalidatePanels();
   try{chart=await post("/api/chart",birth());buildLegend();draw();await loadDynamic();if(city)await loadCity();await refreshTab()}   // เส้นจรขึ้นกับดวงเกิด/วิธี ต้องโหลดใหม่ด้วย (ChatGPT รอบ 7)
@@ -822,12 +830,12 @@ function dynTable(d){
 function crossTable(d){
   if(!d.crossings||!d.crossings.length) return "";
   return `<h3 style="margin-top:16px">คู่เส้นที่ผ่านใกล้เมืองพร้อมกัน</h3>`+
-    `<div class="hint">astro.com เรียกบริเวณที่เส้นสองเส้นตัดกันว่า crossing และมีคำอธิบายรายคู่ดาว — ตารางนี้ยังไม่ได้คำนวณ<b>จุดตัดจริง</b> เพียงบอกว่าเส้นสองเส้นนี้ผ่านใกล้เมืองพร้อมกัน · คนละเรื่องกับ paran ซึ่งดูที่ละติจูด</div>`+
+    `<div class="hint">ตำราสากล เรียกบริเวณที่เส้นสองเส้นตัดกันว่า crossing และมีคำอธิบายรายคู่ดาว — ตารางนี้ยังไม่ได้คำนวณ<b>จุดตัดจริง</b> เพียงบอกว่าเส้นสองเส้นนี้ผ่านใกล้เมืองพร้อมกัน · คนละเรื่องกับ paran ซึ่งดูที่ละติจูด</div>`+
     `<div class="tw"><table><tr><th>คู่เส้น</th><th>ระยะไกลสุดของคู่</th></tr>`+
     d.crossings.map(c=>`<tr><td>${esc(c.a_th)} ${esc(c.a_angle)} × ${esc(c.b_th)} ${esc(c.b_angle)}${acBlock(c.astrocom)}</td><td>${Math.round(c.km)} กม.</td></tr>`).join("")+`</table></div>`;
 }
-const SRC_NOTE=`<div class="src" style="margin-top:10px">คำสอนทั้งหมดมาจากสกิล <b>Helena Woods</b> (สกัดจาก 146 คลิป ทุกข้อมีที่มา) — กดที่เวลาเพื่อเปิดคลิปตรงจุดนั้น · ตัวเลขระยะมาจากการคำนวณของโปรแกรม ไม่ใช่คำสอน</div>`;
-// ความแรงตามระยะ: Helena สอนว่า ≤150-300 ไมล์ = ปานกลาง · เต็มกำลังราว 100-150 ไมล์ (อ้างในสกิล ไฟล์ orbs-parans-localspace.md)
+const SRC_NOTE=`<div class="src" style="margin-top:10px">คำสอนทั้งหมดมาจากสกิล <b>สายคำสอน</b> (สกัดจาก 146 คลิป ทุกข้อมีที่มา) — กดที่เวลาเพื่อเปิดคลิปตรงจุดนั้น · ตัวเลขระยะมาจากการคำนวณของโปรแกรม ไม่ใช่คำสอน</div>`;
+// ความแรงตามระยะ: สายคำสอน สอนว่า ≤150-300 ไมล์ = ปานกลาง · เต็มกำลังราว 100-150 ไมล์ (อ้างในสกิล ไฟล์ orbs-parans-localspace.md)
 const MI=1.609344;   // กม./ไมล์ ตัวเดียวกับ server.py (เดิม 1.609 → ที่ 482.75 กม. ฝั่ง Python ได้ 299.97 ไมล์ "ปานกลาง" แต่หน้าเว็บได้ 300.03 "อ่อน")
 function strength(km){const mi=km/MI;const t=mi<=150?"เต็มกำลัง (≤150 ไมล์)":mi<=300?"ปานกลาง (150-300 ไมล์)":"อ่อน (>300 ไมล์)";
   return `<div class="hint">${Math.round(mi)} ไมล์ · ${t}</div>`}
@@ -844,16 +852,16 @@ function textBlock(t){
 function readBlock(rows){
   if(!rows||!rows.length) return "";
   const tag=r=>r.tag==="H+A"?`<span class="tg both" title="ทั้งสองสำนักตรงกัน">ตรงกัน</span>`
-    :r.tag==="H"?`<span class="tg h" title="คำสอน Helena Woods">H</span>`
-    :`<span class="tg a" title="สรุปจาก astro.com">A</span>`;
+    :r.tag==="H"?`<span class="tg h" title="คำสอน สายคำสอน">H</span>`
+    :`<span class="tg a" title="สรุปจาก ตำราสากล">A</span>`;
   const src=r=>[...r.cites.map(c=>`<a href="${esc(c.url)}" target="_blank" rel="noopener">▶${esc(c.ts)}</a>`),
                 ...r.astro_urls.map((u,i)=>`<a href="${esc(u)}" target="_blank" rel="noopener">astro:${esc(r.astro_keys[i])}</a>`)].join(" ");
   return `<details class="teach"><summary>ดูแยกทีละข้อ/ทีละสำนัก (${rows.length} ข้อ)</summary><div class="read"><ul>`+rows.map(r=>`<li class="${r.warn?"w":""}">${tag(r)} ${esc(r.text)} <span class="cits">${src(r)}</span></li>`).join("")+`</ul></div></details>`;
 }
 function acBlock(a){
   if(!a) return "";
-  return `<details class="teach ac"><summary>astro.com · ${esc(a.title)}</summary><ul>${a.bullets.map(b=>`<li>${esc(b)}</li>`).join("")}`+
-    `<li class="hint"><a href="${esc(a.url)}" target="_blank" rel="noopener">อ่านต้นฉบับที่ astro.com ↗</a> — สรุปย่อด้วยคำของเราเอง ลิขสิทธิ์ข้อความต้นฉบับเป็นของ Astrodienst</li></ul></details>`;
+  return `<details class="teach ac"><summary>ตำราสากล · ${esc(a.title)}</summary><ul>${a.bullets.map(b=>`<li>${esc(b)}</li>`).join("")}`+
+    (a.url?`<li class="hint"><a href="${esc(a.url)}" target="_blank" rel="noopener">อ่านต้นฉบับ ↗</a></li>`:"")+`</ul></details>`;
 }
 function teachBlock(h,key){
   const rows=(h.meanings||[]).concat(h.angle_meanings||[]);
@@ -874,7 +882,7 @@ function spanRows(list,kindTh){
 }
 // อ่านตามลำดับ — ทยอยเพิ่มทีละข้อตามที่ตกลงกันไว้
 // ลำดับนี้เรียงตามที่สำรวจจาก 8 แหล่ง (19 ก.ย. 2026): ทุกสำนักหลักเริ่มที่ "ดวงกำเนิด" ไม่ใช่ที่แผนที่
-// Helena Woods · Moses Siregar · Robert Currey · Kerykeion ตรงกันว่าต้องรู้สภาพดาวก่อนจึงอ่านเส้นได้ถูก
+// สายคำสอน · Moses Siregar · Robert Currey · Kerykeion ตรงกันว่าต้องรู้สภาพดาวก่อนจึงอ่านเส้นได้ถูก
 const GUIDE_STEPS=["สภาพดาวในดวงกำเนิด (ต้องรู้ก่อนดูเส้น)","อยากได้อะไร → ควรดูเส้นไหน",
   "เมืองเกิดของคุณ: เส้นที่พาดผ่าน","เส้นที่ส่งผลจริงที่เมืองที่เลือก","paran ที่ละติจูดนั้น",
   "ดวงย้ายเมือง: เรือนปกติ + เรือนยูเรเนียน"];
@@ -1027,7 +1035,7 @@ const citeLinks=cs=>`<span class="cits">${cs.map(c=>`<a href="${esc(c.url)}" tar
 function step4Html(s4){
   if(!s4) return `<div class="empty">เลือกเมืองที่สนใจก่อน (เหมือนข้อ 3)</div>`;
   let h=`<div class="rd"><p><b>${esc(s4.city.name)}</b> ละติจูด ${s4.city.lat.toFixed(2)}° — paran คือละติจูดที่ดาวสองดวงอยู่บนมุมพร้อมกัน `+
-    `เป็นแถบแนวนอนทั้งโลก ไม่ขึ้นกับลองจิจูด · นับเฉพาะที่ห่างไม่เกิน ±${s4.orb_deg}° (≈${Math.round(s4.orb_deg*111/MI)} ไมล์) ตามที่ Helena ใช้</p>`+
+    `เป็นแถบแนวนอนทั้งโลก ไม่ขึ้นกับลองจิจูด · นับเฉพาะที่ห่างไม่เกิน ±${s4.orb_deg}° (≈${Math.round(s4.orb_deg*111/MI)} ไมล์) ตามที่ สายคำสอน ใช้</p>`+
     `<details class="teach"><summary>ตัวเลข orb ของ paran ในตำรา (${s4.rules.length} บรรทัด)</summary><ul>`+
     s4.rules.map(x=>`<li>${esc(x.value)} — ${esc(x.what)} <span class="hint">${esc(x.who)}</span> ${citeLinks(x.cites)}</li>`).join("")+`</ul></details></div>`;
   if(!s4.parans.length) return h+`<div class="empty">ไม่มี paran ในระยะ ±${s4.orb_deg}° ของละติจูดนี้ — ตามคำสอน ไม่มี paran ไม่ได้แปลว่าไม่มีพลังงาน ให้ยึดเส้นในข้อ 3 เป็นหลัก</div>`;
@@ -1061,7 +1069,7 @@ function step5Summary(sm){
     `<p class="hint">ใจความย่อมาจากคำอ่านเต็ม — อ่านฉบับเต็มได้ที่หัวข้อ "ดาวที่ย้ายเรือนเมื่อไปเมืองนี้" ด้านล่าง</p>`+
     `<p class="note">${esc(sm.source_note)}</p></div>`;
 }
-// ดวงย้ายเมืองแบบเรือนปกติ (สาย Lewis/Helena/Siregar) — คนละระบบกับเรือนยูเรเนียนด้านล่าง
+// ดวงย้ายเมืองแบบเรือนปกติ (สาย Lewis/สายคำสอน/Siregar) — คนละระบบกับเรือนยูเรเนียนด้านล่าง
 function classicRelocHtml(k){
   if(!k) return "";
   let h=`<div class="rd"><p><b>ลัคนา</b> ${esc(k.natal_asc_txt)} → <b>${esc(k.city_asc_txt)}</b>`+
@@ -1084,7 +1092,7 @@ function step5Html(s5){
   const ax=s5.axes, sh=v=>`${v.shift>=0?"+":""}${v.shift.toFixed(2)}°`;
   const fac=(codes,mark)=>codes.length?codes.map(c=>`<span class="${mark&&mark.includes(c)?"mv":""}">${esc(c)}</span>`).join(" "):"—";
   // (ก) แบบเรือนปกติ = สิ่งที่สำนักแผนที่ดวงหมายถึงเมื่อพูดว่า "ดวงย้ายเมือง" · (ข) แบบยูเรเนียน = อีกสำนัก
-  let h=`<h4 style="margin:6px 0 4px">(ก) แบบเรือนปกติ — สายแผนที่ดวง (Lewis / Helena / Siregar)</h4>`+
+  let h=`<h4 style="margin:6px 0 4px">(ก) แบบเรือนปกติ — สายแผนที่ดวง (Lewis / สายคำสอน / Siregar)</h4>`+
     classicRelocHtml(s5.classic)+
     `<h4 style="margin:16px 0 4px">(ข) แบบเรือนยูเรเนียน — พจนานุกรม AISTRO (คนละสำนัก)</h4>`+
     step5Summary(s5.summary)+`<div class="rd"><p class="note">${esc(s5.note)}</p>`+
@@ -1231,11 +1239,11 @@ function renderPanel(){
   if(tab==="window"){p.innerHTML=head+windowHtml();return}   // ใช้ windowData อย่างเดียว ไม่ใช้ cityData เช่นกัน
   if(!d)return;
   if(tab==="near"){
-    p.innerHTML=head+`<div class="src">เส้นดาวกำเนิด (${d.method==="mundo"?"in mundo":"ecl. projection"}) ที่ห่างเมืองไม่เกิน ${d.orb_km} กม. · เป็นวิธีของ Jim Lewis/astro.com ไม่ใช่ยูเรเนียน<br>คำแปลรวมสองสำนัก: <span class="tg both">ตรงกัน</span> ทั้งคู่พูดตรงกัน · <span class="tg h">H</span> Helena Woods · <span class="tg a">A</span> astro.com (สรุปย่อ) — กดที่ ▶เวลา หรือ astro: เพื่อเปิดต้นฉบับ</div>`+
+    p.innerHTML=head+`<div class="src">เส้นดาวกำเนิด (${d.method==="mundo"?"in mundo":"ecl. projection"}) ที่ห่างเมืองไม่เกิน ${d.orb_km} กม. · เป็นวิธีของ Jim Lewis/ตำราสากล ไม่ใช่ยูเรเนียน<br>คำแปลรวมสองสำนัก: <span class="tg both">ตรงกัน</span> ทั้งคู่พูดตรงกัน · <span class="tg h">H</span> สายคำสอน · <span class="tg a">A</span> ตำราสากล (สรุปย่อ) — กดที่ ▶เวลา หรือ astro: เพื่อเปิดต้นฉบับ</div>`+
       (d.lines_near.length?`<div class="tw"><table><tr><th>ดาว</th><th>เส้น</th><th>ระยะ</th></tr>`+d.lines_near.map((h,i)=>`<tr><td><span class="sw" style="background:${COLORS[h.body]}"></span> ${esc(h.glyph)} ${esc(h.th)}${h.group==="uranian"?` <span class="hint">(ดาวสมมติยูเรเนียน · ไม่มีคำสอนความหมายของดาวดวงนี้ · มีเฉพาะความหมายของมุม)</span>`:""}${textBlock(h.text_reading)}${h.text_reading?"":tnpBlock(h.tnp)}${readBlock(h.reading)}${teachBlock(h,i)}${acBlock(h.astrocom)}</td><td>${ANG_TH[h.angle]}</td><td class="num">${Math.round(h.km)} กม.${strength(h.km)}</td></tr>`).join("")+`</table></div>`+SRC_NOTE:`<div class="empty">ไม่มีเส้นในระยะนี้ — ลองขยายระยะที่ช่อง "ระยะที่ถือว่าใกล้เมือง"</div>`)+
       crossTable(d)+dynTable(d);   // เส้นจรเป็นชั้นแยก ต้องขึ้นแม้ไม่มีเส้นกำเนิด (ซิดนีย์ 12 ม.ค. 2026: จันทร์ MC จร 95 กม. เคยหายจากจอ)
   }else if(tab==="paran"){
-    p.innerHTML=head+`<div class="src">ดาวสองดวงอยู่บนแกนพร้อมกัน ที่ละติจูดห่างเมืองไม่เกิน 1° (≈111 กม. · Helena Woods ใช้ 1°)</div>`+
+    p.innerHTML=head+`<div class="src">ดาวสองดวงอยู่บนแกนพร้อมกัน ที่ละติจูดห่างเมืองไม่เกิน 1° (≈111 กม. · สายคำสอน ใช้ 1°)</div>`+
       (d.parans_near.length?`<div class="tw"><table><tr><th>คู่ดาว</th><th>ละติจูด paran</th><th>ห่าง</th></tr>`+d.parans_near.map((x,i)=>`<tr><td>${esc(x.a_th)} ${ANG_TH[x.ang_a]} · ${esc(x.b_th)} ${ANG_TH[x.ang_b]}${teachBlock({meanings:x.meanings,angle_meanings:[]},"p"+i)}</td><td>${x.lat.toFixed(2)}°</td><td>${x.dlat.toFixed(2)}°<div class="hint">${Math.round(x.dlat*111)} กม.</div></td></tr>`).join("")+`</table></div>`+SRC_NOTE:`<div class="empty">ไม่มี paran ในระยะ 1° ละติจูด</div>`);
   }else if(tab==="relA"){
     const A=d.relocation.A;
@@ -1350,7 +1358,7 @@ addEventListener("resize",size);
 </script>
 <script>
 // ── ออฟไลน์: ลงทะเบียน service worker (แยกแคชจากแอปยูเรเนียน: urmap-v*) ──
-const MAP_CACHE="urmap-v3";
+const MAP_CACHE="urmap-v4";
 (function(){
   const el=document.createElement("div");el.className="hint";el.style.cssText="margin:6px 4px 0";el.id="swstat";
   document.querySelector(".wrap").append(el);
