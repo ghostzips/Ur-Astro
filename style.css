@@ -1229,7 +1229,7 @@ p.hint:empty{display:none}
   #aspwheel{position:sticky;top:var(--topbar,0px);z-index:3;background:var(--panel);padding:var(--s1) 0}
 }
 
-/* v123: กล่องดาวเด่น/ดาวสันโดษ (คำสอน อ.รหัสวิทยา) */
+/* v123: กล่องดาวเด่น/ดาวสันโดษ (คำสอน VT) */
 #notebox .noterow { display: flex; flex-wrap: wrap; gap: var(--s2);
   align-items: center; margin: var(--s2) 0; }
 #notebox .notelbl { flex: 0 0 auto; min-width: 84px; color: var(--muted);
