@@ -1,0 +1,78 @@
+<!doctype html><html lang="th"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ซ่อมแผนที่ดวง (ล้างของเก่าแล้วติดตั้งใหม่)</title>
+<style>
+ body{font:16px/1.6 -apple-system,"Segoe UI",Roboto,"Noto Sans Thai",sans-serif;margin:0;background:#f3f1ec;color:#1d2127}
+ .wrap{max-width:560px;margin:0 auto;padding:20px 16px 40px}
+ h1{font-size:19px;margin:0 0 6px}
+ .card{background:#fff;border:1px solid #dcd7cc;border-radius:12px;padding:14px 16px;margin-top:12px}
+ .hint{color:#6b6257;font-size:13.5px}
+ li{margin:3px 0;font-size:14px}
+ .ok{color:#1d6b3a}.bad{color:#b3261e}
+ button{font:inherit;padding:11px 16px;border-radius:10px;border:1px solid #24527f;background:#24527f;color:#fff;cursor:pointer;width:100%;margin-top:10px}
+ button.sec{background:#fff;color:#24527f}
+</style>
+<div class="wrap">
+<h1>ซ่อมแผนที่ดวง</h1>
+<div class="hint">หน้านี้ใช้เมื่อมือถือยังเปิดได้แต่เป็น<strong>รุ่นเก่า</strong> หรือขึ้นว่า "ไฟล์ยังไม่ครบในแคช"
+เพราะตัวจัดการออฟไลน์รุ่นเก่ายังเสิร์ฟหน้าที่ค้างอยู่</div>
+<div class="card">
+  <div><b>จะทำอะไรบ้าง</b></div>
+  <ul>
+    <li>ถอนตัวจัดการออฟไลน์ของ <b>แผนที่ดวง</b> (เฉพาะโฟลเดอร์ /map/)</li>
+    <li>ลบแคชของแผนที่ดวงทุกรุ่น (urmap-*)</li>
+    <li>ลบไฟล์ของแผนที่ดวงที่ค้างอยู่ในแคชของแอปอื่นบนโดเมนเดียวกัน</li>
+  </ul>
+  <div class="hint"><b>ไม่แตะ</b>แอปยูเรเนียนและ<b>ไม่ลบดวงที่บันทึกไว้</b> (ดวงเก็บใน localStorage คนละที่กับแคช)
+  หลังซ่อมต้องมีเน็ตเพื่อโหลดใหม่ประมาณ 16 MB</div>
+  <button id="go">ล้างของเก่าแล้วติดตั้งใหม่</button>
+  <button class="sec" id="back">ย้อนกลับไปหน้าแผนที่ดวง</button>
+</div>
+<div class="card" id="logcard" hidden><b>ผลการซ่อม</b><ul id="log"></ul><div id="done"></div></div>
+</div>
+<script>
+// หน้านี้ตั้งใจให้ "ไม่เคยอยู่ในแคชใด ๆ" (ไม่อยู่ในรายการ precache และอยู่ใน NEVER_CACHE ของ sw.js)
+// จึงถูกดึงจากเน็ตเสมอแม้ตัวจัดการออฟไลน์รุ่นเก่ายังทำงานอยู่ — เป็นทางเดียวที่แน่ใจว่าโค้ดใหม่ได้รัน
+const $=s=>document.querySelector(s);
+const say=(t,cls)=>{const li=document.createElement("li");li.textContent=t;if(cls)li.className=cls;$("#log").append(li)};
+const __BASE=new URL("./",location.href).href;        // .../Ur-Astro/map/
+window.__BASE=__BASE;
+
+/** ล้างเฉพาะของแผนที่ดวง — คืนสรุปเป็นตัวเลขเพื่อให้เทสต์ตรวจได้
+ *  base ใส่ได้เฉพาะตอนเทสต์ (เครื่อง dev เสิร์ฟ mapapp/ ที่ราก จึงต้องจำลองพาธ /map/ ของจริง) */
+async function cleanup(base){
+  const BASE=base||window.__BASE;
+  const out={unregistered:0,keptRegs:0,cachesDeleted:[],strays:0,keptEntries:0};
+  if("serviceWorker" in navigator){
+    for(const r of await navigator.serviceWorker.getRegistrations()){
+      if(r.scope.startsWith(BASE)){ await r.unregister(); out.unregistered++; }
+      else out.keptRegs++;                              // ของแอปยูเรเนียน — ห้ามแตะ
+    }
+  }
+  if(window.caches){
+    for(const k of await caches.keys()){
+      if(k.startsWith("urmap-")){ await caches.delete(k); out.cachesDeleted.push(k); continue; }
+      const c=await caches.open(k);
+      for(const req of await c.keys()){
+        if(req.url.startsWith(BASE)){ await c.delete(req); out.strays++; } else out.keptEntries++;
+      }
+    }
+  }
+  return out;
+}
+
+$("#back").addEventListener("click",()=>location.href="./index.html?fresh="+Date.now());
+$("#go").addEventListener("click",async()=>{
+  $("#go").disabled=true;$("#logcard").hidden=false;$("#log").innerHTML="";
+  try{
+    const r=await cleanup();
+    say(`ถอนตัวจัดการออฟไลน์ของแผนที่ดวง ${r.unregistered} ตัว (ของแอปอื่นคงไว้ ${r.keptRegs} ตัว)`,"ok");
+    say(`ลบแคชแผนที่ดวง ${r.cachesDeleted.length} ชุด${r.cachesDeleted.length?": "+r.cachesDeleted.join(", "):""}`,"ok");
+    say(`ลบไฟล์แผนที่ดวงที่ค้างในแคชแอปอื่น ${r.strays} ไฟล์ (ไฟล์ของแอปนั้นคงไว้ ${r.keptEntries} ไฟล์)`,"ok");
+    $("#done").innerHTML=`<div class="hint" style="margin-top:8px">กำลังเปิดหน้าแผนที่ดวงรุ่นใหม่… ถ้าไม่เปลี่ยนเอง กดปุ่มย้อนกลับด้านบน</div>`;
+    if(!new URLSearchParams(location.search).has("dry"))
+      setTimeout(()=>location.replace("./index.html?fresh="+Date.now()),1200);   // ?fresh= กันแคช HTTP ของเบราว์เซอร์
+  }catch(e){ say("ซ่อมไม่สำเร็จ: "+e.message,"bad"); $("#go").disabled=false; }
+});
+window.__cleanup=cleanup;     // ให้เทสต์เรียกตรง ๆ ได้
+</script>
