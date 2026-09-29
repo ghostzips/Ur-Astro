@@ -1355,3 +1355,6 @@ p.hint:empty{display:none}
 .rdmore summary{cursor:pointer;color:var(--dim);font-size:var(--t-xs);padding:6px 4px}
 .rdmean{margin:4px 0 8px}
 .rdvt{border-style:dashed}
+.rdlife,.rdnow{font-size:var(--t-xs);padding:1px 6px;border-radius:999px;white-space:nowrap}
+.rdlife{color:var(--dim);border:1px solid var(--rule)}
+.rdnow{color:var(--warn-ink);background:var(--warn-soft)}

@@ -15,7 +15,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v129">
+<link rel="stylesheet" href="style.css?v=urain-v130">
 </head>
 <body>
 <div class="wrap">
@@ -513,6 +513,7 @@
   <h3>ใบอ่านดวง</h3>
   <p class="dialnote">เรียงหลักฐานตามสี่ขั้นของ AISTRO (ภาพ 7): <b>ข้อมูล → โครงสร้าง → น้ำหนัก → คำแปลตำรา</b> ·
     ดวงกำเนิด (r) + โค้งสุริยยาตร์ (v1) ณ <b>วันดวงจรในหน้าตั้งดวง</b> · วังกะ 1.0° บนจาน 22.5° ·
+    ป้าย <b>ตลอดชีวิต</b> = โครงสร้างดวงกำเนิด · <b>ช่วงนี้</b> = โค้งกระตุ้น (อยู่ในวังกะราว ±1 ปีรอบวันแน่น) ·
     หน้านี้เรียงหลักฐานและยกคำแปลตำราเท่านั้น <b>ไม่สรุปคำทำนายแทนผู้อ่าน</b></p>
   <div class="dictlook"><span class="lbl">หัวข้อ</span>
     <select id="readgate"><option value="0">ทั้งดวง</option></select></div>
@@ -705,10 +706,10 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v129"></script>
-<script src="places.js?v=urain-v129"></script>
-<script src="engine.js?v=urain-v129"></script>
-<script src="render.js?v=urain-v129"></script>
+<script src="glyphs.js?v=urain-v130"></script>
+<script src="places.js?v=urain-v130"></script>
+<script src="engine.js?v=urain-v130"></script>
+<script src="render.js?v=urain-v130"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -752,7 +753,7 @@ function pyrWarn(kinds) {
     (pyrTier(kinds) === "3" ? ` · A/B=C/D ยังนับเป็นหลักฐานชั้น ③ ได้ แต่น้ำหนักน้อย` : "") +
     ` · สูตรยังคำนวณครบตามเดิม</p>`;
 }
-const SW_CACHE = "urain-v129";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v130";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 let DIALMARKS = null, _markTimer = 0;   // วงเส้นประกะพริบครอบดาวของสูตร (v80)
@@ -3957,7 +3958,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v129")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v130")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
@@ -5066,6 +5067,20 @@ function readAng(a, b) {
   const d = Math.abs((((a - b) % 360) + 540) % 360 - 180);
   return Math.round(d / 22.5) * 22.5;
 }
+// ระยะมีเครื่องหมายบนจาน 22.5 (−11.25..11.25) · บวก = ข้างโค้งเลยเป้าไปแล้ว
+function readSd(v, target) { return (((v - target) % 22.5) + 33.75) % 22.5 - 11.25; }
+// วันที่สูตรโค้งแน่นที่สุด — ใช้ตัวแก้วันที่ของ engine ตัวเดียวกับปฏิทินโค้ง (solveArcDate)
+// โค้งเป้า = โค้งวันนี้ − ระยะมีเครื่องหมาย · คาบ 22.5 → ได้คำตอบที่ใกล้วันดวงจรที่สุด
+function readExact(e, arcNow) {
+  if (e.src !== "v") return null;
+  if (e.jdx === undefined) e.jdx = AISTRO.solveArcDate(TL.jd, arcNow - e.sd, TL.jdT, 22.5, TZ);
+  return e.jdx;
+}
+function readDateTxt(jd) { const d = ctrDate(jd); return `${d.d}/${d.m}/${d.y + 543}`; }
+function readWhen(e, arcNow) {
+  if (e.src !== "v") return `<span class="rdlife" title="โครงสร้างดวงกำเนิด ไม่เปลี่ยนตามวันที่">ตลอดชีวิต</span>`;
+  return `<span class="rdnow" title="โค้งสุริยยาตร์กระตุ้น · อยู่ในวังกะ 1° ราว ±1 ปีรอบวันแน่น">ช่วงนี้ · แน่น ${readDateTxt(readExact(e, arcNow))}</span>`;
+}
 function readMid(a, b) {                       // ศูนย์รังสี (บนจาน 22.5 ด้านใกล้/ไกลให้ผลเท่ากัน)
   return AISTRO.mod360(a + AISTRO.mod360(b - a) / 2);
 }
@@ -5093,7 +5108,7 @@ function readBuild(R, V, orb) {
   for (const x of C) for (const y of C) {
     if (x === y) continue;
     const o = readDial(V[x], R[y]);
-    if (o <= orb) big.push({ tier: "1", src: "v", f: [x, y], o, ang: readAng(V[x], R[y]),
+    if (o <= orb) big.push({ tier: "1", src: "v", f: [x, y], o, ang: readAng(V[x], R[y]), sd: readSd(V[x], R[y]),
       txt: `${x}v1=${y}r`, mean: { type: "A", p: x, axis: y } });
   }
   // ② A/B(r) = Cv1  ·  ④ A+B−C(r) = Dv1
@@ -5102,13 +5117,13 @@ function readBuild(R, V, orb) {
     for (const c of C) {
       if (c === a || c === b) continue;
       const o = readDial(mp, V[c]);
-      if (o <= orb) small.push({ tier: "2", f: [a, b, c], o, txt: `${a}/${b}=${c}v1`,
+      if (o <= orb) small.push({ tier: "2", src: "v", f: [a, b, c], o, sd: readSd(V[c], mp), txt: `${a}/${b}=${c}v1`,
         mean: { type: "AB", a, b, axis: c } });
       const sp = AISTRO.mod360(R[a] + R[b] - R[c]);
       for (const d of C) {
         if (d === a || d === b || d === c) continue;
         const o4 = readDial(sp, V[d]);
-        if (o4 <= orb) small.push({ tier: "4", f: [a, b, c, d], o: o4,
+        if (o4 <= orb) small.push({ tier: "4", src: "v", f: [a, b, c, d], o: o4, sd: readSd(V[d], sp),
           txt: `${a}+${b}−${c}=${d}v1`, mean: { type: "ABC", a, b, c } });
       }
     }
@@ -5176,7 +5191,7 @@ function readRender() {
     return `<div class="rdrow ${cls || ""}" data-ri="${i}">${pyrBadge(kinds[e.tier])}` +
       `<b class="rdf">${esc(e.txt)}</b>` +
       (e.ang !== undefined ? `<span class="rda">${angLabel(e.ang)}</span>` : "") +
-      `<span class="rdo">orb ${e.o.toFixed(2)}°</span></div>`;
+      `<span class="rdo">orb ${e.o.toFixed(2)}°</span>${readWhen(e, arc)}</div>`;
   };
   h += `<div class="rdstep"><div class="rdh">ขั้น 3 · น้ำหนัก <span class="hint">เรียงใหญ่ → เล็ก · ` +
     `สูตรเล็กอยู่ใต้สูตรใหญ่ที่มีดาวร่วมกัน · แตะแถวเพื่อดูคำแปล</span></div>`;
@@ -5223,7 +5238,8 @@ async function readMeanFill() {
   const box = $("readmean");
   if (DICT_STATE !== "ready") { box.innerHTML = '<p class="svempty">โหลดพจนานุกรมไม่สำเร็จ — แตะแถวในขั้น 3 เพื่อลองใหม่</p>'; return; }
   box.innerHTML = st.top.map((e) =>
-    `<div class="mbox horm"><div class="mnote">${AISTRO_RENDER.esc(e.txt)} · orb ${e.o.toFixed(2)}°</div>` +
+    `<div class="mbox horm"><div class="mnote">${AISTRO_RENDER.esc(e.txt)} · orb ${e.o.toFixed(2)}° · ` +
+    (e.src === "v" ? `ช่วงนี้ (แน่น ${readDateTxt(e.jdx)})` : "ตลอดชีวิต") + `</div>` +
     meanHTML(e.mean) + `</div>`).join("");
 }
 $("readgate").addEventListener("change", readRender);
