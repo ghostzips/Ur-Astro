@@ -248,7 +248,7 @@
       </dialog>
     </div>
   </div>
-  <div class="hint" style="margin:6px 4px 0">ต่างประเทศ: เขตเวลาที่เติมให้เป็นเวลามาตรฐาน ถ้าเกิดช่วงเวลาออมแสงต้องแก้เอง</div>
+  <div class="hint" id="tzwarn" style="margin:6px 4px 0"></div>
 
   <div class="card mapcard">
     <div class="maptools">
@@ -323,15 +323,27 @@ function fillSelect(sel,withCustom){
   sel.append(g1,g2); if(withCustom) sel.append(new Option("— จุดที่คลิกบนแผนที่ —","custom"));
 }
 const placeOf=v=>{const [k,i]=v.split(":");return places[k][+i]};
-function setBirthPlace(){const v=$("#place").value; if(v===SAVED_OPT) return;   // ตัวเลือกของดวงที่บันทึกไว้ — พิกัดมาจากไฟล์บันทึก ไม่ใช่จากรายชื่อเมือง
+function setBirthPlace(){const v=$("#place").value;
+  // ตัวเลือกของดวงที่บันทึกไว้: พิกัด/เขตเวลาติดมากับตัวเลือกเอง (dataset) — เดิม return เฉย ๆ
+  // ผู้ใช้เลือกเมืองอื่นแล้วเลือกกลับ พิกัดจึงค้างเป็นของเมืองอื่นทั้งที่ช่องเขียนชื่อเดิม (ตรวจบั๊ก 29 ก.ย. 2026)
+  if(v===SAVED_OPT){const o=$("#place").selectedOptions[0];
+    if(o&&o.dataset.lat!==undefined){$("#lat").value=o.dataset.lat;$("#lon").value=o.dataset.lon;setTz(+o.dataset.tz)}
+    return}
   const p=placeOf(v);$("#lat").value=p.lat;$("#lon").value=p.lon;setTz(p.tz)}
 
 // ── เขตเวลา: ตัวเลือก (ผู้ใช้สั่ง 22 ก.ย. 2026) ค่าเริ่มต้น +7 ─────────────────────────────
 // ครอบเขตเวลาที่ใช้จริงทั่วโลก รวมครึ่ง/เศษชั่วโมง · ถ้าเมืองไหนมีค่าที่ไม่อยู่ในรายการ ให้เพิ่มตัวเลือกนั้นเอง
 // (ห้ามปัดหรือปล่อยให้ค่าไม่ถูกตั้ง เพราะเขตเวลาเข้าสูตรคำนวณโดยตรง)
-const TZ_LIST=[-12,-11,-10,-9.5,-9,-8,-7,-6,-5,-4,-3.5,-3,-2,-1,0,1,2,3,3.5,4,4.5,5,5.5,5.75,6,6.5,7,8,8.75,9,9.5,10,10.5,11,12,12.75,13,14];
-const tzTxt=v=>`UTC${v>=0?"+":"−"}${Number.isInteger(v)?Math.abs(v):Math.abs(v).toString().replace("-","")}`;
+const TZ_LIST=[-12,-11,-10,-9.5,-9,-8,-7,-6,-5,-4,-3.5,-3,-2,-1,0,1,2,3,3.5,4,4.5,5,5.5,5.75,6,6.5,6.7,7,8,8.75,9,9.5,10,10.5,11,12,12.75,13,14];
+// 6.7 ชม. = 6:42 เวลาท้องถิ่นกรุงเทพที่ไทยใช้ก่อน 1 เม.ย. 1920 (ผู้ใช้สั่งเพิ่มคำเตือนเขตเวลา 29 ก.ย. 2026)
+const tzTxt=v=>v===6.7?"UTC+6:42 (ไทยก่อน 1920)":`UTC${v>=0?"+":"−"}${Number.isInteger(v)?Math.abs(v):Math.abs(v).toString().replace("-","")}`;
 function fillTz(){const s=$("#tz");s.innerHTML="";TZ_LIST.forEach(v=>s.append(new Option(tzTxt(v),String(v))));s.value="7"}
+// คำเตือนเขตเวลา: เมืองในรายการมีค่าเดียวตายตัว = เวลามาตรฐานปัจจุบัน — ไม่รู้เวลาออมแสงหรือเวลาท้องถิ่นยุคเก่า
+function tzWarn(){const el=$("#tzwarn");if(!el)return;
+  const y=+($("#date").value||"").slice(0,4),tv=$("#tz").value,th=/^th:/.test($("#place").value)||tv==="7";
+  const old=y>0&&y<1920&&th&&tv!=="6.7";
+  el.innerHTML=(old?`<b style="color:var(--warn,#c0392b)">⚠ เกิดก่อน 1 เม.ย. 1920 (พ.ศ. 2463): ไทยยังใช้เวลาท้องถิ่นกรุงเทพ +6:42 ไม่ใช่ +7 — ถ้าเกิดในไทย ให้เลือกเขตเวลา "UTC+6:42"</b><br>`:"")+
+    "เขตเวลาที่เติมให้เป็นเวลามาตรฐานปัจจุบันของเมือง · ต่างประเทศถ้าเกิดช่วงเวลาออมแสง หรือก่อนประเทศนั้นใช้เวลามาตรฐาน ต้องแก้เอง"}
 function setTz(v){const s=$("#tz"),val=String(v);
   if(![...s.options].some(o=>o.value===val)){const o=new Option(tzTxt(+v)+" (จากข้อมูลเมือง)",val);
     s.append(o);}                      // ค่าแปลกต้องโผล่ให้เห็น ไม่ใช่เงียบแล้วใช้ค่าเดิมผิด ๆ
@@ -341,13 +353,17 @@ function setTz(v){const s=$("#tz"),val=String(v);
 // เก็บเฉพาะสิ่งที่เป็น "ตัวดวงกำเนิด": ชื่อเจ้าของ วัน เวลา สถานที่ พิกัด เขตเวลา วิธีคำนวณเส้น ระยะที่ถือว่าใกล้
 // ไม่เก็บเมืองที่กำลังดู/ช่วงวันที่จร เพราะเป็นสิ่งที่เปลี่ยนไปมาระหว่างอ่าน ไม่ใช่ของดวง
 const STORE="acg_charts_v1", SAVED_OPT="saved";
-function savedList(){try{const v=JSON.parse(localStorage.getItem(STORE)||"[]");return Array.isArray(v)?v:[]}catch(e){return []}}
+function savedList(){try{const v=JSON.parse(localStorage.getItem(STORE)||"[]");if(!Array.isArray(v))return [];
+  // รายการที่เสีย (null/ไม่มีชื่อ) ต้องถูกข้าม — เดิมรายการเดียวทำป๊อปอัพโหลดว่างทั้งหมด (ตรวจบั๊กรอบ 2, 29 ก.ย. 2026)
+  return v.filter(c=>c&&typeof c==="object"&&typeof c.name==="string"&&typeof c.date==="string"&&Number.isFinite(+c.tz)&&c.tz!==null&&c.tz!=="")}catch(e){return []}}
 function writeSaved(l){try{localStorage.setItem(STORE,JSON.stringify(l));return true}
   catch(e){alert("บันทึกไม่ได้ (พื้นที่เก็บของเบราว์เซอร์เต็มหรือถูกปิดไว้): "+e.message);return false}}
-function placeName(){const o=$("#place").selectedOptions[0];return o?o.textContent:""}
+// ชื่อจริงของสถานที่ — ตัวเลือกของดวงที่บันทึกไว้เก็บชื่อจริงใน dataset (ข้อความบนจอมีวงเล็บต่อท้าย)
+// เดิมบันทึกข้อความบนจอไปตรง ๆ ชื่อจึงพอก "(จากดวงที่บันทึก)" ซ้อนเพิ่มทุกรอบ (ตรวจบั๊ก 29 ก.ย. 2026)
+function placeName(){const o=$("#place").selectedOptions[0];return o?(o.dataset.name!==undefined?o.dataset.name:o.textContent):""}
 function currentChart(){return {name:$("#owner").value.trim(),date:$("#date").value,time:$("#time").value,
-  place:$("#place").value,place_name:placeName(),lat:+$("#lat").value,lon:+$("#lon").value,tz:+$("#tz").value,
-  method,orb:$("#orb").value}}
+  place:$("#place").value,place_name:placeName(),lat:numField("#lat","ละติจูด"),lon:numField("#lon","ลองจิจูด"),
+  tz:+$("#tz").value,method,orb:$("#orb").value}}
 // ป๊อปอัพเลือกดวง — สร้างใหม่ทุกครั้งที่เปิด จึงไม่มีทางแสดงรายการที่ถูกลบไปแล้ว
 function fillSaved(){
   const l=savedList(),box=$("#dlglist");box.innerHTML="";
@@ -367,7 +383,7 @@ async function applyChart(c){
   method=c.method||"mundo";[...$("#method").children].forEach(b=>b.classList.toggle("on",b.dataset.v===method));
   if([...$("#orb").options].some(o=>o.value===String(c.orb)))$("#orb").value=String(c.orb);
   $("#savemsg").textContent=`โหลด "${c.name}" แล้ว`;
-  invalidatePanels(); await drawChart();      // ทุกแผงขึ้นกับดวงกำเนิด ต้องคำนวณใหม่ทั้งหมด
+  tzWarn(); invalidatePanels(); await drawChart();      // ทุกแผงขึ้นกับดวงกำเนิด ต้องคำนวณใหม่ทั้งหมด
 }
 // เลือกสถานที่เกิดของดวงที่โหลด: รายชื่อเมืองอาจเปลี่ยนลำดับ/หายไป — ยืนยันด้วย "ชื่อ" เสมอ ไม่เชื่อ index
 // หาไม่เจอก็ยังโหลดได้ โดยทำตัวเลือกชั่วคราวจากพิกัดที่บันทึกไว้ (ไม่เงียบ ๆ เปลี่ยนเป็นเมืองอื่น)
@@ -377,10 +393,15 @@ function selectSavedPlace(c){
   const byVal=[...sel.options].find(o=>o.value===c.place&&o.textContent===c.place_name);
   const byName=byVal||[...sel.options].find(o=>o.textContent===c.place_name);
   if(byName){sel.value=byName.value;return}
-  sel.append(new Option((c.place_name||"พิกัดที่บันทึกไว้")+" (จากดวงที่บันทึก)",SAVED_OPT));
-  sel.value=SAVED_OPT;
+  const o=new Option((c.place_name||"พิกัดที่บันทึกไว้")+" (จากดวงที่บันทึก)",SAVED_OPT);
+  Object.assign(o.dataset,{name:c.place_name||"",lat:c.lat,lon:c.lon,tz:c.tz});   // ติดพิกัดไว้กับตัวเลือก
+  sel.append(o);sel.value=SAVED_OPT;
 }
-function ownerTag(){const n=$("#owner").value.trim();return n?`<span class="badge">ดวงของ ${esc(n)}</span>`:""}
+// ป้ายชื่อเจ้าของวาดไว้เสมอ (ซ่อนเมื่อว่าง) แล้วอัปเดตเฉพาะป้าย — ไม่วาดแผงใหม่ทุกตัวอักษร
+// เดิม renderPanel() ทุก keystroke ทำให้ <details> ที่กางไว้หุบหมด และเลื่อนจอกระโดด (ตรวจบั๊ก 29 ก.ย. 2026)
+function ownerTag(){const n=$("#owner").value.trim();return `<span class="badge ownertag"${n?"":" hidden"}>ดวงของ ${esc(n)}</span>`}
+function refreshOwnerTags(){const n=$("#owner").value.trim();
+  document.querySelectorAll("#panel .ownertag").forEach(el=>{el.textContent="ดวงของ "+n;el.hidden=!n})}
 
 // ── แผนที่ equirectangular + ซูม/เลื่อน ─────────────────────
 const cv=$("#map"), ctx=cv.getContext("2d"), wrap=$("#mapwrap");
@@ -523,16 +544,20 @@ function draw(){
     if(l.angle==="MC"||l.angle==="IC"){bx=X(l.segments[0][0][1]);by=l.angle==="MC"?16:H-26}
     else{let best=null;for(const s of l.segments)for(const [la,lo] of s){const x=X(lo),y=Y(la);if(x<20||x>W-20||y<40||y>H-40)continue;const d=Math.abs(la-view.cy);if(!best||d<best.d)best={d,x,y}}
       if(best){bx=best.x+22;by=best.y}}
-    if(bx!==null&&bx>=10&&bx<=W-10)window.__badge(bx,by,l);
+    if(bx!==null&&bx>=10&&bx<=W-10)window.__badge(bx,by,l,!!hover.kind);      // เส้นจร/โปรเกรส = กรอบประ
   }
   // จุดเกิด + เมืองที่เลือก
-  const bl=+$("#lat").value,bo=+$("#lon").value;
-  if(chart&&!isNaN(bl)){ctx.fillStyle="#fff";ctx.strokeStyle="#24527f";ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(X(bo),Y(bl),5,0,7);ctx.fill();ctx.stroke()}
+  // จุดเกิด: ช่องว่างห้ามตีเป็น 0 (+"" === 0 เคยวาดจุดเกิดที่ละติจูด 0°)
+  const bs=String($("#lat").value).trim(),os_=String($("#lon").value).trim(),bl=Number(bs),bo=Number(os_);
+  if(chart&&bs!==""&&os_!==""&&Number.isFinite(bl)&&Number.isFinite(bo)){ctx.fillStyle="#fff";ctx.strokeStyle="#24527f";ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(X(bo),Y(bl),5,0,7);ctx.fill();ctx.stroke()}
   if(city){const x=X(city.lon),y=Y(city.lat);
     ctx.fillStyle="#d8352a";ctx.strokeStyle="#fff";ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,6.5,0,7);ctx.fill();ctx.stroke();
     ctx.font="bold 13px sans-serif";const t=city.name;const tw=ctx.measureText(t).width;
     ctx.fillStyle="rgba(255,255,255,.9)";ctx.fillRect(x+10,y-20,tw+10,19);ctx.fillStyle="#1d2127";ctx.fillText(t,x+15,y-6)}
+  // คำแนะนำของแผ่นภาพออนไลน์ต้องมาจากที่นี่ — เดิมตั้งค่าในตัวจัดการคลิกแล้ว draw() เขียนทับทันที ไม่มีใครเห็น (ตรวจบั๊ก 29 ก.ย. 2026)
   $("#status").textContent=`ซูม ${view.k.toFixed(1)}× · กลาง ${view.cy.toFixed(0)}°, ${view.cx.toFixed(0)}°`+
+    // วัดจากระดับแผ่นภาพ ไม่ใช่ view.k — มือถือกรอบ 4:5 ซูมต่ำสุดคือ 2.5× เกณฑ์ "k<2" จึงไม่มีวันจริงบนมือถือ
+    (showTiles&&tileZoom()<=2?" · แผ่นภาพออนไลน์: ซูมเข้าเพื่อดูถนน/เมือง":"")+
     (badgeState.skipped?` · ซ่อนป้ายที่ซ้อน ${badgeState.skipped} · แตะเส้นดูชื่อ`:"");
   drawn={cx:view.cx,cy:view.cy,k:view.k,W,H};drawVer++;inGesture=false;
 }
@@ -736,9 +761,11 @@ function tileImg(z,x,y){
   }
   return e;
 }
+// ระดับความละเอียดของแผ่นภาพ OSM ที่ใช้ ณ ซูมปัจจุบัน — ใช้ทั้งตอนวาดและตอนตัดสินว่าจะบอกให้ซูมเข้าไหม
+const tileZoom=()=>Math.max(0,Math.min(9,Math.round(Math.log2(view.k*W/256))));
 function drawTiles(){
   if(!showTiles) return;
-  const z=Math.max(0,Math.min(9,Math.round(Math.log2(view.k*W/256))));
+  const z=tileZoom();
   const n=2**z, lon0=LON(0), lon1=LON(W);
   const x0=Math.max(0,Math.floor((lon0+180)/360*n)), x1=Math.min(n-1,Math.ceil((lon1+180)/360*n));
   const y0=Math.max(0,Math.floor(merc(LAT(0))*n)), y1=Math.min(n-1,Math.ceil(merc(LAT(H))*n));
@@ -826,17 +853,29 @@ async function loadLand(){loadGeo("110m")}
 // ── เส้นที่ใกล้เคอร์เซอร์ (หน่วยพิกเซลบนจอ) ────────────────────
 function nearestLine(px,py,tol){ nearestLine.tol=tol||9;
   if(!chart) return null; let best=null;
-  for(const l of chart.lines){ if(hidden.has(l.body))continue;
+  // เส้นกำเนิด + เส้นจร/โปรเกรสที่วาดอยู่ — เดิมไล่เฉพาะเส้นกำเนิด แตะเส้นจรจึงไม่บอกชื่อ (ตรวจบั๊ก 29 ก.ย. 2026)
+  const pool=chart.lines.map(l=>[l,null]);
+  if(dynamic)for(const [kind,ls] of Object.entries(dynamic.layers))for(const l of ls)pool.push([l,kind]);
+  for(const [l,kind] of pool){ if(hidden.has(l.body))continue;
     for(const s of l.segments){ for(let i=1;i<s.length;i++){
       const ax=X(s[i-1][1]),ay=Y(s[i-1][0]),bx=X(s[i][1]),by=Y(s[i][0]);
       const dx=bx-ax,dy=by-ay,L2=dx*dx+dy*dy; let t=L2?((px-ax)*dx+(py-ay)*dy)/L2:0; t=Math.max(0,Math.min(1,t));
-      const d=Math.hypot(px-(ax+t*dx),py-(ay+t*dy)); if(!best||d<best.d) best={d,line:l};
+      const d=Math.hypot(px-(ax+t*dx),py-(ay+t*dy)); if(!best||d<best.d) best={d,line:l,kind};
     }}}
   return best&&best.d<=(nearestLine.tol||9)?best:null;      // เมาส์ 9px · นิ้ว 22px (ตั้งใน pointer handler)
 }
 
 // ── API ─────────────────────────────────────────────────
-const birth=()=>({date:$("#date").value,time:$("#time").value,tz:+$("#tz").value,lat:+$("#lat").value,lon:+$("#lon").value,method,orb_km:+$("#orb").value});
+// อ่านตัวเลขจากช่อง — ว่าง/อ่านไม่ออก ต้อง "โยน" ห้ามคืน 0 (+"" === 0 ทำให้วาดดวงที่ละติจูด 0° และบันทึกลงเครื่อง
+// โดยไม่มีคำเตือน ทั้งที่ชื่อสถานที่ยังเป็นเมืองเดิม — ตรวจบั๊ก 29 ก.ย. 2026) · 0 ที่พิมพ์เองเป็นค่าที่ถูกต้อง รับได้
+function numField(id,label){const raw=String($(id).value).trim(),v=Number(raw);
+  if(raw===""||!Number.isFinite(v)){
+    $("#formcard").classList.add("coords");                                 // มือถือพับช่องพิกัดไว้ — เปิดให้เห็นช่องที่ผิด
+    $("#coordBtn").textContent="ซ่อนพิกัด (เติมให้เองจากสถานที่เกิด)";           // ข้อความปุ่มต้องตรงกับสภาพที่เปิดอยู่
+    throw new Error(`กรอก${label}ให้เป็นตัวเลข (ตอนนี้ว่างหรืออ่านไม่ออก)`)}
+  return v}
+const birth=()=>({date:$("#date").value,time:$("#time").value,tz:+$("#tz").value,
+  lat:numField("#lat","ละติจูด"),lon:numField("#lon","ลองจิจูด"),method,orb_km:+$("#orb").value});
 // เวอร์ชันมือถือ: ไม่มีเซิร์ฟเวอร์ — "post" คือเรียก API.call ในเบราว์เซอร์ (api.js ให้ JSON โครงเดียวกับ Flask ทุกฟิลด์)
 // คืน Promise เหมือน fetch เพื่อให้โค้ดหน้าเว็บที่ยกมาจาก PC ใช้ต่อได้โดยไม่แก้
 // ข้อความที่โมดูล JS ประกอบขึ้นตอนรัน (เช่น angle_source) ก็ต้องไม่เอ่ยชื่อแหล่ง — กรองที่ปลายทางนี้ที่เดียว
@@ -850,7 +889,8 @@ async function post(url,body){await bootReady;const r=await API.call(url,JSON.pa
   return /\/api\/(chart|dynamic)$/.test(url)?r:neutral(r)}
 async function drawChart(){
   $("#formcard").classList.add("loading"); invalidatePanels();
-  try{chart=await post("/api/chart",birth());buildLegend();draw();await loadDynamic();if(city)await loadCity();await refreshTab()}   // เส้นจรขึ้นกับดวงเกิด/วิธี ต้องโหลดใหม่ด้วย (ChatGPT รอบ 7)
+  // hover/flash ชี้อ็อบเจกต์เส้นของดวงเก่า — ต้องล้าง ไม่งั้นป้ายของดวงเก่าค้างบนแผนที่ใหม่ (ตรวจบั๊ก 29 ก.ย. 2026)
+  try{chart=await post("/api/chart",birth());hover=null;flash=null;$("#flashtip").hidden=true;buildLegend();draw();await loadDynamic();if(city)await loadCity();await refreshTab()}   // เส้นจรขึ้นกับดวงเกิด/วิธี ต้องโหลดใหม่ด้วย (ChatGPT รอบ 7)
   catch(e){alert("คำนวณไม่สำเร็จ: "+e.message)}finally{$("#formcard").classList.remove("loading")}
 }
 let dynSeq=0;
@@ -866,7 +906,7 @@ let goal=null;                       // เป้าหมายของข้�
 // loadReading/loadWindow "คืน" ข้อมูล ไม่เขียนตัวแปรเอง — refreshTab เป็นคนเขียนเมื่อแน่ใจว่าเป็นคำขอล่าสุด
 function loadReading(){
   const pl=$("#place").selectedOptions[0];
-  return post("/api/reading",{...birth(),birth_place:pl?pl.textContent:"",goal,city,
+  return post("/api/reading",{...birth(),birth_place:pl?placeName():"",goal,city,
     date_from:$("#dynDate").value,date_to:$("#dynDate2").value||$("#dynDate").value,kinds:dynKinds()});
 }
 let windowData=null;
@@ -885,6 +925,9 @@ let panelSeq=0, citySeq=0;
 function invalidatePanels(){readingData=null;windowData=null}
 async function refreshTab(){
   const my=++panelSeq;
+  // แท็บที่ไม่ต้องรอคำอ่าน ต้องถอดสถานะ "กำลังโหลด" ของคำขอก่อนหน้าเอง — ไม่งั้นแผงจาง 55% และกดไม่ได้ถาวร
+  // (คำขอเก่าที่กลับมาทีหลังเห็นว่าไม่ใช่คำขอล่าสุดจึงไม่ถอดให้ — ตรวจบั๊ก 29 ก.ย. 2026)
+  if(tab!=="guide"&&tab!=="window") $("#panel").classList.remove("loading");
   if(tab==="guide"||tab==="window"){
     $("#panel").classList.add("loading");
     try{const r=await (tab==="guide"?loadReading():loadWindow()); if(my!==panelSeq) return;
@@ -895,7 +938,9 @@ async function refreshTab(){
   renderPanel();
 }
 async function loadCity(){
-  if(!city||!chart) return; $("#citybox").hidden=false; $("#panel").classList.add("loading");
+  if(!city||!chart) return; $("#citybox").hidden=false;
+  // แท็บอ่านตามลำดับ/ช่วงเวลา: refreshTab คุมสถานะโหลดเอง — เดิม loadCity ถอดคลาสก่อนคำอ่านมา แผงกดได้ทั้งที่ยังเป็นผลเก่า
+  const own=tab!=="guide"&&tab!=="window"; if(own) $("#panel").classList.add("loading");
   const my=++citySeq;
   try{const d=await post("/api/city",{...birth(),city,date_on:$("#dynDate").value,kinds:dynKinds()});
       if(my!==citySeq) return; cityData=d; renderPanel()}
@@ -906,7 +951,7 @@ async function loadCity(){
       `<div class="src">อ่านข้อมูลเมืองนี้ไม่ได้: ${esc(e.message)}</div>`+
       `<div class="empty">ลองเลือกจุดที่ไม่ใกล้ขั้วโลก หรือตรวจข้อมูลวันเกิด/เวลาเกิดอีกครั้ง</div>`;
   }
-  finally{if(my===citySeq) $("#panel").classList.remove("loading")}
+  finally{if(my===citySeq&&own) $("#panel").classList.remove("loading")}
 }
 function buildLegend(){
   const lg=$("#legend");lg.innerHTML="";
@@ -927,8 +972,7 @@ function buildLegend(){
   const pl=document.createElement("label");pl.id="paranToggle";pl.className=showParan?"":"off";pl.innerHTML=`<span class="sw" style="background:#8a63c4"></span> เส้น paran`;lg.append(pl);
 }
 $("#ckDetail").addEventListener("click",()=>{showDetail=!showDetail;$("#ckDetail").classList.toggle("on",showDetail);draw()});
-$("#ckTiles").addEventListener("click",()=>{showTiles=!showTiles;$("#ckTiles").classList.toggle("on",showTiles);
-  if(showTiles&&view.k<2)  $("#status").textContent="แผ่นภาพออนไลน์: ซูมเข้าเพื่อดูรายละเอียดถนน/เมือง";draw()});
+$("#ckTiles").addEventListener("click",()=>{showTiles=!showTiles;$("#ckTiles").classList.toggle("on",showTiles);draw()});
 $("#legend").addEventListener("click",e=>{const lab=e.target.closest("label");if(!lab)return;
   if(lab.id==="legNone"||lab.id==="legAll"){const bs=[...new Set(chart.lines.map(l=>l.body))];hidden.clear();if(lab.id==="legNone")bs.forEach(b=>hidden.add(b));hover=null;buildLegend()}
   else if(lab.id==="paranToggle"){showParan=!showParan;lab.classList.toggle("off",!showParan)}
@@ -1416,12 +1460,13 @@ $("#go").addEventListener("click",drawChart);
 for(const id of ["#ckTransit","#ckProg","#dynDate"])
   $(id).addEventListener("change",async()=>{invalidatePanels();await loadDynamic();if(city)await loadCity();await refreshTab()});
 $("#dynDate2").addEventListener("change",async()=>{invalidatePanels();await refreshTab()});
-$("#place").addEventListener("change",setBirthPlace);
+$("#place").addEventListener("change",()=>{setBirthPlace();tzWarn()});
+["#date","#tz"].forEach(id=>$(id).addEventListener("change",tzWarn));
 $("#coordBtn").addEventListener("click",()=>{const f=$("#formcard"),on=f.classList.toggle("coords");
   $("#coordBtn").textContent=on?"ซ่อนพิกัด (เติมให้เองจากสถานที่เกิด)":"แก้พิกัดเอง (ละติจูด/ลองจิจูด)"});
-$("#owner").addEventListener("input",()=>{$("#savemsg").textContent="";if(chart)renderPanel()});
+$("#owner").addEventListener("input",()=>{$("#savemsg").textContent="";refreshOwnerTags()});
 $("#save").addEventListener("click",()=>{
-  const c=currentChart();
+  let c; try{c=currentChart()}catch(e){alert("บันทึกไม่ได้: "+e.message);return}
   if(!c.name){alert("ใส่ชื่อเจ้าของดวงก่อนบันทึก");$("#owner").focus();return}
   const l=savedList(),i=l.findIndex(x=>x.name===c.name);
   if(i>=0&&!confirm(`มีดวงชื่อ "${c.name}" อยู่แล้ว — เขียนทับด้วยข้อมูลในฟอร์มตอนนี้?`))return;
@@ -1461,7 +1506,7 @@ let drag=null, pinch=null, tipTimer=0;
 const fingers=new Map();               // pointerId → {x,y} — สองนิ้ว = หนีบซูม (เดิมไม่มี: นิ้วที่สองเขียนทับ drag ทำแผนที่กระโดด)
 const clearRegion=()=>[...$("#regions").children].forEach(b=>b.classList.remove("on"));
 function showTip(px,py,n){const t=$("#tip");t.style.display="block";t.style.left=Math.max(4,Math.min(px+14,W-190))+"px";t.style.top=Math.min(py+14,H-30)+"px";
-  t.textContent=(n?`${n.line.glyph} ${n.line.th} · ${ANG_TH[n.line.angle]} · `:"")+`${LAT(py).toFixed(1)}°, ${LON(px).toFixed(1)}°`}
+  t.textContent=(n?`${n.kind?DYN_TH[n.kind]+" ":""}${n.line.glyph} ${n.line.th} · ${ANG_TH[n.line.angle]} · `:"")+`${LAT(py).toFixed(1)}°, ${LON(px).toFixed(1)}°`}
 wrap.addEventListener("pointerdown",e=>{const r=cv.getBoundingClientRect();
   fingers.set(e.pointerId,{x:e.clientX,y:e.clientY});
   try{wrap.setPointerCapture(e.pointerId)}catch(err){}
@@ -1517,20 +1562,25 @@ addEventListener("resize",size);
   try{await bootReady}catch(e){$("#boot").textContent="❌ โหลดตารางดาวไม่สำเร็จ: "+e.message;return}
   $("#boot").remove();
   if(MEANINGS.missing()){const w=document.createElement("div");w.className="src";w.style.marginTop="8px";
-    w.textContent="ชุดนี้ไม่ได้ใส่ไฟล์คำอ่าน (readings.json.gz) — เส้น/paran/ดวงย้ายเมืองคำนวณได้ครบ แต่จะไม่มีคำอ่านของเส้นและคำแนะนำตามเป้าหมาย";
+    w.textContent=MEANINGS.loadError()
+      ? "โหลดไฟล์คำอ่านไม่สำเร็จ ("+MEANINGS.loadError()+") — เส้น/paran/ดวงย้ายเมืองคำนวณได้ครบ แต่ตอนนี้ไม่มีคำอ่าน ลองรีโหลดหน้าตอนมีเน็ต"
+      : "ชุดนี้ไม่ได้ใส่ไฟล์คำอ่าน (readings.json.gz) — เส้น/paran/ดวงย้ายเมืองคำนวณได้ครบ แต่จะไม่มีคำอ่านของเส้นและคำแนะนำตามเป้าหมาย";
     $(".wrap").prepend(w)}
   places=API.places();
-  fillTz();fillSelect($("#place"),false);fillSelect($("#city"),true);fillSaved();
+  fillTz();fillSelect($("#place"),false);fillSelect($("#city"),true);fillSaved();tzWarn();
   $("#place").value="th:"+places.th.findIndex(p=>p.name==="กรุงเทพมหานคร");setBirthPlace();
   $("#city").value="intl:"+places.intl.findIndex(p=>p.name.startsWith("โตเกียว"));city=placeOf($("#city").value);
-  $("#dynDate").value=new Date().toISOString().slice(0,10);
-  $("#dynDate2").value=new Date(Date.now()+30*864e5).toISOString().slice(0,10);
+  // วันที่ตามปฏิทินของเครื่องผู้ใช้ — toISOString() เป็นวัน UTC ในไทยก่อน 07:00 จึงได้ "เมื่อวาน" (ตรวจบั๊ก 29 ก.ย. 2026)
+  const localYmd=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  const today=new Date(),later=new Date(today.getFullYear(),today.getMonth(),today.getDate()+30);
+  $("#dynDate").value=localYmd(today);
+  $("#dynDate2").value=localYmd(later);
   size();loadLand();await drawChart();   // drawChart โหลดแท็บที่เปิดอยู่ให้ด้วย (แท็บ "อ่านตามลำดับ" เป็นค่าเริ่ม)
 })();
 </script>
 <script>
 // ── ออฟไลน์: ลงทะเบียน service worker (แยกแคชจากแอปยูเรเนียน: urmap-v*) ──
-const MAP_CACHE="urmap-v12";
+const MAP_CACHE="urmap-v14";
 (function(){
   const el=document.createElement("div");el.className="hint";el.style.cssText="margin:6px 4px 0";el.id="swstat";
   document.querySelector(".wrap").append(el);

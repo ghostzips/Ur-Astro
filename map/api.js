@@ -67,9 +67,9 @@
   /** R.deg ของ Python: "09°06′ ธนู (249.104°)" */
   function deg(x) {
     x = mod360(x);
-    const s = Math.floor(x / 30), r = x - s * 30;
-    const mins = Math.round((r % 1) * 60) % 60;
-    return `${String(Math.floor(r)).padStart(2, "0")}°${String(mins).padStart(2, "0")}′ ${SIGNS[s]} (${x.toFixed(3)}°)`;
+    // ปัดเป็นลิปดารวมก่อนแล้วแยกราศี/องศา — เดิม 29.9999° ขึ้น "29°00′ เมษ" (ตรวจบั๊กรอบ 2) · ปัดครึ่งขึ้นตรง Python floor(+0.5)
+    const tm = Math.floor(x * 60 + 0.5) % 21600, s = Math.floor(tm / 1800), rm = tm - s * 1800;
+    return `${String(Math.floor(rm / 60)).padStart(2, "0")}°${String(rm % 60).padStart(2, "0")}′ ${SIGNS[s]} (${x.toFixed(3)}°)`;
   }
 
   // ── สถานที่ (ตรง server.load_places จาก places.js) ──────────────────────────
@@ -368,11 +368,14 @@
           }
         }
       }
-      for (const kind of kinds) {
-        const step = T().STEP[kind], runs = {}, done = [], ts = T().sampleTimes(jdA, days, step);
+      // จร: ทุก 6 ชม. · จันทร์จรทุก 1 ชม. — ตรง server when_where (_step_groups)
+      for (const [kind, step, codes] of kinds.flatMap((k) => T().stepGroups(k, n.bodies).map(([st, cs]) => [k, st, cs]))) {
+        const grp = order.filter((key) => codes.includes(spots[key].body));
+        if (!grp.length) continue;
+        const runs = {}, done = [], ts = T().sampleTimes(jdA, days, step);
         for (let i = 0; i < ts.length; i++) {
-          const sets = kind === "transit" ? G().transitLines(jd, ts[i], n.bodies, method) : G().progressedLines(jd, ts[i], n.bodies, method);
-          for (const key of order) {
+          const sets = kind === "transit" ? G().transitLines(jd, ts[i], codes, method) : G().progressedLines(jd, ts[i], codes, method);
+          for (const key of grp) {
             const sp = spots[key], v = sets[sp.body];
             for (const ang of G().ANGLES) {
               const km = G().distanceKm(sp.lat, sp.lon, ang, v.ra, v.dec, v.gast);
@@ -418,7 +421,9 @@
       if (e instanceof RangeError) {
         throw new BadInput(/อาร์กติก|ขั้วโลก/.test(e.message)
           ? "คำนวณไม่ได้ที่พิกัดนี้ (ใกล้ขั้วโลกเกินไปสำหรับระบบเรือน): " + e.message
-          : "คำนวณไม่ได้: " + e.message);
+          : "คำนวณไม่ได้: " + e.message +
+            // ปีที่ engine รายงานเป็นปีตามเวลาสากล — เกิด 1 ม.ค. 1900 เช้าเวลาไทย = 31 ธ.ค. 1899 UT (ตรวจบั๊กรอบ 2, 29 ก.ย. 2026)
+            (/นอกช่วง/.test(e.message) ? " — ปีนี้นับตามเวลาสากล (UT) ข้อมูลเริ่ม 1 ม.ค. 1900 00:00 UT (07:00 เวลาไทย)" : ""));
       }
       throw e;
     }

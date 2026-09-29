@@ -13,24 +13,42 @@
                          goals: {}, goal_advice: [], sect_advice: [], orb_rules: [], timing_rules: [], tnp_factor: {} });
   async function fetchJson(url) {
     const res = await fetch(url);
-    if (!res.ok) throw new Error("HTTP " + res.status);
+    if (!res.ok) { const e = new Error("HTTP " + res.status); e.status = res.status; throw e; }
     const path = String(url).split(/[?#]/)[0];
     if (/\.gz$/.test(path) && typeof DecompressionStream === "function") {
       return JSON.parse(await new Response(res.body.pipeThrough(new DecompressionStream("gzip"))).text());
     }
     return JSON.parse(await res.text());
   }
-  /** โหลด names.json (บังคับ) + readings.json.gz (ตัวเลือก) */
-  async function load(url, namesUrl) {
-    if (D) return D;
-    const names = await fetchJson(namesUrl || "./names.json");
-    try { D = await fetchJson(url); }
-    catch (e) { D = EMPTY(); }
-    D.names = names;
-    return D;
+  /** โหลด names.json (บังคับ) + readings.json.gz (ตัวเลือก)
+   *  แยก "ไม่ได้ใส่ไฟล์" (404 — ตั้งใจ) ออกจาก "โหลดไม่สำเร็จ" (เน็ตสะดุด/ไฟล์เสีย): อย่างหลังลองซ้ำ 2 ครั้งก่อนยอม
+   *  และบอกผู้ใช้ตามจริง — เดิมทุกความผิดพลาดกลายเป็น "ไม่ได้ใส่ไฟล์คำอ่าน" ถาวรทั้งที่ไฟล์มีอยู่ (ตรวจบั๊ก 29 ก.ย. 2026)
+   *  เก็บ promise ไว้ เรียกซ้อนพร้อมกันจะไม่ยิงโหลดซ้ำ */
+  let pending = null;
+  function load(url, namesUrl) {
+    if (D) return Promise.resolve(D);
+    if (pending) return pending;
+    pending = (async () => {
+      const names = await fetchJson(namesUrl || "./names.json");
+      let data = null, lastErr = null;
+      for (let attempt = 0; attempt < 3 && !data; attempt++) {
+        try { data = await fetchJson(url); }
+        catch (e) {
+          lastErr = e;
+          if (e.status === 404) break;                     // ตั้งใจไม่ใส่ไฟล์ — ไม่ต้องลองซ้ำ
+          await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
+        }
+      }
+      D = data || Object.assign(EMPTY(), lastErr && lastErr.status !== 404 ? { _loadError: String(lastErr.message || lastErr) } : {});
+      D.names = names;
+      return D;
+    })();
+    pending.catch(() => { pending = null; });      // names.json ล้ม → ให้เรียกใหม่ได้ (ไม่ตรึงความล้มเหลวไว้)
+    return pending;
   }
   const ready = () => !!D;
   const missing = () => !!(D && D._missing);
+  const loadError = () => (D && D._loadError) || null;       // โหลดไม่สำเร็จ (ไม่ใช่ตั้งใจไม่ใส่ไฟล์)
   const need = () => { if (!D) throw new Error("ยังไม่ได้โหลด readings.json.gz"); return D; };
 
   /** คำสอนของเส้นดาวนั้นที่มุมนั้น: เฉพาะมุม + ความหมายทั่วไปของดาว (for_line) */
@@ -87,6 +105,6 @@
   /** ข้อมูลคำอ่านที่แนบไปกับทุกเส้น (server._enrich) */
   const enrich = (code, angle) => ({ reading: forReading(code, angle), astrocom: acLine(code, angle), tnp: tnpLineReading(code, angle) });
 
-  root.MEANINGS = { load, ready, missing, forLine, forParan, acLine, acCrossing, forMerged, forReading, adviceFor,
+  root.MEANINGS = { load, ready, missing, loadError, forLine, forParan, acLine, acCrossing, forMerged, forReading, adviceFor,
                     goals, sectAdvice, orbRules, timingRules, names, tnpLineReading, enrich, data: () => D };
 })(typeof globalThis !== "undefined" ? globalThis : this);

@@ -10,6 +10,14 @@
   const ASPECT_TH = { 0: "ร่วม (conjunction)", 90: "จัตุรัส (square)", 180: "ตรงข้าม (opposition)" };
   const ASPECT_ORB = 1.0;
   const STEP = { transit: 0.25, progressed: 1.0 };
+  // ก้าวที่ไล่ดูของดาวดวงนั้น — ตรง server._step: จันทร์จรทุก 1 ชม. (ไล่ 6 ชม. เคยทำช่วงสั้นหลุดทั้งช่วง ตรวจบั๊ก 29 ก.ย. 2026)
+  const stepOf = (kind, code) => kind !== "transit" ? STEP[kind] : (code === "MO" ? 1 / 24 : STEP.transit);
+  // แบ่งดาวตามก้าว → [[step, codes]] เรียงก้าวจากใหญ่ไปเล็ก — ตรง server._step_groups (ลำดับคงที่)
+  function stepGroups(kind, codes) {
+    const g = new Map();
+    for (const c of codes) { const st = stepOf(kind, c); if (!g.has(st)) g.set(st, []); g.get(st).push(c); }
+    return [...g.entries()].sort((a, b) => b[0] - a[0]);
+  }
   const ANGLES = ["MC", "IC", "AC", "DC"];
   const mod360 = (v) => ((v % 360) + 360) % 360;
   const lonOf = (jd, code) => root.AISTRO.calc(root.ACG.LON_ALIAS[code] || code, jd);
@@ -104,12 +112,24 @@
   function lineSpans(jdB, lat, lon, method, orbKm, jdA, days, kinds, enrich, names) {
     const spans = {};
     for (const kind of kinds) {
-      const step = STEP[kind], runs = {}, done = [];
+      const out = [];
+      for (const [step, codes] of stepGroups(kind, names.bodies))      // จันทร์จรแยกกลุ่ม ไล่ทุก 1 ชม.
+        out.push(...spansOfGroup(jdB, lat, lon, method, orbKm, jdA, days, kind, step, codes, enrich, names));
+      // ตรง server: ระยะตัดเศษระดับเมตร (floor ให้ผลเหมือนกันทั้งสองภาษา ไม่เหมือน round) + ตัวตัดสิน (ดาว, มุม)
+      const m = (v) => Math.floor(v * 1000), cmp = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+      spans[kind] = out.sort((x, y) => cmp(x.from, y.from) || m(x.closest_km) - m(y.closest_km) || cmp(x.body, y.body) || cmp(x.angle, y.angle));
+    }
+    return spans;
+  }
+  /** ส่วนในของ lineSpans สำหรับดาวกลุ่มเดียวที่ใช้ก้าวเดียวกัน — ตรง server._spans_of_group */
+  function spansOfGroup(jdB, lat, lon, method, orbKm, jdA, days, kind, step, codes, enrich, names) {
+    {
+      const runs = {}, done = [];
       const ts = sampleTimes(jdA, days, step);
       for (let i = 0; i < ts.length; i++) {
         const jd = ts[i];
-        const sets = kind === "transit" ? root.ACG.transitLines(jdB, jd, names.bodies, method)
-                                        : root.ACG.progressedLines(jdB, jd, names.bodies, method);
+        const sets = kind === "transit" ? root.ACG.transitLines(jdB, jd, codes, method)
+                                        : root.ACG.progressedLines(jdB, jd, codes, method);
         for (const h of root.ACG.linesNear(lat, lon, sets, orbKm)) {
           const key = h.body + "|" + h.angle, cur = runs[key];
           if (cur && cur.last_i === i - 1) {
@@ -134,9 +154,8 @@
                    hours: Math.round(hours * 10) / 10, days: Math.max(1, Math.round(hours / 24)),
                    closest_date: ymd(pk), closest_km: km, ...enrich(code, angle) });
       }
-      spans[kind] = out.sort((x, y) => x.from < y.from ? -1 : x.from > y.from ? 1 : x.closest_km - y.closest_km);
+      return out;
     }
-    return spans;
   }
 
   /** จังหวะเวลาที่เมืองปลายทาง — ตรง _timing */
@@ -162,6 +181,6 @@
              timing_advice: timingAdvice.filter((x) => x.cites && x.cites.length).slice(0, 6) };
   }
 
-  root.TIMING = { ASPECTS, ASPECT_TH, ASPECT_ORB, STEP, ANGLES, ymd, sampleTimes, edge, edges, overlap,
+  root.TIMING = { ASPECTS, ASPECT_TH, ASPECT_ORB, STEP, stepOf, stepGroups, ANGLES, ymd, sampleTimes, edge, edges, overlap,
                   refineMin, lineKmAt, aspectWindows, lineSpans, timing };
 })(typeof globalThis !== "undefined" ? globalThis : this);
