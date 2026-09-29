@@ -1324,3 +1324,34 @@ p.hint:empty{display:none}
 .elecsoft b { color:var(--ink); }
 .elsoftr { display:block; margin-top:3px; font-variant-numeric:tabular-nums; }
 .elsoftr i { font-style:normal; color:var(--faint); font-size:.9em; }
+
+/* v127: ประตูเรือน */
+#calgate button { min-width:30px; padding:3px 7px; font-variant-numeric:tabular-nums; }
+#calgate button.gempty { opacity:.45; }
+#calgatewho { flex:1 0 100%; }
+
+/* v128 ป้ายน้ำหนักหลักฐาน (พีระมิด AISTRO + แดน RULES 0.1) — ป้ายเท่านั้น */
+.pyr{display:inline-block;flex:0 0 auto;margin:0 6px;padding:1px 6px;border-radius:999px;
+  font-size:var(--t-xs);line-height:1.5;white-space:nowrap;border:1px solid var(--rule);color:var(--dim)}
+.pyr-dan,.pyr-1{color:var(--accent);border-color:var(--accent);font-weight:600}
+.pyr-2{color:var(--ink)}
+.pyr-4,.pyr-x{color:var(--faint);border-style:dashed}
+.pyr-x{color:var(--warn-ink);border-color:var(--warn-line)}
+.fxpyr{margin-top:var(--s2);font-size:var(--t-xs);color:var(--dim)}
+.pyrwarn{margin:var(--s2) 0 0;padding:var(--s2) var(--s3);border-radius:8px;
+  background:var(--warn-soft);border:1px solid var(--warn-line);color:var(--warn-ink);font-size:var(--t-xs)}
+
+/* v129 ใบอ่านดวง */
+.rdstep{margin:var(--s3) 0;padding:var(--s3);border:1px solid var(--rule);border-radius:10px;background:var(--panel)}
+.rdh{font-weight:700;margin-bottom:var(--s2)}
+.rdstep p{margin:4px 0}
+.rdcount .pyr{margin-left:0}
+.rdrow{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;padding:6px 4px;border-top:1px solid var(--rule);cursor:pointer}
+.rdrow .pyr{margin:0}
+.rdf{font-family:var(--mono)}
+.rda,.rdo{font:400 var(--t-xs)/1 var(--mono);color:var(--dim)}
+.rdkids{margin-left:18px;border-left:1px dashed var(--rule);padding-left:8px}
+.rddim{opacity:.5}
+.rdmore summary{cursor:pointer;color:var(--dim);font-size:var(--t-xs);padding:6px 4px}
+.rdmean{margin:4px 0 8px}
+.rdvt{border-style:dashed}

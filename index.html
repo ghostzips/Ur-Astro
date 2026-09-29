@@ -15,7 +15,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v126">
+<link rel="stylesheet" href="style.css?v=urain-v129">
 </head>
 <body>
 <div class="wrap">
@@ -119,6 +119,7 @@
   <button type="button" class="tab" data-p="pctr">ศูนย์รังสี 360°</button>
   <button type="button" class="tab" data-p="pcal">ปฏิทินโค้ง</button>
   <button type="button" class="tab" data-p="phor">กาลชะตา</button>
+  <button type="button" class="tab" data-p="pread">ใบอ่านดวง</button>
   <button type="button" class="tab" data-p="pelec">ฤกษ์</button>
   <button type="button" class="tab" data-p="phouse">เรือนชะตา</button>
   <button type="button" class="tab" data-p="pasp">มุมสัมพันธ์</button>
@@ -159,6 +160,10 @@
   <label><input type="checkbox" data-k="onlyPer"> เฉพาะถึงเจ้าชะตา 🔵</label>
   <label><input type="checkbox" data-k="onlyGood"> มีดาวดี 🟢</label>
   <label><input type="checkbox" data-k="onlyBad"> มีดาวร้าย 🔴</label>
+  <span class="sep"></span>
+  <!-- v127: ประตูเรือน (แนวคิด AISTRO) — ชุดเดียวกับปฏิทินโค้ง ใช้ตัวกรองเดิมของตาราง -->
+  <span class="lbl">ประตูเรือน</span>
+  <select id="tgate" title="แสดงเฉพาะแถวที่มีปัจจัยซึ่งอยู่ในเรือนนั้นของดวงกำเนิด"></select>
   <button type="button" id="clearf" class="clearf" hidden>ล้างตัวกรอง</button>
   <span class="fwarn" id="fwarn" hidden></span>
   <p class="dialnote" id="mdialnote" hidden></p>
@@ -469,6 +474,13 @@
     <button type="button" id="calgo">คำนวณ</button>
     <b class="mrsum" id="calcount"></b>
   </div>
+  <!-- v127: ประตูเรือน — แนวคิดของ AISTRO "12 เรือน = 12 ประตูสู่ภาพดาว" (สายเว็บ อ.มาร์ค)
+       กรองแสดงเฉพาะสมการที่มีปัจจัยซึ่งอยู่ในเรือนนั้นของดวงกำเนิด · ไม่แตะสูตร/วันที่ใด ๆ -->
+  <div class="dictlook" id="calgaterow">
+    <span class="lbl">ประตูเรือน</span>
+    <span class="laychips" id="calgate"></span>
+    <span class="hint" id="calgatewho"></span>
+  </div>
   <div id="caltop"></div>
   <div id="calday"></div>
   <div id="callist"><p class="svempty">เลือกชนิดสมการแล้วกดคำนวณ</p></div>
@@ -490,6 +502,21 @@
   <div class="dictlook"><span class="lbl">เรื่องที่จับได้</span>
     <span class="laychips" id="hortopics"></span></div>
   <div id="horout"><p class="svempty">พิมพ์คำถามแล้วกด "ตอบ"</p></div>
+</section>
+</div>
+
+<div class="panel" id="pread">
+<!-- v129: ใบอ่านดวง — ร้อยสี่ขั้นของ AISTRO (ภาพ 7) ในหน้าเดียว · สายเว็บ อ.มาร์ค
+     ผู้ใช้เลือก (29 ก.ย. 2026): ดวงกำเนิด + โค้งสุริยยาตร์ ณ วันดวงจร · orb = ORB_RT 1.0° ·
+     คำแปล 7 สูตรแรก · สูตรเล็กไม่มีดาวร่วมกับสูตรใหญ่ = จาง (ไม่ลบ) · คำสอน VT แยกกล่องติดป้าย -->
+<section class="legend" id="readbox">
+  <h3>ใบอ่านดวง</h3>
+  <p class="dialnote">เรียงหลักฐานตามสี่ขั้นของ AISTRO (ภาพ 7): <b>ข้อมูล → โครงสร้าง → น้ำหนัก → คำแปลตำรา</b> ·
+    ดวงกำเนิด (r) + โค้งสุริยยาตร์ (v1) ณ <b>วันดวงจรในหน้าตั้งดวง</b> · วังกะ 1.0° บนจาน 22.5° ·
+    หน้านี้เรียงหลักฐานและยกคำแปลตำราเท่านั้น <b>ไม่สรุปคำทำนายแทนผู้อ่าน</b></p>
+  <div class="dictlook"><span class="lbl">หัวข้อ</span>
+    <select id="readgate"><option value="0">ทั้งดวง</option></select></div>
+  <div id="readout"><p class="svempty">กดคำนวณดวงก่อน</p></div>
 </section>
 </div>
 
@@ -678,14 +705,54 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v126"></script>
-<script src="places.js?v=urain-v126"></script>
-<script src="engine.js?v=urain-v126"></script>
-<script src="render.js?v=urain-v126"></script>
+<script src="glyphs.js?v=urain-v129"></script>
+<script src="places.js?v=urain-v129"></script>
+<script src="engine.js?v=urain-v129"></script>
+<script src="render.js?v=urain-v129"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const SW_CACHE = "urain-v126";   // ต้องตรงกับ CACHE ใน sw.js
+// v127 ประตูเรือน — ประกาศไว้หัวสคริปต์ เพราะ clearResults()/run() ใช้ก่อนถึงบรรทัดนิยามฟังก์ชัน
+let CALGATE = 0;          // ปฏิทินโค้ง: 0 = ทั้งหมด · 1..12 = เรือนที่เลือก
+let TGATE_SIG = "";
+let READ = null, READ_SIG = "";    // v129 ใบอ่านดวง: ผลล่าสุด · ลายเซ็นดวงกำเนิด (เปลี่ยนดวง = หัวข้อกลับเป็นทั้งดวง)       // ตารางดูดวงจร: ลายเซ็นดวงกำเนิดล่าสุด (เปลี่ยนดวง = รีเซ็ตเรือน)
+// ── ป้ายน้ำหนักหลักฐาน (v128 · ผู้ใช้สั่ง) ─────────────────────────────────────
+// พีระมิด AISTRO ภาพ 6–7: ① A=B หลัก · ② A/B=C รอง · ③ A/B=C/D ประกอบ · ④ A+B−C=D เสริม
+// แดน = A=B=C ที่เป็นดาวเดี่ยวล้วน → น้ำหนักสูง (RULES ข้อ 0.1)
+// เป็น "ป้าย" เท่านั้น — ไม่กรองสูตร ไม่เปลี่ยนลำดับ ไม่เปลี่ยนคำแปล (คีย์ยังเป็นตามข้อ 0)
+// kinds = ชนิดของแต่ละข้างในสมการ: "one" ดาวเดี่ยว · "mid" A/B · "abc" A+B−C
+function pyrTier(kinds) {
+  const nMid = kinds.filter((k) => k === "mid").length;
+  const nAbc = kinds.filter((k) => k === "abc").length;
+  const nSyn = nMid + nAbc;
+  if (!nSyn) return kinds.length >= 3 ? "dan" : "1";
+  if (nSyn === 1) return nAbc ? "4" : "2";
+  if (nMid === 2 && !nAbc) return "3";
+  return "x";                    // เกินพีระมิด: A+B−C=D+E−F · A/B=C+D−E · A/B=C/D=E/F
+}
+const PYR_TH = {
+  dan: ["แดน · สูง", "แดน: ดาวเดี่ยวล้วนตรงกัน = แหล่งอิทธิพล น้ำหนักสูง (RULES 0.1)"],
+  1: ["① หลัก", "ชั้น 1 A=B: โครงสร้างหลัก น้ำหนักสูงสุด (AISTRO ภาพ 6–7)"],
+  2: ["② รอง", "ชั้น 2 A/B=C: หลักฐานรอง ใช้ประกอบโครงสร้างหลัก (AISTRO ภาพ 6–7)"],
+  3: ["③ ประกอบ", "ชั้น 3 A/B=C/D: หลักฐานประกอบ น้ำหนักลดหลั่น (AISTRO ภาพ 6–7)"],
+  4: ["④ เสริม", "ชั้น 4 A+B−C=D: จุดเล็ก ใช้ขยายรายละเอียดเท่านั้น (AISTRO ภาพ 6–7 · RULES 0.1)"],
+  x: ["นอกพีระมิด", "จุดสังเคราะห์หลายตัวต่อกัน ไม่อยู่ในพีระมิดหลักฐาน (AISTRO ภาพ 10)"],
+};
+function pyrBadge(kinds) {
+  const t = pyrTier(kinds), [lbl, tip] = PYR_TH[t];
+  return `<span class="pyr pyr-${t}" data-pyr="${t}" title="${tip}">${lbl}</span>`;
+}
+// ข้อ 2: เตือนเมื่อสมการมีจุดสังเคราะห์ (A/B หรือ A+B−C) มากกว่า 1 ตัว — เตือนเท่านั้น ไม่ตัดสูตร
+function pyrWarn(kinds) {
+  const n = kinds.filter((k) => k !== "one").length;
+  if (n < 2) return "";
+  return `<p class="pyrwarn">⚠️ สมการนี้มีจุดสังเคราะห์ ${n} ตัว — หลัก AISTRO (ภาพ 10) ` +
+    `ให้ใช้ A/B หรือ A+B−C เพียงตัวเดียวเป็น "หัวเรื่อง" ที่เหลือเป็นดาวเดี่ยว ` +
+    `ถ้าใส่หลายตัว ความหมายคูณกันจนตีความได้ทุกทาง` +
+    (pyrTier(kinds) === "3" ? ` · A/B=C/D ยังนับเป็นหลักฐานชั้น ③ ได้ แต่น้ำหนักน้อย` : "") +
+    ` · สูตรยังคำนวณครบตามเดิม</p>`;
+}
+const SW_CACHE = "urain-v129";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 let DIALMARKS = null, _markTimer = 0;   // วงเส้นประกะพริบครอบดาวของสูตร (v80)
@@ -765,6 +832,7 @@ function clearResults() {
   // ปฏิทินโค้ง — บั๊กชั้นเดียวกับจานเรือน/กราฟแนวโน้ม: ถ้าไม่ล้าง รายการสมการของ
   // ดวงเก่าค้างบนจอ และกดแถวยังอ่าน CAL.rows ชุดเก่าได้ (เจอตอนทำ All=V · v91)
   CAL.ev = null; CAL.rows = null; CAL.key = ""; CAL.dayJd = undefined;
+  CALGATE = 0; $("calgate").innerHTML = ""; $("calgatewho").textContent = "";
   $("caltop").innerHTML = "";
   $("calday").innerHTML = "";
   $("callist").innerHTML = '<p class="svempty">เลือกชนิดสมการแล้วกดคำนวณ</p>';
@@ -779,6 +847,8 @@ function clearResults() {
   if (ELEC_LAST && ELEC_SIG)
     ELEC_STASH = { sig: ELEC_SIG, html: $("elecout").innerHTML, last: ELEC_LAST };
   ELEC_LAST = null;
+  READ = null;
+  $("readout").innerHTML = '<p class="svempty">กดคำนวณดวงก่อน</p>';
   $("elecout").innerHTML =
     '<p class="svempty">กำหนดช่วงเวลาที่ทำได้จริง แล้วกด "หาฤกษ์"</p>';
   // ── v98: ยามกลาง (uitest หมวด 11) ไล่ทุกแท็บแล้วจับได้อีก 4 ที่ที่ไม่เคยถูกล้าง ──
@@ -959,6 +1029,7 @@ function run() {
            place: placeTxt0 === "กำหนดเอง…" ? "" : placeTxt0 };
     elecRestore();         // v125: ดวงกำเนิด/สถานที่/เขตเวลาเดิม = คืนผลฤกษ์ที่พักไว้
     renderNotable(R);      // v123: ดาวเด่น/ดาวสันโดษ (อ่านจากค่าที่คำนวณแล้ว)
+    readRender();          // v129: ใบอ่านดวง (ต้องหลัง TL)
     renderHouseWheel(R);   // v115: ต้องหลัง TL — จานแบบ swDraw ใช้วันเวลา/สถานที่จาก TL ที่มุมบนซ้าย
     $("tlmonth").innerHTML = $("cmpmonth").innerHTML;
     $("tlmonth").value = String(mb);   // ดัชนีของเดือนดวงจร = จำนวนเดือนที่ย้อนหลัง
@@ -973,6 +1044,11 @@ function run() {
     DIALSTATE = null; CTRLAY = null;
     showPanel(CUR_PANEL);          // วาดแท็บที่เปิดอยู่ใหม่ด้วยดวงล่าสุด
     $("tools").style.display = "";
+    // v127: ดวงใหม่ = ชุดเรือนใหม่ → รีเซ็ตเป็น "ทุกเรือน" เหมือนปฏิทินโค้ง
+    // (ค้างเลขเรือนไว้ = กรองเรือน 7 ของอีกคนเงียบ ๆ — เจอตอนทดสอบเปลี่ยนดวง)
+    if (!TGATE_SIG || TGATE_SIG !== TL.jd + "|" + TL.lat + "|" + TL.lon) $("tgate").value = "0";
+    TGATE_SIG = TL.jd + "|" + TL.lat + "|" + TL.lon;
+    tGateFill();
     applyFilters();
     st.className = "";
     st.textContent = `คำนวณ ${months.length} เดือนใน ` +
@@ -1689,7 +1765,7 @@ function scPicRow(p) {
   return `<div class="scrow scpic f-${AISTRO.FACTOR_CLASS[p.t]}" data-kind="abc"` +
     ` data-a="${p.a}" data-b="${p.b}" data-c="${p.t}" data-o="${p.o.toFixed(3)}" data-lv="${lv}">` +
     `<b>${scCode(p.a, "r")} = ${scCode(p.b, "r")} = ${scCode(p.t, "t")}</b>` +
-    `<span class="sccls">ภาพดาว</span>` +
+    `<span class="sccls">ภาพดาว</span>` + pyrBadge(["one", "one", "one"]) +
     `<span class="sclv sclv${lv}" title="orb ${p.o.toFixed(2)}°">${LV_DOT[lv]}</span>` +
     `<span class="scsc"></span></div>`;
 }
@@ -3881,7 +3957,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v126")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v129")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
@@ -4377,6 +4453,33 @@ const CAL_KIND_TH = [
 ];
 let CAL = { win: 1, on: { "Ar=Bv": true, "Av1=Bv2": true }, ev: null, rows: null, key: "",
   dsort: "tier" };
+// ── ประตูเรือน (v127 · แนวคิด AISTRO "เรือน → ภาพดาว → เวลา") ─────────────────
+// เรือนใช้ชุดเดียวกับแท็บเรือนชะตา (แกน AR/MC ต้นเรือน 4 · uranianHouses ที่สอบเทียบเว็บ 22/22)
+// AR ไม่นับเป็นสมาชิกเรือน — ระดับคำแปล AR "ไม่เข้าเรือน" (จานเรือนก็กรอง AR ออกเหมือนกัน)
+// เป็นตัวกรองการแสดงผลล้วน: สมการ วันที่ มุม และลำดับเหมือนเดิมทุกแถว
+function calGateSet(R) {
+  const axis = AISTRO.uranianAxis(R), h = AISTRO.uranianHouses(R, axis, 4), out = {};
+  for (let n = 1; n <= 12; n++) out[n] = h[n].filter((c) => c !== "AR");
+  return out;
+}
+function calGatePass(e, members) {
+  return [e.a, e.b, e.c].some((c) => c && members.indexOf(c) >= 0);
+}
+function calGateChips() {
+  const box = $("calgate"); if (!box) return;
+  const H = TL ? calGateSet(TL.R) : null;
+  let h = `<button type="button" data-gate="0" class="laychip${CALGATE === 0 ? " on" : ""}">ทั้งหมด</button>`;
+  for (let n = 1; n <= 12; n++) {
+    const empty = H && !H[n].length;
+    h += `<button type="button" data-gate="${n}" class="laychip${CALGATE === n ? " on" : ""}${empty ? " gempty" : ""}"` +
+      ` title="${H ? (H[n].join(" ") || "เรือนว่าง") : ""}">${n}</button>`;
+  }
+  box.innerHTML = h;
+  $("calgatewho").textContent = !H || !CALGATE ? "" :
+    (H[CALGATE].length ? `เรือน ${CALGATE}: ${H[CALGATE].join(" · ")}`
+                       : `เรือน ${CALGATE} ไม่มีดาว — ไม่มีสมการให้แสดง`);
+}
+
 // ── ชั้นความแรง (v91) — ตามลำดับในตำรา: ดาวเดียว > ศูนย์รังสี > จุดอิทธิพล ──
 // เป็นการจัดชั้น "ความแรง" ไม่ใช่การตัดสินดี/ร้าย (ดี/ร้ายอยู่คอลัมน์ถัดไป)
 const CAL_TIER = { "Ar=Bv": 1, "Av1=Bv2": 1, "Ar/Br=Bv": 2, "Ar=Br/Bv": 2,
@@ -4671,6 +4774,10 @@ function calTimeHTML(e) {
     `<span class="cdpm cdpm-${lv}" title="ถ้าเวลาเกิดผิด 1 นาที เวลานี้เลื่อน ${
       Math.round(s)} นาที">${pm}</span>`;
 }
+$("calgate").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-gate]"); if (!b) return;
+  CALGATE = +b.dataset.gate; calRun();
+});
 function calRun() {
   if (!TL) { $("callist").innerHTML = '<p class="svempty">กดคำนวณดวงก่อน</p>'; return; }
   const kinds = CAL_KIND_TH.map(([k]) => k).filter((k) => CAL.on[k]);
@@ -4690,7 +4797,10 @@ function calRun() {
     calShiftAll(CAL.rows);
     CAL.key = key;
   }
-  const rows = CAL.rows;
+  // ประตูเรือน: กรองการแสดงผลเท่านั้น — CAL.rows ครบเหมือนเดิม และแถวยังชี้ด้วย e.i เดิม
+  const gm = CALGATE ? calGateSet(TL.R)[CALGATE] : null;
+  const rows = gm ? CAL.rows.filter((e) => calGatePass(e, gm)) : CAL.rows;
+  calGateChips();
   const MTH = AISTRO_RENDER.MONTH_TH;
   // แถบสีสลับ "ทีละวัน" — ผู้ใช้บอกว่าสีเดียวกันหมดแล้วดูช่วงวันยาก (v93)
   let html = "", lastMonth = "", todayDone = false, lastDay = "", band = false;
@@ -4708,14 +4818,15 @@ function calRun() {
       html += `<div class="calmonth">${MTH[c[1] - 1]} ${c[0] + 543}</div>`;
       lastMonth = mKey;
     }
-    html += calRowHTML(e, i, band);
+    html += calRowHTML(e, e.i, band);    // e.i = ตำแหน่งใน CAL.rows (ไม่ใช่ลำดับหลังกรอง)
   });
   if (!todayDone) html += `<div class="caltoday">← วันนี้</div>`;
   $("callist").innerHTML = html || '<p class="svempty">ไม่มีสมการในช่วงนี้</p>';
   $("calday").innerHTML = "";
   $("caltop").innerHTML = rows.length ? calTopHTML(calDays(rows)) : "";
-  const merged = CAL.ev.length - rows.length;
-  $("calcount").textContent = `${rows.length} สมการ` +
+  const merged = CAL.ev.length - CAL.rows.length;
+  $("calcount").textContent = (gm ? `เรือน ${CALGATE}: ${rows.length} จาก ${CAL.rows.length} สมการ`
+                                  : `${rows.length} สมการ`) +
     (merged ? ` · รวมสัญกรณ์ซ้ำ ${merged}` : "") +
     (rows.length > 300 ? " · กองทัพจุด — ลองปิดชนิดที่เบาลง" : "");
   // เลื่อนไปที่เส้นวันนี้
@@ -4940,6 +5051,194 @@ async function horAsk() {
 }
 $("horgo").addEventListener("click", horAsk);
 $("horq").addEventListener("keydown", (e) => { if (e.key === "Enter") horAsk(); });
+
+// ── ใบอ่านดวง (v129 · สายเว็บ AISTRO ภาพ 6/7/10/11/12 + RULES 0.1) ─────────────
+// ตัวเลขทั้งหมดมาจาก engine (chartAt/layerPositions/clusterOnDial) · คำแปลยกจากพจนานุกรม
+// ไม่มีประโยคที่เครื่องแต่ง · ป้ายชั้น/การจัดกลุ่ม/การทำจาง เป็นการ "จัดวาง" ไม่ตัดสูตรทิ้ง
+//   สูตรใหญ่: แดน (ดาวกำเนิดเดี่ยว 3 ดวงตรงกัน) · ① A=B กำเนิด · ① Xv1=Yr (โค้งถึงกำเนิด)
+//   สูตรเล็ก: ② A/B(r)=Cv1 · ④ A+B−C(r)=Dv1   (โค้งกระตุ้นจุดสังเคราะห์ของดวงกำเนิด)
+//   รองรับ (ผู้ใช้เลือกแบบ ก): สูตรเล็กมีรหัสดาวร่วมกับสูตรใหญ่อย่างน้อย 1 ดวง
+//   ไม่รวม ③ A/B=C/D และ ②/④ ภายในดวงกำเนิดล้วน — หน้านี้เน้น "สิ่งที่โค้งกระตุ้น ณ วันนั้น"
+const READ_MEAN_N = 7, READ_KID_SHOW = 3;
+function readDial(a, b) { return elecDial(a, b); }
+// มุมจริงสาย 22.5 ที่ใกล้ที่สุดของระยะห่างสองตำแหน่ง (0..180)
+function readAng(a, b) {
+  const d = Math.abs((((a - b) % 360) + 540) % 360 - 180);
+  return Math.round(d / 22.5) * 22.5;
+}
+function readMid(a, b) {                       // ศูนย์รังสี (บนจาน 22.5 ด้านใกล้/ไกลให้ผลเท่ากัน)
+  return AISTRO.mod360(a + AISTRO.mod360(b - a) / 2);
+}
+function readBuild(R, V, orb) {
+  const C = AISTRO.CODE_ORDER.filter((c) => R[c] !== undefined);
+  const big = [], small = [];
+  // แดน + ① กำเนิด (กฎลูกโซ่แตกทุกคู่ แล้วตัดคู่ที่เกินวังกะ เหมือนแท็บฤกษ์)
+  for (const g of AISTRO.clusterOnDial(R, 22.5, orb)) {
+    const m = g.members;
+    for (let i = 0; i < m.length; i++)
+      for (let j = i + 1; j < m.length; j++) {
+        const o = readDial(R[m[i]], R[m[j]]);
+        if (o <= orb) big.push({ tier: "1", src: "r", f: [m[i], m[j]], o,
+          txt: `${m[i]}=${m[j]}`, ang: readAng(R[m[i]], R[m[j]]),
+          mean: { type: "A", p: m[i], axis: m[j] } });
+        for (let k = j + 1; k < m.length; k++) {
+          const t = [m[i], m[j], m[k]];
+          const w = Math.max(o, readDial(R[t[0]], R[t[2]]), readDial(R[t[1]], R[t[2]]));
+          if (w <= orb) big.push({ tier: "dan", src: "r", f: t, o: w, txt: t.join("="),
+            mean: { type: "ABC", a: t[0], b: t[1], c: t[2] } });
+        }
+      }
+  }
+  // ① โค้งถึงกำเนิด Xv1 = Yr (X ≠ Y — ตัวเดียวกันคือโค้งเองหาร 22.5 ลงตัว ไม่ใช่สมการ)
+  for (const x of C) for (const y of C) {
+    if (x === y) continue;
+    const o = readDial(V[x], R[y]);
+    if (o <= orb) big.push({ tier: "1", src: "v", f: [x, y], o, ang: readAng(V[x], R[y]),
+      txt: `${x}v1=${y}r`, mean: { type: "A", p: x, axis: y } });
+  }
+  // ② A/B(r) = Cv1  ·  ④ A+B−C(r) = Dv1
+  for (let i = 0; i < C.length; i++) for (let j = i + 1; j < C.length; j++) {
+    const a = C[i], b = C[j], mp = readMid(R[a], R[b]);
+    for (const c of C) {
+      if (c === a || c === b) continue;
+      const o = readDial(mp, V[c]);
+      if (o <= orb) small.push({ tier: "2", f: [a, b, c], o, txt: `${a}/${b}=${c}v1`,
+        mean: { type: "AB", a, b, axis: c } });
+      const sp = AISTRO.mod360(R[a] + R[b] - R[c]);
+      for (const d of C) {
+        if (d === a || d === b || d === c) continue;
+        const o4 = readDial(sp, V[d]);
+        if (o4 <= orb) small.push({ tier: "4", f: [a, b, c, d], o: o4,
+          txt: `${a}+${b}−${c}=${d}v1`, mean: { type: "ABC", a, b, c } });
+      }
+    }
+  }
+  const W = { dan: 0, 1: 1 };
+  big.sort((x, y) => W[x.tier] - W[y.tier] || x.o - y.o);
+  small.sort((x, y) => x.tier.localeCompare(y.tier) || x.o - y.o);
+  return { big, small };
+}
+// จัดสูตรเล็กเข้าใต้สูตรใหญ่ที่มีรหัสดาวร่วมกัน "มากที่สุด" (เสมอกัน = ตัวที่น้ำหนักสูงกว่า)
+// เดิมเอาตัวแรกที่ร่วมแค่ 1 ดวง → แดนที่มี AR กินสูตรเล็กไป 3,831 สูตร (เห็นจากดวงจริง)
+// การรองรับยังเป็นแบบ ก (ร่วม ≥ 1 ดวง) · ไม่มีเลย = จาง
+function readNest(big, small) {
+  for (const b of big) b.kids = [];
+  const lone = [];
+  for (const s of small) {
+    let host = null, best = 0;
+    for (const b of big) {
+      const n = b.f.filter((c) => s.f.indexOf(c) >= 0).length;
+      if (n > best) { best = n; host = b; }
+    }
+    if (host) host.kids.push(s); else lone.push(s);
+  }
+  return lone;
+}
+function readRender() {
+  const out = $("readout");
+  if (!TL) { out.innerHTML = '<p class="svempty">กดคำนวณดวงก่อน</p>'; return; }
+  const esc = AISTRO_RENDER.esc, R = TL.R, orb = AISTRO.ORB_RT;
+  const sig = [TL.jd, TL.lat, TL.lon].join("|");
+  const gsel = $("readgate"), G = calGateSet(R);
+  if (sig !== READ_SIG || gsel.options.length !== 13) {
+    READ_SIG = sig;
+    gsel.innerHTML = `<option value="0">ทั้งดวง</option>` +
+      [1,2,3,4,5,6,7,8,9,10,11,12].map((n) =>
+        `<option value="${n}">เรือน ${n}${G[n].length ? " · " + G[n].join(" ") : " · (ว่าง)"}</option>`).join("");
+    gsel.value = "0";
+  }
+  const gate = +gsel.value, mem = gate ? G[gate] : null;
+  const V = ctrLayers(["r", "v1"]).v1;
+  const all = readBuild(R, V, orb);
+  // ประตูเรือน: กรองการแสดงผลตามปัจจัยในเรือนของดวงกำเนิด (ไม่แตะตัวเลข)
+  const pass = (e) => !mem || e.f.some((c) => mem.indexOf(c) >= 0);
+  const big = all.big.filter(pass), small = all.small.filter(pass);
+  const lone = readNest(big, small);
+  const arc = AISTRO.mod360(V.SU - R.SU);
+  const wp = jdLocalParts(TL.jdT);
+  const age = (TL.jdT - TL.jd) / 365.2422;
+  const cnt = (t, arr) => arr.filter((e) => e.tier === t).length;
+  const dm = (v) => `${Math.floor(v)}°${String(Math.floor((v % 1) * 60)).padStart(2, "0")}′`;
+  let h = `<div class="rdstep"><div class="rdh">ขั้น 1 · ข้อมูล</div>` +
+    `<p>วันที่อ่าน <b>${wp.d}/${wp.m}/${wp.y + 543}</b> (วันดวงจร) · อายุ ${age.toFixed(1)} ปี · ` +
+    `โค้งสุริยยาตร์ <b>${dm(arc)}</b></p>` +
+    (mem ? `<p>หัวข้อ: เรือน ${gate} — ปัจจัย ${mem.length ? mem.map((c) => `<b>${c}</b>`).join(" ") : "ไม่มี"}` +
+      ` · แสดงเฉพาะสูตรที่มีปัจจัยเหล่านี้</p>` : `<p>หัวข้อ: ทั้งดวง</p>`) + `</div>`;
+  h += `<div class="rdstep"><div class="rdh">ขั้น 2 · โครงสร้าง <span class="hint">พบ ${big.length + small.length} สูตร</span></div>` +
+    `<p class="rdcount">${pyrBadge(["one","one","one"])} ${cnt("dan", big)} ` +
+    `${pyrBadge(["one","one"])} ${cnt("1", big)} ${pyrBadge(["mid","one"])} ${cnt("2", small)} ` +
+    `${pyrBadge(["abc","one"])} ${cnt("4", small)}</p></div>`;
+  // ขั้น 3
+  const kinds = { dan: ["one","one","one"], 1: ["one","one"], 2: ["mid","one"], 4: ["abc","one"] };
+  const list = [];                                   // ลำดับการอ่าน: ใหญ่ → ลูกของมัน
+  const row = (e, cls) => {
+    const i = list.push(e) - 1;
+    return `<div class="rdrow ${cls || ""}" data-ri="${i}">${pyrBadge(kinds[e.tier])}` +
+      `<b class="rdf">${esc(e.txt)}</b>` +
+      (e.ang !== undefined ? `<span class="rda">${angLabel(e.ang)}</span>` : "") +
+      `<span class="rdo">orb ${e.o.toFixed(2)}°</span></div>`;
+  };
+  h += `<div class="rdstep"><div class="rdh">ขั้น 3 · น้ำหนัก <span class="hint">เรียงใหญ่ → เล็ก · ` +
+    `สูตรเล็กอยู่ใต้สูตรใหญ่ที่มีดาวร่วมกัน · แตะแถวเพื่อดูคำแปล</span></div>`;
+  if (!big.length && !small.length) h += `<p class="svempty">ไม่มีสูตรในวังกะ ${orb}° สำหรับหัวข้อนี้</p>`;
+  for (const b of big) {
+    h += row(b, "rdbig");
+    if (b.kids.length) {
+      h += `<div class="rdkids">` + b.kids.slice(0, READ_KID_SHOW).map((k) => row(k, "rdkid")).join("");
+      if (b.kids.length > READ_KID_SHOW)
+        h += `<details class="rdmore"><summary>อีก ${b.kids.length - READ_KID_SHOW} สูตรเล็ก</summary>` +
+          b.kids.slice(READ_KID_SHOW).map((k) => row(k, "rdkid")).join("") + `</details>`;
+      h += `</div>`;
+    }
+  }
+  if (lone.length)
+    h += `<details class="rdmore rdlone"><summary>ไม่มีโครงสร้างหลักรองรับ ${lone.length} สูตร (ภาพ 6: ไม่อ่านโดยลำพัง)</summary>` +
+      lone.map((k) => row(k, "rddim")).join("") + `</details>`;
+  h += `</div>`;
+  // ขั้น 4: คำแปลตำรา 7 สูตรแรกตามลำดับน้ำหนัก (ใหญ่ทั้งหมดก่อน แล้วสูตรเล็กที่มีรองรับ)
+  const top = big.concat(big.flatMap((b) => b.kids)).slice(0, READ_MEAN_N);
+  h += `<div class="rdstep"><div class="rdh">ขั้น 4 · คำแปลตำรา <span class="hint">${top.length} สูตรแรกตามน้ำหนัก</span></div>` +
+    `<div id="readmean">${top.length ? '<div class="mnone">กำลังโหลดพจนานุกรม …</div>' : '<p class="svempty">ไม่มีสูตรให้แปล</p>'}</div>`;
+  const shown = big.concat(small);
+  const has = (arr) => shown.filter((e) => e.f.some((c) => arr.indexOf(c) >= 0)).length;
+  h += `<div class="horsum">แตะดาวฝั่งดี (VE/JU/KR/AP) <b>${has(HOR_GOOD)}</b> สูตร · ` +
+    `ฝั่งหนัก (SA/NE/HA/AD) <b>${has(HOR_BAD)}</b> สูตร · ` +
+    `แตะจุดเจ้าชะตา (AR/MC/AS/SU/MO/NO) <b>${has(HOR_SELF)}</b> สูตร</div>` +
+    `<p class="hordisc">หน้านี้เรียงหลักฐานและยกคำแปลตำราเท่านั้น ไม่ได้สรุปคำทำนายแทนผู้อ่าน · ` +
+    `สูตร ④ ไม่มีคีย์ 4 ปัจจัยในพจนานุกรม จึงแสดงคำแปลของหัวเรื่อง A+B−C (≡ A/B ตก C ตาม RULES ข้อ 0)</p></div>`;
+  // กล่องคำสอน VT — แยกสายชัดเจน (CLAUDE.md: ห้ามผสม)
+  const n = notableStars(R);
+  h += `<div class="rdstep rdvt"><div class="rdh">คำสอน VT <span class="hint">คนละสายกับด้านบน · part 37, 38</span></div>` +
+    `<p>ดาวเด่น (ทำมุม 0/45/90/135/180 ถึง MC): ${n.hi.length ? n.hi.map((x) => `<b>${x.c}</b>`).join(" ") : "ไม่มี"}</p>` +
+    `<p>ดาวสันโดษ (ว่างข้างเดียว ≥ 45°): ${n.lone.length ? n.lone.map((x) => `<b>${x.c}</b>`).join(" ") : "ไม่มี"}</p></div>`;
+  out.innerHTML = h;
+  READ = { list, top, sig };
+  readMeanFill();
+}
+async function readMeanFill() {
+  const st = READ;
+  if (!st || !st.top.length) return;
+  await dictNeed();
+  if (READ !== st) return;                           // มีการคำนวณใหม่ระหว่างรอ — ทิ้งผลเก่า
+  const box = $("readmean");
+  if (DICT_STATE !== "ready") { box.innerHTML = '<p class="svempty">โหลดพจนานุกรมไม่สำเร็จ — แตะแถวในขั้น 3 เพื่อลองใหม่</p>'; return; }
+  box.innerHTML = st.top.map((e) =>
+    `<div class="mbox horm"><div class="mnote">${AISTRO_RENDER.esc(e.txt)} · orb ${e.o.toFixed(2)}°</div>` +
+    meanHTML(e.mean) + `</div>`).join("");
+}
+$("readgate").addEventListener("change", readRender);
+$("readout").addEventListener("click", async (e) => {
+  const r = e.target.closest(".rdrow");
+  if (!r || !READ) return;
+  const nx = r.nextElementSibling;
+  if (nx && nx.classList.contains("rdmean")) { nx.remove(); return; }
+  const ent = READ.list[+r.dataset.ri];
+  await dictNeed();
+  const d = document.createElement("div");
+  d.className = "mbox rdmean";
+  d.innerHTML = DICT_STATE === "ready" ? meanHTML(ent.mean) : '<p class="svempty">โหลดพจนานุกรมไม่สำเร็จ</p>';
+  r.after(d);
+});
 
 // ── ตัวหาฤกษ์ (v125 · คำสอน VT part 66 / 66.1 / 66.2 / 66.3 / 66.4) ─────────
 // ทุกเกณฑ์มาจากคำสอน ไม่มีเกณฑ์ที่เครื่องคิดขึ้นเอง · ค่าที่ใช้ก็เป็นของเดิมในแอป:
@@ -5182,7 +5481,7 @@ function elecFormHTML(jd) {
   h += F.pairs.map((p) => {
     const bad = isBad(p.a) || isBad(p.b);
     return `<div class="elfrow${bad ? " bad" : ""}" data-t="A" ` +
-      `data-p="${p.a}" data-x="${p.b}"><span class="elff">${nm(p.a)}=${nm(p.b)}</span>` +
+      `data-p="${p.a}" data-x="${p.b}"><span class="elff">${nm(p.a)}=${nm(p.b)}</span>${pyrBadge(["one", "one"])}` +
       `<span class="elfa">${angLabel(p.ang)}${ASP_TH[p.ang] ? " " + esc(ASP_TH[p.ang]) : ""}</span>` +
       `<span class="elfo">ห่าง ${p.gap.toFixed(3)}°</span>` +
       (bad ? `<span class="elfbad">⚠️ ดาวร้าย</span>` : "") + `</div>`;
@@ -5197,7 +5496,7 @@ function elecFormHTML(jd) {
     const bad = t.s.some(isBad);
     return `<div class="elfrow${bad ? " bad" : ""}" data-t="ABC" ` +
       `data-a="${t.s[0]}" data-b="${t.s[1]}" data-c="${t.s[2]}">` +
-      `<span class="elff">${t.s.map(nm).join("=")}</span>` +
+      `<span class="elff">${t.s.map(nm).join("=")}</span>${pyrBadge(["one", "one", "one"])}` +
       `<span class="elfa">${t.s[0]}+${t.s[1]}−${t.s[2]}</span>` +
       `<span class="elfo">แน่นสุด ${t.worst.toFixed(3)}°</span>` +
       (bad ? `<span class="elfbad">⚠️ ดาวร้าย</span>` : "") + `</div>`;
@@ -5546,7 +5845,7 @@ function horRender() {
   } else {
     h += tri.slice(0, TRI_SHOW).map((t, i) =>
       `<div class="calrow horrow hor3" data-h3="${i}">` +
-      `<b class="calf">${t.s[0]}=${t.s[1]}=${t.s[2]}</b>` +
+      `<b class="calf">${t.s[0]}=${t.s[1]}=${t.s[2]}</b>` + pyrBadge(["one", "one", "one"]) +
       horWhyHTML(t.ang, t.self) +
       // ภาพหนึ่งภาพมีสามคู่ มุมไม่จำเป็นต้องเท่ากัน — ป้ายใหญ่บอกมุมที่แรงที่สุด
       // แล้วกำกับทั้งสามไว้ ไม่ให้เข้าใจผิดว่าทั้งภาพเป็นมุมเดียว (เห็นจากผลจริง 0/157.5/157.5)
@@ -5566,7 +5865,7 @@ function horRender() {
   } else {
     h += rel.map((p, i) =>
       `<div class="calrow horrow" data-hp="${i}">` +
-      `<b class="calf">${p.a}=${p.b}</b>` +
+      `<b class="calf">${p.a}=${p.b}</b>` + pyrBadge(["one", "one"]) +
       horWhyHTML(p.ang, p.self) +
       `<span class="cala">${p.gap.toFixed(2)}°</span>` +
       (p.hit ? `<span class="horhit">🔎 ตรงคำว่า "${esc(p.hit)}"</span>` : "") +
@@ -6634,7 +6933,9 @@ function fxRun() {
     out += `<div class="fxsum"><div class="fxsym">${fxSideHTML(A)}` +
       `<span class="fxang">${f.ang}°</span>${fxSideHTML(B)}</div>` +
       `<div class="fxth">${AISTRO_RENDER.esc(fxSideTH(A))} ` +
-      `<b>ทำมุม ${f.ang}°</b> กับ ${AISTRO_RENDER.esc(fxSideTH(B))}</div></div>`;
+      `<b>ทำมุม ${f.ang}°</b> กับ ${AISTRO_RENDER.esc(fxSideTH(B))}</div>` +
+      `<div class="fxpyr">น้ำหนักหลักฐาน ${pyrBadge([A.kind, B.kind])}</div>` +
+      pyrWarn([A.kind, B.kind]) + `</div>`;
     // เก็บรายละเอียด "ณ เวลาดวงจร" ไว้ก่อน ค่อยวางหลังคำตอบหลัก
     // (เดิมขึ้น "✘ ไม่เกิด" ตัวใหญ่ก่อน คนอ่านหยุดตรงนั้นแล้วนึกว่าไม่มีคำตอบ
     //  ทั้งที่คำตอบจริงอยู่บรรทัดท้ายสุด — ผู้ใช้ทักมาแล้ว)
@@ -6821,7 +7122,20 @@ $("ctrctl").addEventListener("change", (e) => {
   renderCtrPanel();
 });
 
+// ประตูเรือนของตาราง — ใช้ calGateSet ตัวเดียวกับปฏิทินโค้ง (กติกาเรือนชุดเดียว)
+function tGateFill() {
+  const sel = $("tgate"); if (!sel) return;
+  const H = TL ? calGateSet(TL.R) : null, cur = sel.value || "0";
+  let h = `<option value="0">ทุกเรือน</option>`;
+  for (let n = 1; n <= 12; n++)
+    h += `<option value="${n}"${H && !H[n].length ? " disabled" : ""}>เรือน ${n}` +
+      (H ? ` · ${H[n].join(" ") || "ว่าง"}` : "") + `</option>`;
+  sel.innerHTML = h;
+  sel.value = H && H[+cur] && H[+cur].length ? cur : "0";
+}
 function applyFilters() {
+  const gv = +($("tgate") && $("tgate").value || 0);
+  const gm = gv && TL ? calGateSet(TL.R)[gv] : null;
   const on = {};
   document.querySelectorAll(".tools input").forEach((b) => {
     on[b.dataset.k] = b.checked;
@@ -6835,6 +7149,7 @@ function applyFilters() {
         if (ok && on.onlyPer && !r.classList.contains("has-per")) ok = false;
         if (ok && on.onlyGood && !r.classList.contains("has-good")) ok = false;
         if (ok && on.onlyBad && !r.classList.contains("has-bad")) ok = false;
+        if (ok && gm && !(r.dataset.f || "").split(" ").some((c) => gm.indexOf(c) >= 0)) ok = false;
         r.classList.toggle("hide", !ok);
         if (ok) vis++;
       });
@@ -6855,10 +7170,12 @@ function applyFilters() {
     l.classList.toggle("on", l.querySelector("input").checked);
   });
 }
+$("tgate").addEventListener("change", applyFilters);
 $("clearf").addEventListener("click", () => {
   document.querySelectorAll(".tools input").forEach((b) => {
     b.checked = /^t[1-4]$/.test(b.dataset.k);
   });
+  $("tgate").value = "0";
   applyFilters();
 });
 // ── เครื่องมือเทียบกับเว็บ ────────────────────────────────────────────────

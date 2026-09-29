@@ -85,7 +85,7 @@ function monthColumnHtml(rows, year, month, mi) {
       `<span>${TYPE_NOTE[kind]}</span></div>`);
     for (const r of sel) {
       // data-i = ดัชนีในอาร์เรย์ของเดือนนั้น ใช้ย้อนกลับไปหาอ็อบเจกต์แถวตอนกดดูคำแปล
-      body.push(`<div class="frow ${rowFlags(r)}" data-i="${rows.indexOf(r)}">` +
+      body.push(`<div class="frow ${rowFlags(r)}" data-i="${rows.indexOf(r)}" data-f="${[...AISTRO.rowFactors(r)].join(" ")}">` +
         `${rowHtml(r)}</div>`);
     }
     body.push("</div>");
