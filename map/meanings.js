@@ -9,8 +9,12 @@
 
   // ชุดว่าง — ใช้เมื่อ deploy ไม่ได้ใส่ readings.json.gz (ค่าเริ่มของ deploy_map.sh เพราะเป็นข้อความที่สกัดจากแหล่งของคนอื่น)
   // เส้น/paran/ดวงย้ายเมืองยังคำนวณได้ครบ แค่ไม่มีคำอ่าน — ทุกฟังก์ชันคืน "ไม่มี" อย่างซื่อสัตย์ ไม่พัง
+  // นิยามเป้าหมาย (ชื่อ/มุม/คำค้น) เป็นค่าตั้ง ไม่ใช่ข้อความจากตำรา — ต้องมีเสมอแม้ไม่ได้ใส่ไฟล์คำอ่าน
+  // เดิมอยู่ในไฟล์คำอ่านอย่างเดียว → deploy แบบไม่มีคำอ่าน ปุ่มเป้าหมายหายและส่งเป้าหมายถูกปฏิเสธ (ตรวจบั๊กรอบ 3)
+  // ต้องตรง ui/meanings.py GOALS ทุกตัวอักษร (เทสต์บังคับ)
+  const GOALS = {"career": {"th": "งาน ชื่อเสียง ธุรกิจ", "angle": "MC", "kw": ["ชื่อเสียงในงาน", "เปิดธุรกิจ", "ประชาสัมพันธ์", "เปิดตัวผลงาน"]}, "love": {"th": "ความรัก คู่ครอง", "angle": "DC", "kw": ["ความรัก", "คู่ครอง"]}, "home": {"th": "บ้าน ครอบครัว ปักหลัก", "angle": "IC", "kw": ["บ้าน", "ครอบครัว", "ปักหลัก", "เกษียณ"]}, "self": {"th": "ตัวตน ร่างกาย สุขภาพ", "angle": "AC", "kw": ["ผ่าตัด", "หัตถการ", "ร่างกาย", "สุขภาพ"]}, "start": {"th": "เริ่มต้น ยังไม่รู้จะดูอะไร", "angle": null, "kw": ["ผู้เริ่มต้น", "มือใหม่"]}};
   const EMPTY = () => ({ _missing: true, line_meanings: {}, paran_meanings: [], astrocom: {}, ac_code: {}, merged: {}, readings: {},
-                         goals: {}, goal_advice: [], sect_advice: [], orb_rules: [], timing_rules: [], tnp_factor: {} });
+                         goals: GOALS, goal_advice: [], sect_advice: [], orb_rules: [], timing_rules: [], tnp_factor: {} });
   async function fetchJson(url) {
     const res = await fetch(url);
     if (!res.ok) { const e = new Error("HTTP " + res.status); e.status = res.status; throw e; }
@@ -79,10 +83,10 @@
   const forReading = (code, angle) => need().readings[`${code}.${angle}`] || null;
   /** บรรทัดคำแนะนำที่ตรงกับเป้าหมาย (advice_for) — จับจากคำในสกิล */
   function adviceFor(goal) {
-    const d = need(), kw = (d.goals[goal] || {}).kw || [];
+    const d = need(), kw = (goals()[goal] || {}).kw || [];
     return d.goal_advice.filter((r) => kw.some((k) => r.text.includes(k)));
   }
-  const goals = () => need().goals;
+  const goals = () => { const g = need().goals; return g && Object.keys(g).length ? g : GOALS; };
   const sectAdvice = () => need().sect_advice;
   const orbRules = () => need().orb_rules;
   const timingRules = () => need().timing_rules;

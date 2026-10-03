@@ -336,12 +336,15 @@ function setBirthPlace(){const v=$("#place").value;
 // (ห้ามปัดหรือปล่อยให้ค่าไม่ถูกตั้ง เพราะเขตเวลาเข้าสูตรคำนวณโดยตรง)
 const TZ_LIST=[-12,-11,-10,-9.5,-9,-8,-7,-6,-5,-4,-3.5,-3,-2,-1,0,1,2,3,3.5,4,4.5,5,5.5,5.75,6,6.5,6.7,7,8,8.75,9,9.5,10,10.5,11,12,12.75,13,14];
 // 6.7 ชม. = 6:42 เวลาท้องถิ่นกรุงเทพที่ไทยใช้ก่อน 1 เม.ย. 1920 (ผู้ใช้สั่งเพิ่มคำเตือนเขตเวลา 29 ก.ย. 2026)
-const tzTxt=v=>v===6.7?"UTC+6:42 (ไทยก่อน 1920)":`UTC${v>=0?"+":"−"}${Number.isInteger(v)?Math.abs(v):Math.abs(v).toString().replace("-","")}`;
+// แสดงเป็น ชม.:นาที (เดิม "UTC+5.75" "UTC−9.5" อ่านยาก · ตรวจบั๊กรอบ 3)
+const tzTxt=v=>{if(v===6.7)return "UTC+6:42 (ไทยก่อน 1920)";const a=Math.abs(v),h=Math.floor(a),m=Math.round((a-h)*60);
+  return `UTC${v>=0?"+":"−"}${h}${m?":"+String(m).padStart(2,"0"):""}`};
 function fillTz(){const s=$("#tz");s.innerHTML="";TZ_LIST.forEach(v=>s.append(new Option(tzTxt(v),String(v))));s.value="7"}
 // คำเตือนเขตเวลา: เมืองในรายการมีค่าเดียวตายตัว = เวลามาตรฐานปัจจุบัน — ไม่รู้เวลาออมแสงหรือเวลาท้องถิ่นยุคเก่า
 function tzWarn(){const el=$("#tzwarn");if(!el)return;
-  const y=+($("#date").value||"").slice(0,4),tv=$("#tz").value,th=/^th:/.test($("#place").value)||tv==="7";
-  const old=y>0&&y<1920&&th&&tv!=="6.7";
+  // เทียบทั้งวันที่ — ไทยเปลี่ยนเป็น +7 วันที่ 1 เม.ย. 1920 (เดิมเทียบแค่ปี ม.ค.–มี.ค. 1920 หลุดคำเตือน · ตรวจบั๊กรอบ 3)
+  const dt=$("#date").value||"",tv=$("#tz").value,th=/^th:/.test($("#place").value)||tv==="7";
+  const old=/^\d{4}-/.test(dt)&&dt<"1920-04-01"&&th&&tv!=="6.7";
   el.innerHTML=(old?`<b style="color:var(--warn,#c0392b)">⚠ เกิดก่อน 1 เม.ย. 1920 (พ.ศ. 2463): ไทยยังใช้เวลาท้องถิ่นกรุงเทพ +6:42 ไม่ใช่ +7 — ถ้าเกิดในไทย ให้เลือกเขตเวลา "UTC+6:42"</b><br>`:"")+
     "เขตเวลาที่เติมให้เป็นเวลามาตรฐานปัจจุบันของเมือง · ต่างประเทศถ้าเกิดช่วงเวลาออมแสง หรือก่อนประเทศนั้นใช้เวลามาตรฐาน ต้องแก้เอง"}
 function setTz(v){const s=$("#tz"),val=String(v);
@@ -951,7 +954,7 @@ async function loadCity(){
       `<div class="src">อ่านข้อมูลเมืองนี้ไม่ได้: ${esc(e.message)}</div>`+
       `<div class="empty">ลองเลือกจุดที่ไม่ใกล้ขั้วโลก หรือตรวจข้อมูลวันเกิด/เวลาเกิดอีกครั้ง</div>`;
   }
-  finally{if(my===citySeq&&own) $("#panel").classList.remove("loading")}
+  finally{if(my===citySeq&&own&&tab!=="guide"&&tab!=="window") $("#panel").classList.remove("loading")}   // สลับไปแท็บคำอ่านระหว่างโหลด ห้ามถอดแทน refreshTab
 }
 function buildLegend(){
   const lg=$("#legend");lg.innerHTML="";
@@ -1580,7 +1583,7 @@ addEventListener("resize",size);
 </script>
 <script>
 // ── ออฟไลน์: ลงทะเบียน service worker (แยกแคชจากแอปยูเรเนียน: urmap-v*) ──
-const MAP_CACHE="urmap-v14";
+const MAP_CACHE="urmap-v15";
 (function(){
   const el=document.createElement("div");el.className="hint";el.style.cssText="margin:6px 4px 0";el.id="swstat";
   document.querySelector(".wrap").append(el);

@@ -108,8 +108,15 @@
     const segs = [];
     let cur = [], prev = null;
     const n = Math.round((latMax - latMin) / step);
-    for (let i = 0; i <= n; i++) {
-      const lat = latMin + i * step;
+    let lats = [];
+    for (let i = 0; i <= n; i++) lats.push(latMin + i * step);
+    // เติมจุดขอบ 90−|δ| ให้ AC กับ DC บรรจบกัน — ตรง acg/lines.py polyline (ตรวจบั๊กรอบ 3)
+    if ((angle === "AC" || angle === "DC") && dec !== 0) {
+      const edge = 90 - Math.abs(dec) - 1e-12;
+      for (const x of [edge, -edge]) if (x > latMin && x < latMax && !lats.includes(x)) lats.push(x);
+      lats.sort((a, b) => a - b);
+    }
+    for (const lat of lats) {
       const lon = lineLon(angle, ra, dec, g, lat);
       if (lon === null) {
         if (cur.length > 1) segs.push(cur);

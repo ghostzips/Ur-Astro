@@ -6,7 +6,7 @@
  * ขนาดที่ต้องโหลดตอนติดตั้ง ≈ 16 MB: ตารางดาว 10.5 + ละติจูดดาว 3.1 + แผนที่ระดับหยาบ/กลาง 2.1 + ที่เหลือ <1
  * แผนที่ระดับละเอียด (1:10m, 8.9 MB) **ไม่บังคับโหลดตอนติดตั้ง** — ดึงครั้งแรกที่ซูมถึงตอนมีเน็ต แล้วเก็บไว้ใช้ออฟไลน์
  */
-const CACHE = "urmap-v14";
+const CACHE = "urmap-v15";
 const FILES = [
   "./",
   "./index.html",
@@ -46,9 +46,10 @@ self.addEventListener("install", (e) => {
     // cache:"reload" — ไม่ให้ตรึงไฟล์เก่าจากแคช HTTP ของเบราว์เซอร์ไว้ในแคชของเรา (บทเรียนจาก app/sw.js)
     await Promise.all(FILES.map(async (f) => {
       let res;
-      try { res = await fetch(f, { cache: "reload" }); }
-      catch (err) { if (OPTIONAL.has(f)) return; throw err; }
-      if (!res.ok) { if (OPTIONAL.has(f)) return; throw new Error("โหลด " + f + " ไม่สำเร็จ: " + res.status); }
+      // ไฟล์ทางเลือก (คำอ่าน) ข้ามได้เฉพาะ 404 = ตั้งใจไม่ใส่ — เน็ตสะดุด/5xx ต้องล้มให้ติดตั้งใหม่
+      // เดิมข้ามทุกความล้มเหลว → ขึ้น "พร้อมใช้ออฟไลน์" ทั้งที่ไม่มีคำอ่าน และไม่มีวันลงแคชจนกว่าจะบัมพ์ (ตรวจบั๊กรอบ 3)
+      res = await fetch(f, { cache: "reload" });
+      if (!res.ok) { if (OPTIONAL.has(f) && res.status === 404) return; throw new Error("โหลด " + f + " ไม่สำเร็จ: " + res.status); }
       await c.put(f, res);
     }));
     await self.skipWaiting();
@@ -70,11 +71,8 @@ self.addEventListener("activate", (e) => {
   })());
 });
 
-// ไฟล์โค้ดเล็ก: คืนของในแคชทันที แล้วดึงรุ่นใหม่มาทับไว้ใช้รอบหน้า (ลืมบัมพ์ CACHE ก็ยังไม่ค้างถาวร)
-// ไฟล์ใหญ่ (ตารางดาว/แผนที่/พจนานุกรม) cache-first ล้วน
-const FRESH = new Set(["", "index.html", "manifest.json", "glyphs.js", "engine.js", "acg.js", "reading.js",
-                       "meanings.js", "places.js", "timing.js", "api.js", "house_dict.json"]);
-const isFresh = (url) => { const u = new URL(url); return u.origin === location.origin && FRESH.has(u.pathname.split("/").pop()); };
+// ทุกไฟล์ cache-first — รุ่นใหม่มาพร้อมกันทั้งชุดเมื่อเลข CACHE เปลี่ยน (bump_map.sh + เทสต์บังคับว่าเลขตรงกัน)
+// เดิมไฟล์โค้ดดึงรุ่นใหม่ทับทีละไฟล์เบื้องหลัง → index.html ใหม่อาจคู่กับ api.js เก่า (ตรวจบั๊กรอบ 3, 3 ต.ค. 2026)
 // หน้าสอบเทียบ/fixture ต้องสดเสมอ ห้ามลงแคช — ไม่งั้นแก้เทสต์แล้วรันได้ของเก่าเงียบ ๆ (บทเรียนจากแอป)
 // fix.html = หน้าซ่อม ต้องมาจากเน็ตเสมอ ห้ามลงแคชเด็ดขาด — เป็นทางเดียวที่ทะลุตัวจัดการออฟไลน์รุ่นเก่าที่ค้างอยู่ได้
 const NEVER_CACHE = /\/(selftest\.html|uitest\.html|fix\.html|fixture\.json)$/;
@@ -89,19 +87,10 @@ self.addEventListener("fetch", (e) => {
     // urain-* ของแอปยูเรเนียนก่อนเสมอ → มือถือค้างหน้า v3 ทั้งที่ SW เป็น v5 และหน้าเก่าฟ้อง "ไฟล์ไม่ครบในแคช urmap-v3" (เจอจริง 21 ก.ย. 2026)
     const mine = await caches.open(CACHE);
     const hit = await mine.match(e.request, { ignoreSearch: true });
-    if (hit && isFresh(e.request.url)) {
-      e.waitUntil((async () => {
-        try {
-          const res = await fetch(e.request, { cache: "no-cache" });
-          const key = new URL(e.request.url); key.search = "";
-          if (res.ok) mine.put(key.href, res.clone());
-        } catch (err) { /* ออฟไลน์ก็ใช้ของเก่าต่อไป */ }
-      })());
-      return hit;
-    }
     if (hit) return hit;
     const res = await fetch(e.request);
-    if (res.ok && ON_DEMAND.test(path)) mine.put(e.request, res.clone());
+    // คำอ่านที่ติดตั้งไม่ทัน (เน็ตสะดุดตอน install) ให้ลงแคชเมื่อโหลดสำเร็จครั้งแรก ไม่งั้นออฟไลน์ไม่มีคำอ่านจนกว่าจะบัมพ์
+    if (res.ok && (ON_DEMAND.test(path) || /\/readings\.json\.gz$/.test(path))) mine.put(path.endsWith("readings.json.gz") ? "./readings.json.gz" : e.request, res.clone());
     return res;
   })());
 });

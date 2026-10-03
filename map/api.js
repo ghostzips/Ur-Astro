@@ -69,7 +69,7 @@
     x = mod360(x);
     // ปัดเป็นลิปดารวมก่อนแล้วแยกราศี/องศา — เดิม 29.9999° ขึ้น "29°00′ เมษ" (ตรวจบั๊กรอบ 2) · ปัดครึ่งขึ้นตรง Python floor(+0.5)
     const tm = Math.floor(x * 60 + 0.5) % 21600, s = Math.floor(tm / 1800), rm = tm - s * 1800;
-    return `${String(Math.floor(rm / 60)).padStart(2, "0")}°${String(rm % 60).padStart(2, "0")}′ ${SIGNS[s]} (${x.toFixed(3)}°)`;
+    return `${String(Math.floor(rm / 60)).padStart(2, "0")}°${String(rm % 60).padStart(2, "0")}′ ${SIGNS[s]} (${((Math.round(x * 1000) / 1000) % 360).toFixed(3)}°)`;   // ไม่ขึ้น 360.000°
   }
 
   // ── สถานที่ (ตรง server.load_places จาก places.js) ──────────────────────────
