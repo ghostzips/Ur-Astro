@@ -15,7 +15,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v130">
+<link rel="stylesheet" href="style.css?v=urain-v131">
 </head>
 <body>
 <div class="wrap">
@@ -706,17 +706,17 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v130"></script>
-<script src="places.js?v=urain-v130"></script>
-<script src="engine.js?v=urain-v130"></script>
-<script src="render.js?v=urain-v130"></script>
+<script src="glyphs.js?v=urain-v131"></script>
+<script src="places.js?v=urain-v131"></script>
+<script src="engine.js?v=urain-v131"></script>
+<script src="render.js?v=urain-v131"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
 // v127 ประตูเรือน — ประกาศไว้หัวสคริปต์ เพราะ clearResults()/run() ใช้ก่อนถึงบรรทัดนิยามฟังก์ชัน
 let CALGATE = 0;          // ปฏิทินโค้ง: 0 = ทั้งหมด · 1..12 = เรือนที่เลือก
 let TGATE_SIG = "";
-let READ = null, READ_SIG = "";    // v129 ใบอ่านดวง: ผลล่าสุด · ลายเซ็นดวงกำเนิด (เปลี่ยนดวง = หัวข้อกลับเป็นทั้งดวง)       // ตารางดูดวงจร: ลายเซ็นดวงกำเนิดล่าสุด (เปลี่ยนดวง = รีเซ็ตเรือน)
+let READ = null, READ_SIG = "", READ_STALE = true;    // v129 ใบอ่านดวง: ผลล่าสุด · ลายเซ็นดวงกำเนิด (เปลี่ยนดวง = หัวข้อกลับเป็นทั้งดวง)       // ตารางดูดวงจร: ลายเซ็นดวงกำเนิดล่าสุด (เปลี่ยนดวง = รีเซ็ตเรือน)
 // ── ป้ายน้ำหนักหลักฐาน (v128 · ผู้ใช้สั่ง) ─────────────────────────────────────
 // พีระมิด AISTRO ภาพ 6–7: ① A=B หลัก · ② A/B=C รอง · ③ A/B=C/D ประกอบ · ④ A+B−C=D เสริม
 // แดน = A=B=C ที่เป็นดาวเดี่ยวล้วน → น้ำหนักสูง (RULES ข้อ 0.1)
@@ -753,7 +753,7 @@ function pyrWarn(kinds) {
     (pyrTier(kinds) === "3" ? ` · A/B=C/D ยังนับเป็นหลักฐานชั้น ③ ได้ แต่น้ำหนักน้อย` : "") +
     ` · สูตรยังคำนวณครบตามเดิม</p>`;
 }
-const SW_CACHE = "urain-v130";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v131";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 let DIALMARKS = null, _markTimer = 0;   // วงเส้นประกะพริบครอบดาวของสูตร (v80)
@@ -848,7 +848,7 @@ function clearResults() {
   if (ELEC_LAST && ELEC_SIG)
     ELEC_STASH = { sig: ELEC_SIG, html: $("elecout").innerHTML, last: ELEC_LAST };
   ELEC_LAST = null;
-  READ = null;
+  READ = null; READ_STALE = true;
   $("readout").innerHTML = '<p class="svempty">กดคำนวณดวงก่อน</p>';
   $("elecout").innerHTML =
     '<p class="svempty">กำหนดช่วงเวลาที่ทำได้จริง แล้วกด "หาฤกษ์"</p>';
@@ -1030,7 +1030,10 @@ function run() {
            place: placeTxt0 === "กำหนดเอง…" ? "" : placeTxt0 };
     elecRestore();         // v125: ดวงกำเนิด/สถานที่/เขตเวลาเดิม = คืนผลฤกษ์ที่พักไว้
     renderNotable(R);      // v123: ดาวเด่น/ดาวสันโดษ (อ่านจากค่าที่คำนวณแล้ว)
-    readRender();          // v129: ใบอ่านดวง (ต้องหลัง TL)
+    // v131: ใบอ่านดวงสร้าง DOM ~41,000 ชิ้น — เดิมสร้างทุกครั้งที่คำนวณแม้ไม่เปิดแท็บ
+    // (มือถือเสียเวลาทุกครั้งที่กดคำนวณ/เปิดจาน) · ตอนนี้วาดเมื่อแท็บเปิดอยู่ หรือตอนเปิดแท็บ
+    READ_STALE = true;
+    if (CUR_PANEL === "pread") readRender();
     renderHouseWheel(R);   // v115: ต้องหลัง TL — จานแบบ swDraw ใช้วันเวลา/สถานที่จาก TL ที่มุมบนซ้าย
     $("tlmonth").innerHTML = $("cmpmonth").innerHTML;
     $("tlmonth").value = String(mb);   // ดัชนีของเดือนดวงจร = จำนวนเดือนที่ย้อนหลัง
@@ -3958,7 +3961,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v130")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v131")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
@@ -5149,7 +5152,9 @@ function readNest(big, small) {
   }
   return lone;
 }
+PANEL_DRAW.pread = () => { if (READ_STALE) readRender(); };
 function readRender() {
+  READ_STALE = false;
   const out = $("readout");
   if (!TL) { out.innerHTML = '<p class="svempty">กดคำนวณดวงก่อน</p>'; return; }
   const esc = AISTRO_RENDER.esc, R = TL.R, orb = AISTRO.ORB_RT;
