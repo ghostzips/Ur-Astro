@@ -6,7 +6,7 @@
  * ขนาดที่ต้องโหลดตอนติดตั้ง ≈ 16 MB: ตารางดาว 10.5 + ละติจูดดาว 3.1 + แผนที่ระดับหยาบ/กลาง 2.1 + ที่เหลือ <1
  * แผนที่ระดับละเอียด (1:10m, 8.9 MB) **ไม่บังคับโหลดตอนติดตั้ง** — ดึงครั้งแรกที่ซูมถึงตอนมีเน็ต แล้วเก็บไว้ใช้ออฟไลน์
  */
-const CACHE = "urmap-v16";
+const CACHE = "urmap-v17";
 const FILES = [
   "./",
   "./index.html",
@@ -56,9 +56,15 @@ self.addEventListener("install", (e) => {
   })());
 });
 
+// ลบแคชรุ่นอื่นของแผนที่ — เรียกตอน activate และทุกครั้งที่เปิดหน้า (navigate) ด้วย เพราะหน้า/SW รุ่นเก่าที่ยังทำงานค้าง
+// ช่วงสลับรุ่นอาจเรียก caches.open(ชื่อรุ่นเก่า) ซึ่ง "สร้างแคชเปล่าขึ้นใหม่" หลัง activate ลบไปแล้ว (เจอจริง urmap-v15 ว่างค้างหลังขึ้น v16)
+async function sweepOld() {
+  for (const k of await caches.keys()) if (k !== CACHE && k.startsWith("urmap-")) await caches.delete(k);
+}
+
 self.addEventListener("activate", (e) => {
   e.waitUntil((async () => {
-    for (const k of await caches.keys()) if (k !== CACHE && k.startsWith("urmap-")) await caches.delete(k);
+    await sweepOld();
     // เก็บกวาดสำเนาไฟล์ของแผนที่ที่หลงอยู่ในแคชของแอปอื่นบนโดเมนเดียวกัน (SW ของแอปยูเรเนียนขอบเขต /Ur-Astro/ เคยคุมหน้า /map/
     // ก่อน SW นี้ติดตั้งสำเร็จ และเก็บทุกไฟล์ same-origin ลงแคชของมัน ~16 MB) — ลบเฉพาะ URL ใต้ขอบเขตของเรา ไม่แตะไฟล์ของแอปนั้น
     const scope = self.registration.scope;
@@ -82,7 +88,10 @@ self.addEventListener("fetch", (e) => {
   const path = new URL(e.request.url).pathname;
   if (NEVER_CACHE.test(path)) return;
   if (/^https?:\/\/tile\.openstreetmap\.org\//.test(e.request.url)) return;   // แผ่นภาพออนไลน์ไม่แคช (นโยบาย OSM)
+  if (e.request.mode === "navigate") e.waitUntil(sweepOld());
   e.respondWith((async () => {
+    // แคชของรุ่นนี้ถูกลบแล้ว = มีรุ่นใหม่มาแทน — ห้าม caches.open() (จะสร้างแคชเปล่าชื่อรุ่นเก่าขึ้นมาใหม่) ไปเน็ตตรง ๆ
+    if (!(await caches.has(CACHE))) return fetch(e.request);
     // ค้น**เฉพาะแคชของเรา** — caches.match() แบบรวมค้นทุกแคชของโดเมนตามลำดับที่สร้าง จึงเจอ /map/index.html ตัวเก่าในแคช
     // urain-* ของแอปยูเรเนียนก่อนเสมอ → มือถือค้างหน้า v3 ทั้งที่ SW เป็น v5 และหน้าเก่าฟ้อง "ไฟล์ไม่ครบในแคช urmap-v3" (เจอจริง 21 ก.ย. 2026)
     const mine = await caches.open(CACHE);

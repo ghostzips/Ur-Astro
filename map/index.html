@@ -1625,7 +1625,7 @@ addEventListener("resize",size);
 </script>
 <script>
 // ── ออฟไลน์: ลงทะเบียน service worker (แยกแคชจากแอปยูเรเนียน: urmap-v*) ──
-const MAP_CACHE="urmap-v16";
+const MAP_CACHE="urmap-v17";
 (function(){
   const el=document.createElement("div");el.className="hint";el.style.cssText="margin:6px 4px 0";el.id="swstat";
   document.querySelector(".wrap").append(el);
@@ -1649,6 +1649,9 @@ const MAP_CACHE="urmap-v16";
       const mine=new URL("sw.js",location.href).href;
       const ready=async()=>{
         const a=reg.active; if(!a||a.scriptURL!==mine){say("ยังไม่พร้อมออฟไลน์ — service worker ของแผนที่ยังไม่ทำงาน ลองรีโหลดตอนมีเน็ต",false);offerFix();return}
+        // caches.open() "สร้างแคชถ้ายังไม่มี" — หน้ารุ่นเก่าที่เปิดค้างตอนรุ่นใหม่ activate (SW ใหม่เพิ่งลบแคชรุ่นนี้)
+        // เคยเรียก open แล้วได้แคชเปล่าชื่อรุ่นเก่าค้าง (urmap-v15 ว่าง 0 ไฟล์ หลังขึ้น v16) → ตรวจด้วย has ก่อน (urmap-v17)
+        if(!(await caches.has(MAP_CACHE))){say("ติดตั้งรุ่นใหม่แล้ว — รีโหลดหน้าเพื่อใช้รุ่นใหม่",true);return}
         const c=await caches.open(MAP_CACHE); const need=["./index.html","./ephem.bin.gz","./beta.bin.gz","./engine.js","./geo/countries-110m.json"];
         const miss=[];for(const f of need)if(!(await c.match(f)))miss.push(f);
         if(miss.length){say("ยังไม่พร้อมออฟไลน์ — ไฟล์ยังไม่ครบในแคช "+MAP_CACHE+": "+miss.join(", "),false);offerFix();return}
