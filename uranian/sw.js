@@ -3,7 +3,7 @@
  * กลยุทธ์: cache-first ทุกไฟล์ในรายการ (แอปนี้ไม่มีข้อมูลที่ต้องสดใหม่เลย
  * ทุกอย่างคำนวณในเครื่อง) เปลี่ยน CACHE เมื่อปล่อยเวอร์ชันใหม่เพื่อล้างของเก่า
  */
-const CACHE = "urain-v134";
+const CACHE = "urain-v135";
 const FILES = [
   "./",
   "./index.html",
@@ -38,12 +38,24 @@ self.addEventListener("install", (e) => {
   })());
 });
 
+// ลบแคชรุ่นอื่นของแอปนี้ — ตอน activate และทุกครั้งที่เปิดหน้า (v135 · บทเรียนจาก urmap-v17)
+// caches.open(ชื่อ) "สร้างแคชถ้ายังไม่มี": SW รุ่นเก่าที่ยังรับ fetch ช่วงสลับรุ่นจะสร้างแคชชื่อรุ่นเก่าขึ้นใหม่
+// หลัง activate ลบไปแล้ว (แผนที่เจอจริง urmap-v15 ค้างเป็นแคชเปล่า) — จึงกวาดซ้ำทุกครั้งที่เปิดหน้า
+async function sweepOld() {
+  for (const k of await caches.keys())
+    if (k !== CACHE && k.startsWith("urain-")) await caches.delete(k);
+}
+// เขียนลงแคชของรุ่นนี้เฉพาะเมื่อแคชยังอยู่ — ถูกลบแล้ว = มีรุ่นใหม่มาแทน ห้ามสร้างขึ้นใหม่
+async function putMine(key, res) {
+  if (!(await caches.has(CACHE))) return;
+  await (await caches.open(CACHE)).put(key, res);
+}
+
 self.addEventListener("activate", (e) => {
   e.waitUntil((async () => {
     // ลบเฉพาะแคชรุ่นเก่าของแอปนี้ ("urain-") — เดิมลบทุกชื่อที่ไม่ใช่ CACHE ทำให้แคชแผนที่ดวง
     // ("urmap-" บนโดเมนเดียวกัน) ถูกล้างทุกครั้งที่ยูเรเนียนอัปเดต (v133 เจอตอนย้ายโฟลเดอร์)
-    for (const k of await caches.keys())
-      if (k !== CACHE && k.startsWith("urain-")) await caches.delete(k);
+    await sweepOld();
     await self.clients.claim();
   })());
 });
@@ -67,6 +79,7 @@ const NEVER_CACHE = /\/uitest\.(js|html)$/;
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
   if (NEVER_CACHE.test(new URL(e.request.url).pathname)) return;   // ปล่อยผ่านไปเน็ตตรง ๆ
+  if (e.request.mode === "navigate") e.waitUntil(sweepOld().catch(() => {}));
   e.respondWith((async () => {
     const hit = await caches.match(e.request, { ignoreSearch: true });
     if (hit && isFresh(e.request.url)) {
@@ -78,7 +91,7 @@ self.addEventListener("fetch", (e) => {
           // ถ้าเขียนใต้ URL ที่พ่วง query คีย์มาตรฐานจะไม่ถูกอัปเดตเลย
           // แล้วหน้าเก่าถูกเสิร์ฟตลอดกาลสำหรับ URL ที่มี query (เจอจริงตอนพัฒนา)
           const key = new URL(e.request.url); key.search = "";
-          if (res.ok) (await caches.open(CACHE)).put(key.href, res.clone());
+          if (res.ok) await putMine(key.href, res.clone());
         } catch (err) { /* ออฟไลน์ก็ใช้ของเก่าต่อไป */ }
       })());
       return hit;
@@ -90,8 +103,7 @@ self.addEventListener("fetch", (e) => {
       // มันจะโยนออกไปทำให้ respondWith พังทั้งคำขอ กลายเป็น "Failed to fetch"
       // ทั้งที่เซิร์ฟเวอร์ตอบ 200 มาแล้ว · แคชเป็นแค่ของแถม ไม่ใช่เงื่อนไขของคำตอบ
       if (res.ok && new URL(e.request.url).origin === location.origin) {
-        e.waitUntil(caches.open(CACHE)
-          .then((c) => c.put(e.request, res.clone()))
+        e.waitUntil(putMine(e.request, res.clone())
           .catch(() => { /* แคชไม่ได้ก็ช่างมัน คำตอบยังส่งได้ */ }));
       }
       return res;

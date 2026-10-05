@@ -15,7 +15,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v134">
+<link rel="stylesheet" href="style.css?v=urain-v135">
 </head>
 <body>
 <div class="wrap">
@@ -706,10 +706,10 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v134"></script>
-<script src="places.js?v=urain-v134"></script>
-<script src="engine.js?v=urain-v134"></script>
-<script src="render.js?v=urain-v134"></script>
+<script src="glyphs.js?v=urain-v135"></script>
+<script src="places.js?v=urain-v135"></script>
+<script src="engine.js?v=urain-v135"></script>
+<script src="render.js?v=urain-v135"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -754,7 +754,7 @@ function pyrWarn(kinds) {
     (pyrTier(kinds) === "3" ? ` · A/B=C/D ยังนับเป็นหลักฐานชั้น ③ ได้ แต่น้ำหนักน้อย` : "") +
     ` · สูตรยังคำนวณครบตามเดิม</p>`;
 }
-const SW_CACHE = "urain-v134";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v135";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 let DIALMARKS = null, _markTimer = 0;   // วงเส้นประกะพริบครอบดาวของสูตร (v80)
@@ -3963,7 +3963,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v134")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v135")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
