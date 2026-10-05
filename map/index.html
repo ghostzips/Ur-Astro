@@ -122,6 +122,10 @@
   details.facts ul,.citysum ul{margin:4px 0 0;padding-left:18px}
   details.facts li,.citysum li{margin:2px 0}
   .warn{color:#b0451f;font-weight:600}
+  .famsel{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:6px}
+  .famrow{display:flex;align-items:center;gap:6px;font-size:13.5px;color:var(--ink);margin:0}
+  .famrow input{width:auto}
+  .famrow select{width:auto;padding:2px 6px;font-size:12.5px}
   .citysum{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:8px 0;font-size:13px;background:#fff}
   .teach>summary{cursor:pointer;color:#2b5f9e;font-weight:600;list-style:none}
   .teach>summary::-webkit-details-marker{display:none}
@@ -286,6 +290,7 @@
       <button data-t="paran">Paran</button>
       <button data-t="relA">ย้ายเมือง A · ย้ายดวง</button>
       <button data-t="relB">ย้ายเมือง B · LM/LA</button>
+      <button data-t="family">ครอบครัว</button>
     </div>
     <div class="card panel" id="panel"></div>
   </div>
@@ -933,12 +938,18 @@ async function loadWindow(){
 // เอา readingData ที่ค้างมาวาดต่อ · ทางแก้: ทุกจุดที่อินพุตเปลี่ยนเรียก invalidatePanels()+refreshTab()
 // panelSeq/citySeq: คำตอบที่มาช้ากว่าคำขอล่าสุดถูกทิ้ง ไม่งั้นเปลี่ยนเมืองรัว ๆ แล้วเมืองเก่าทับเมืองใหม่ได้
 let panelSeq=0, citySeq=0;
-function invalidatePanels(){readingData=null;windowData=null}
+function invalidatePanels(){readingData=null;windowData=null;familyData=null}
 async function refreshTab(){
   const my=++panelSeq;
   // แท็บที่ไม่ต้องรอคำอ่าน ต้องถอดสถานะ "กำลังโหลด" ของคำขอก่อนหน้าเอง — ไม่งั้นแผงจาง 55% และกดไม่ได้ถาวร
   // (คำขอเก่าที่กลับมาทีหลังเห็นว่าไม่ใช่คำขอล่าสุดจึงไม่ถอดให้ — ตรวจบั๊ก 29 ก.ย. 2026)
-  if(tab!=="guide"&&tab!=="window") $("#panel").classList.remove("loading");
+  if(tab!=="guide"&&tab!=="window"&&tab!=="family") $("#panel").classList.remove("loading");
+  if(tab==="family"&&!familyData){
+    $("#panel").classList.add("loading");
+    try{const r=await loadFamily(); if(my!==panelSeq) return; familyData=r}
+    catch(err){if(my!==panelSeq) return; familyData={error:err.message}}
+    finally{if(my===panelSeq) $("#panel").classList.remove("loading")}
+  }
   if(tab==="guide"||tab==="window"){
     $("#panel").classList.add("loading");
     try{const r=await (tab==="guide"?loadReading():loadWindow()); if(my!==panelSeq) return;
@@ -1353,6 +1364,78 @@ function step6Html(s6){
       `อังคารจรเรือน 9 <b>${s6.cautions.mars_9th?s6.cautions.mars_9th.spans.length:0}</b> ช่วง</p>`:"")+
     `<p>คำตอบเต็ม (ตารางช่วง วันใกล้สุด มุมจร) อยู่ที่แท็บ <b>ช่วงเวลา</b> <button class="chip" id="goWindow">เปิดแท็บช่วงเวลา ▸</button></p></div>`;
 }
+// ── v18 ชุด 3: แท็บครอบครัว/คู่รัก (ผู้ใช้เลือกแท็บใหม่ 5 ต.ค. 2026) ─────────────────────────────────
+// คำนวณดวงสมาชิกทีละคนด้วย /api/city เดิม (ป้ายข้อเท็จจริง v16 ครบ) — ตามคำสอน "ดูทุกคนแยกกัน ห้ามใช้ทางลัด"
+// ไม่สร้างดวงรวมของครอบครัว · ดวงประสมของคู่รักยังไม่ได้คำนวณ (บอกตรง ๆ บนหน้าจอ)
+let familyData=null;
+const FAM_KEY="acg_family_v1", FAM_ROLES=["พ่อแม่","คู่รัก","ลูก","อื่น ๆ"], FAM_MAX=5;
+function famState(){try{const v=JSON.parse(localStorage.getItem(FAM_KEY)||"{}");return {sel:Array.isArray(v.sel)?v.sel:[],role:v.role&&typeof v.role==="object"?v.role:{}}}catch(e){return {sel:[],role:{}}}}
+function famSave(st){try{localStorage.setItem(FAM_KEY,JSON.stringify(st))}catch(e){}}
+function famMembers(){
+  const st=famState(),all=savedList();
+  return st.sel.map(n=>all.find(c=>c.name===n)).filter(Boolean).slice(0,FAM_MAX)
+    .map(c=>({...c,role:FAM_ROLES.includes(st.role[c.name])?st.role[c.name]:"อื่น ๆ"}))
+    .sort((a,b)=>FAM_ROLES.indexOf(a.role)-FAM_ROLES.indexOf(b.role));   // พ่อแม่ก่อนตามคำสอน
+}
+const famBody=c=>({date:c.date,time:c.time,tz:+c.tz,lat:+c.lat,lon:+c.lon,method});
+async function loadFamily(){
+  const ms=famMembers();
+  if(!city||ms.length<2) return {members:[],ms};
+  const orb=+$("#orb").value||483, out=[];
+  for(const m of ms){
+    const d=await post("/api/city",{...famBody(m),city,orb_km:orb,date_on:$("#dynDate").value||undefined});
+    const lines=d.lines_near.filter(h=>h.km<=300*MI);
+    out.push({m,summary:d.summary,lines,rules:d.fact_rules});
+  }
+  // คู่รัก: อีกคนเกิดใกล้เส้น DC ของเราไหม — ถามด้วย /api/city เดิม โดยให้ "เมือง" = ที่เกิดของอีกคน
+  // เฉพาะคู่ที่มีคนหนึ่งเป็น "คู่รัก" และอีกคนเป็นคู่รัก/พ่อแม่ (คู่ครอง) — ไม่เช็กลูก · เช็กทั้งสองทิศ
+  const pairs=[],adults=ms.filter(m=>m.role==="คู่รัก"||m.role==="พ่อแม่");
+  for(const a of adults) for(const b of adults) if(b!==a&&(a.role==="คู่รัก"||b.role==="คู่รัก")){
+    const d=await post("/api/city",{...famBody(a),city:{name:b.place_name||b.name,lat:+b.lat,lon:+b.lon},orb_km:300*MI});
+    pairs.push({a:a.name,b:b.name,dc:d.lines_near.filter(h=>h.angle==="DC").map(h=>({th:h.th,km:h.km}))});
+  }
+  return {members:out,pairs,ms};
+}
+function familyHtml(){
+  const all=savedList(),st=famState(),fd=familyData;
+  if(all.length<2) return `<div class="empty">บันทึกดวงไว้อย่างน้อย 2 ดวงก่อน (ปุ่ม "บันทึก" ใต้ฟอร์ม) แล้วเลือกสมาชิกที่นี่</div>`;
+  let h=`<div class="citysum"><b>เลือกสมาชิก</b> <span class="hint">(สูงสุด ${FAM_MAX} คน · เลือกบทบาทเพื่อเรียงพ่อแม่ก่อนตามคำสอน)</span><div class="famsel">`+
+    all.map(c=>{const on=st.sel.includes(c.name);return `<label class="famrow"><input type="checkbox" class="fam-chk" data-n="${esc(c.name)}"${on?" checked":""}> ${esc(c.name)}`+
+      (on?` <select class="fam-role" data-n="${esc(c.name)}">${FAM_ROLES.map(r=>`<option${(st.role[c.name]||"อื่น ๆ")===r?" selected":""}>${esc(r)}</option>`).join("")}</select>`:"")+`</label>`}).join("")+`</div></div>`;
+  if(!city) return h+`<div class="empty">เลือกเมืองที่จะไป (ช่องเมืองเหนือแผนที่) แล้วแท็บนี้จะเทียบให้ทุกคน</div>`;
+  if(!fd) return h;
+  if(fd.error) return h+`<div class="src">คำนวณไม่สำเร็จ: ${esc(fd.error)}</div>`;
+  if(fd.members.length<2) return h+`<div class="empty">ติ๊กเลือกอย่างน้อย 2 คน</div>`;
+  const R=fd.members[0].rules||{},good=x=>x.lines.some(l=>l.facts&&/เป็นคุณที่สุด/.test(l.facts.sect_role||"")),hard=x=>x.summary.full_hard.length>0;
+  for(const x of fd.members){
+    const sm=x.summary;
+    h+=`<h3 style="margin-top:14px">${esc(x.m.name)} <span class="hint">· ${esc(x.m.role)} · เกิด ${esc(x.m.date)} ${esc(x.m.place_name||"")}</span></h3>`+
+      (x.lines.length?`<div class="tw"><table><tr><th>เส้นใน 300 ไมล์</th><th>ระยะ</th></tr>`+x.lines.map(l=>`<tr><td><span class="sw" style="background:${COLORS[l.body]}"></span> ${esc(l.glyph)} ${esc(l.th)} · ${ANG_TH[l.angle]}`+
+        factsBlock(l.facts,x.rules)+`</td><td class="num">${Math.round(l.km)} กม.</td></tr>`).join("")+`</table></div>`
+        :`<div class="hint">ไม่มีเส้นใน 300 ไมล์ → เป็นกลาง (ไม่ใช่ "ไม่ดี")</div>`)+
+      sm.full_hard.map(f=>`<div class="warn">⚠ อยู่ระยะเต็มกำลังของเส้น${esc(f.th)} ${ANG_TH[f.angle]} และดาวดวงนี้สภาพยากในดวง</div>`).join("");
+  }
+  const g=fd.members.filter(good).map(x=>x.m.name),hd=fd.members.filter(hard).map(x=>x.m.name);
+  const it=[];
+  if(g.some(a=>hd.some(b=>b!==a)))      // คนหนึ่งมีเส้นดาวดี อีกคน (คนละคน) อยู่ใกล้ดาวสภาพยาก
+    it.push(`<span class="warn">⚠ เส้นขัดกัน: ${g.map(esc).join(", ")} มีเส้นดาวดีประจำดวง แต่ ${hd.map(esc).join(", ")} อยู่ระยะเต็มกำลังของดาวสภาพยาก</span> — ${esc((R.fam_conflict||{}).text||"")}`);
+  for(const p of fd.pairs||[]) it.push(`คู่รัก: ${esc(p.b)} เกิดใกล้เส้น DC ของ ${esc(p.a)}? `+
+    (p.dc.length?`<b>ใช่</b> — ${p.dc.map(d=>`${esc(d.th)} DC ${Math.round(d.km)} กม.`).join(" · ")}`:`ไม่มีเส้น DC ใน 300 ไมล์`)+(R.partner_dc?` <span class="hint">(${esc(R.partner_dc.text)})</span>`:""));
+  if(fd.ms.some(m=>m.role==="คู่รัก")) it.push(`<span class="hint">ดวงประสมของคู่รักยังไม่ได้คำนวณในแอปนี้ — ${esc((R.fam_composite||{}).text||"")}</span>`);
+  h+=`<div class="citysum"><b>สรุปทั้งครอบครัว</b><ul>${it.map(x=>`<li>${x}</li>`).join("")||"<li>ไม่พบเส้นขัดกันตามเกณฑ์</li>"}</ul>`+
+    `<details class="facts"><summary>คำสอนที่ใช้ประกอบ</summary><ul>`+["fam_parents","fam_separate","fam_conflict","fam_composite","partner_dc"].filter(k=>R[k]).map(k=>`<li>${esc(R[k].text)}${ruleNote(R[k])}</li>`).join("")+`</ul></details></div>`;
+  return h;
+}
+$("#panel").addEventListener("change",async e=>{       // แท็บครอบครัว: ติ๊กสมาชิก / เลือกบทบาท
+  const c=e.target.closest(".fam-chk,.fam-role"); if(!c) return;
+  const st=famState(),n=c.dataset.n;
+  if(c.classList.contains("fam-chk")){
+    if(c.checked&&!st.sel.includes(n)){if(st.sel.length>=FAM_MAX){c.checked=false;alert(`เลือกได้สูงสุด ${FAM_MAX} คน`);return}st.sel.push(n)}
+    if(!c.checked) st.sel=st.sel.filter(x=>x!==n);
+  }else st.role[n]=c.value;
+  famSave(st); familyData=null; await refreshTab();
+});
+
 // ── v16 ชุด 2: ช่วงที่คำสอนเตือนให้ระวัง (ฤดูคราส · พุธถอยหลัง · อังคารจรเรือน 9) ──────────────────────
 function cautionsHtml(c){
   if(!c) return "";
@@ -1509,6 +1592,7 @@ function renderPanelRaw(){
   if(tab==="guide"){p.innerHTML=guideHtml();return}   // ข้อ 1 เป็นเรื่องดวงกำเนิด ไม่ใช้ cityData — ต้องวาดได้แม้ /api/city ล้ม
   const head=city?`<div class="cityhead"><h2>${esc(city.name)}</h2><span class="hint">${city.lat.toFixed(4)}, ${city.lon.toFixed(4)}</span> ${ownerTag()}</div>`:"";
   if(tab==="window"){p.innerHTML=head+windowHtml();return}   // ใช้ windowData อย่างเดียว ไม่ใช้ cityData เช่นกัน
+  if(tab==="family"){p.innerHTML=head+familyHtml();return}   // v18 ใช้ familyData (คำนวณดวงสมาชิกแต่ละคนแยกกัน)
   if(!d)return;
   if(tab==="near"){
     p.innerHTML=head+summaryBox(d.summary,d.facts_error)+`<div class="src">เส้นดาวกำเนิด (${d.method==="mundo"?"in mundo":"ecl. projection"}) ที่ห่างเมืองไม่เกิน ${d.orb_km} กม. · เป็นวิธีของ Jim Lewis/ตำราสากล ไม่ใช่ยูเรเนียน<br>คำแปลรวมสองสำนัก: <span class="tg both">ตรงกัน</span> ทั้งคู่พูดตรงกัน · <span class="tg h">H</span> สายคำสอน · <span class="tg a">A</span> ตำราสากล (สรุปย่อ) — กดที่ ▶เวลา หรือ astro: เพื่อเปิดต้นฉบับ</div>`+
@@ -1669,7 +1753,7 @@ addEventListener("resize",size);
 </script>
 <script>
 // ── ออฟไลน์: ลงทะเบียน service worker (แยกแคชจากแอปยูเรเนียน: urmap-v*) ──
-const MAP_CACHE="urmap-v17";
+const MAP_CACHE="urmap-v18";
 (function(){
   const el=document.createElement("div");el.className="hint";el.style.cssText="margin:6px 4px 0";el.id="swstat";
   document.querySelector(".wrap").append(el);

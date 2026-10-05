@@ -109,7 +109,8 @@
   // ── ข้อ 3: เส้นที่ยังส่งผลจริง (_kept_lines) ────────────────────────────────
   // ── ป้ายข้อเท็จจริงต่อเส้น (v16) — ตรง server.line_facts / city_summary ──────────────────────────────
   const SIDE_HOUSE = { AC: [1, 12], MC: [10, 9], DC: [7, 6], IC: [4, 3] }, SHIFT_15MIN_DEG = 15 * 15 / 60;
-  const FACT_KEYS = ["condition", "sect", "rules", "side", "visible", "exact", "birth_time"];
+  const FACT_KEYS = ["condition", "sect", "rules", "side", "visible", "exact", "birth_time",
+                     "fam_parents", "fam_separate", "fam_conflict", "fam_composite", "partner_dc"];   // ตรง server.FACT_KEYS
   const factRules = () => { const fr = M().factRules(), o = {}; for (const k of FACT_KEYS) if (fr[k]) o[k] = fr[k]; return o; };
   function sideOf(angle, ra, dec, g, clat, clon) {
     const ha = wrap180(g + clon - ra);
