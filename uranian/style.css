@@ -132,6 +132,9 @@ header.top h1 .tag{font-size:10px;font-weight:700;color:var(--accent);
   color:var(--faint) !important;border:1px solid var(--rule) !important;box-shadow:none !important;
   font-size:var(--t-sm) !important;font-weight:600 !important;padding:2px var(--s2) !important}
 .ffold:hover{color:var(--ink) !important;border-color:var(--dim) !important;filter:none !important}
+/* v134: ปุ่มย่อ (absolute มุมขวาบน) ทับปลายป้าย "วันเกิด (…ค.ศ.)" ที่จอ 600px — ป้ายแถวแรกยาวถึงมุมขวาได้ทุกความกว้าง
+   เว้นแถบบนของฟอร์มให้สูงพอสำหรับปุ่ม (ระยะบน + ปุ่ม ~26px + ช่องไฟ) แทนการไล่แก้ทีละความกว้างจอ */
+.form:has(> .ffold){padding-top:calc(var(--s2) + 26px + var(--s2))}
 .fbar{display:flex;align-items:center;gap:var(--s3);width:100%;
   border:1px solid var(--rule);border-radius:var(--r-md);background:var(--panel);
   padding:var(--s2) var(--s3);margin:0 0 var(--s4);cursor:pointer;text-align:left;
@@ -715,6 +718,8 @@ p.hint:empty{display:none}
   .wrap{padding:var(--s4) var(--s3) 40px}
   .form .fg{flex:1 1 auto}
   .form button{width:100%}
+  /* v133: ปุ่มย่อฟอร์มเป็น absolute — ถ้าโดนกฎบรรทัดบนจะยืดเต็มฟอร์ม 357px แล้ว "ย่อ ▴" ทับป้าย "ประเภทดวง" (เจอจากภาพจริง 375px) */
+  .form .ffold{width:auto}
   .ctrgrid{grid-template-columns:1fr}
   .axrows{grid-template-columns:1fr}
 }
