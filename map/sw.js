@@ -20,6 +20,7 @@ const FILES = [
   "./meanings.js",
   "./places.js",
   "./timing.js",
+  "./events.js",
   "./api.js",
   "./ephem.bin.gz",
   "./beta.bin.gz",

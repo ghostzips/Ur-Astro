@@ -155,6 +155,41 @@
              empty: !kept.length, full_hard: fullHard, age, rules: rk.filter((k) => M().factRules()[k]).map((k) => ({ key: k, ...M().factRules()[k] })) };
   }
 
+  // ── คำเตือนจังหวะเวลา (v16 ชุด 2) — ตรง server.timing_cautions · ตารางเดียวกัน (events.js) ──────────────
+  const SEASON_GAP_DAYS = 16.0;
+  const inArc = (x, lo, hi) => mod360(x - lo) <= mod360(hi - lo);
+  function timingCautions(jdB, b, jdA, days, kept) {
+    const E = root.TIMING_EVENTS, n = N(), ymd = T().ymd, jdZ = jdA + days, lines = new Set(kept.map((r) => r.body));
+    const seasons = []; let cur = null;
+    for (const e of E.eclipses) {
+      if (cur && e.jd - cur[cur.length - 1].jd <= SEASON_GAP_DAYS) cur.push(e);
+      else { if (cur) seasons.push(cur); cur = [e]; }
+    }
+    seasons.push(cur);
+    const ecl = seasons.filter((s) => s[s.length - 1].jd >= jdA && s[0].jd <= jdZ).map((s) => ({
+      from: ymd(s[0].jd), to: ymd(s[s.length - 1].jd),
+      eclipses: s.map((e) => ({ date: ymd(e.jd), kind: e.kind, type: e.type, txt: deg(e.lon) })),
+      solar: s.some((e) => e.kind === "solar") }));
+    const pos = RD().natalLons(jdB);
+    const merc = E.mercury_rx.filter((m) => m.jd_d >= jdA && m.jd_r <= jdZ).map((m) => ({
+      from: ymd(m.jd_r), to: ymd(m.jd_d), txt_r: deg(m.lon_r), txt_d: deg(m.lon_d),
+      cover: RD().NATAL_BODIES.filter((c) => inArc(pos[c], m.lon_d, m.lon_r)).map((c) => ({ code: c, th: n.th[c], line_here: lines.has(c) })) }));
+    let mars = null, nAsc = null;
+    try { RD().assertHousable(b.lat, "ที่เกิด"); nAsc = root.AISTRO.anglesAt(jdB, b.lat, b.lon).asc; }
+    catch (e) { if (!(e instanceof RangeError)) throw e; }
+    if (nAsc !== null) {
+      const h9 = (RD().signIndex(nAsc) + 8) % 12, ing = E.mars_ingress, spans9 = [];
+      for (let i = 0; i < ing.length; i++) {
+        const end = i + 1 < ing.length ? ing[i + 1].jd : E.range[1];
+        if (ing[i].sign === h9 && end >= jdA && ing[i].jd <= jdZ) spans9.push({ from: ymd(ing[i].jd), to: ymd(end) });
+      }
+      mars = { sign_th: RD().SIGNS_TH[h9], sect: RD().sectOf(jdB, b.lat, b.lon).sect, spans: spans9 };
+    }
+    const fr = M().factRules(), rules = {};
+    for (const k of ["eclipse", "eclipse_node", "merc_line", "merc_cover", "mars9", "dont_fear", "trigger"]) if (fr[k]) rules[k] = fr[k];
+    return { eclipse_seasons: ecl, mercury_rx: merc, mars_9th: mars, node_line: lines.has("MN"), mercury_line: lines.has("ME"), rules };
+  }
+
   /** ตรง server._goal_pairs: คู่ที่ตำราระบุ + ดาวที่ตำราเอ่ยแค่ชื่อ (ขยายตามมุม) · ไม่มีเลย → อาทิตย์ ศุกร์ พฤหัส */
   function goalPairs(spec, advice) {
     const pairs = advice.flatMap((r) => r.pairs.map((p) => [p[0], p[1]]));
@@ -184,6 +219,7 @@
     let kinds = kindsOf(body); const kindsDefaulted = !kinds.length; kinds = kinds.length ? kinds : ["transit"];
     const [kept] = keptLines(lines, city.lat, city.lon);
     const tm = T().timing(jdB, city.lat, city.lon, method, orbKm, jdA, days, kinds, kept, enrich, n, M().timingRules());
+    tm.cautions = timingCautions(jdB, b, jdA, days, kept);
     const { spans, ...rest } = tm;
     return { city, date_from: from, date_to: to, days, orb_km: orbKm, method, kinds, kinds_defaulted: kindsDefaulted, natal_near: natal, spans, timing: rest };
   }
@@ -248,7 +284,8 @@
       if (body.date_from && body.date_to) {
         const { jdA, from, to, days } = rangeOf(body), kinds6 = kindsOf(body, ["transit"]);
         step6 = { city: step3.city, date_from: from, date_to: to, days, kinds: kinds6, orb_km: orbKm,
-                  ...T().timing(jd, clat, clon, method, orbKm, jdA, days, kinds6, rows, enrich, n, M().timingRules()) };
+                  ...T().timing(jd, clat, clon, method, orbKm, jdA, days, kinds6, rows, enrich, n, M().timingRules()),
+                  cautions: timingCautions(jd, b, jdA, days, rows) };
       }
     }
     // ── เมืองที่ควรไปในช่วงจร ──

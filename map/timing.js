@@ -20,6 +20,7 @@
   }
   const ANGLES = ["MC", "IC", "AC", "DC"];
   const mod360 = (v) => ((v % 360) + 360) % 360;
+  let THN = {};                                            // ชื่อไทยของดาว (ตั้งจาก names ก่อนเรียกตัวกระตุ้น)
   const lonOf = (jd, code) => root.AISTRO.calc(root.ACG.LON_ALIAS[code] || code, jd);
 
   function ymd(jd) {
@@ -66,13 +67,14 @@
   }
 
   /** ช่วงที่ดาวจร/โปรเกรสทำมุม 0/90/180 กับตัวเองในดวงกำเนิด ภายใน orb */
-  function aspectWindows(jdB, jdA, days, code, kind, orb) {
-    orb = orb === undefined ? ASPECT_ORB : orb;
-    const natal = lonOf(jdB, code);
-    const step = kind === "transit" ? (code === "MO" ? 1 / 24 : 0.25) : 1.0;
+  const SLOW_MOVERS = ["JU", "SA", "UR", "NE", "PL"];     // ตรง server.SLOW_MOVERS (v16 ชุด 2)
+  function aspectWindows(jdB, jdA, days, code, kind, orb, mover) {
+    orb = orb === undefined || orb === null ? ASPECT_ORB : orb;
+    const natal = lonOf(jdB, code), mv = mover || code;
+    const step = mover ? 1.0 : (kind === "transit" ? (code === "MO" ? 1 / 24 : 0.25) : 1.0);
     const offAt = (asp) => (t) => {
       const jp = kind === "transit" ? t : root.ACG.progressedJd(jdB, t);
-      const d = mod360(lonOf(jp, code) - natal);
+      const d = mod360(lonOf(jp, mv) - natal);
       return asp ? Math.min(Math.abs(d - asp), Math.abs(d - mod360(360 - asp))) : Math.min(d, 360 - d);
     };
     const runs = {}, out = [];
@@ -103,7 +105,7 @@
       const [ex, off] = refineMin(f, Math.max(tIn, r.exact - step), Math.min(tOut, r.exact + step));
       rows.push({ kind, aspect: asp, aspect_th: ASPECT_TH[asp], from: ymd(tIn), to: ymd(tOut),
                   jd_in: tIn, jd_out: tOut, exact_date: ymd(ex), off_deg: Math.round(off * 100) / 100,
-                  hours: Math.round((tOut - tIn) * 24 * 10) / 10 });
+                  hours: Math.round((tOut - tIn) * 24 * 10) / 10, ...(mover ? { mover, mover_th: THN[mover] } : {}) });
     }
     return rows.sort((x, y) => x.from < y.from ? -1 : x.from > y.from ? 1 : 0);
   }
@@ -166,7 +168,7 @@
       const code = h.body;
       if (!names.bodies.includes(code)) {
         natalLines.push({ body: code, angle: h.angle, th: h.th, glyph: h.glyph, km: h.km, tnp: h.tnp || null,
-                          aspects: [], windows: [], best: [], no_timing: true });
+                          aspects: [], windows: [], best: [], triggers: [], no_timing: true });
         continue;
       }
       const wins = [], asps = [];
@@ -174,8 +176,15 @@
       for (const k of kinds) asps.push(...aspectWindows(jdB, jdA, days, code, k));
       const best = [];
       for (const w of wins) for (const a of asps) if (overlap(w, a)) best.push({ line: w, aspect: a });
+      const trig = [];
+      if (kinds.includes("transit")) {
+        THN = names.th;
+        for (const t of SLOW_MOVERS) if (t !== code) trig.push(...aspectWindows(jdB, jdA, days, code, "transit", null, t));
+        const c = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+        trig.sort((x, y) => c(x.from, y.from) || SLOW_MOVERS.indexOf(x.mover) - SLOW_MOVERS.indexOf(y.mover) || x.aspect - y.aspect);
+      }
       natalLines.push({ body: code, angle: h.angle, th: h.th, glyph: h.glyph, km: h.km,
-                        reading: h.reading, aspects: asps, windows: wins, best });
+                        reading: h.reading, aspects: asps, windows: wins, best, triggers: trig });
     }
     return { spans, natal_lines: natalLines, aspect_orb: ASPECT_ORB, full_mi: 150.0, mid_mi: 300.0,
              timing_advice: timingAdvice.filter((x) => x.cites && x.cites.length).slice(0, 6) };

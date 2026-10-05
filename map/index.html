@@ -297,6 +297,7 @@
 <script src="./reading.js"></script>
 <script src="./meanings.js"></script>
 <script src="./places.js"></script>
+<script src="./events.js"></script>
 <script src="./timing.js"></script>
 <script src="./api.js"></script>
 <script>
@@ -1051,7 +1052,17 @@ function teachBlock(h,key){
   return `<details class="teach"><summary>คำสอน ${rows.length} ข้อ</summary><ul>${main.map(item).join("")}</ul>`+
     (rest.length?`<details class="teach2"><summary>อีก ${rest.length} ข้อ (ความหมายทั่วไปของดาว/มุม · เคส · ประเด็นที่ยังไม่ชัด)</summary><ul>${rest.map(item).join("")}</ul></details>`:"")+`</details>`;
 }
+// ผู้ใช้สั่ง 5 ต.ค. 2026: เส้นจันทร์พับไว้บรรทัดเดียว — จันทร์โคจรครบรอบทุก ~27 วัน เส้น 4 มุมผ่านทุกเมืองราว 4 ครั้ง/เดือน
+// (ดวงทดสอบที่โตเกียวทั้งปี 2026: จันทร์ 54 จาก 74 ช่วง) ทำให้ดาวอื่นจมหาย · แตะแล้วขยายดูครบ ตัวเลขไม่เปลี่ยน
 function spanRows(list,kindTh){
+  const moon=list.filter(x=>x.body==="MO"),rest=list.filter(x=>x.body!=="MO");
+  if(!moon.length||list.length<6) return spanTable(list,kindTh);
+  const hrs=moon.map(x=>x.hours).sort((a,b)=>a-b),med=hrs[Math.floor(hrs.length/2)];
+  return (rest.length?spanTable(rest,kindTh):`<div class="empty">ไม่มีดาวอื่นนอกจากจันทร์ผ่านใกล้เมืองในช่วงนี้</div>`)+
+    `<details class="facts moonfold"><summary>${esc(moon[0].glyph)} จันทร์${esc(kindTh.replace(/^เส้น/,""))}ผ่านเมือง ${moon.length} ครั้ง `+
+    `<span class="hint">(จันทร์เดินเร็ว ผ่านราว 4 ครั้ง/เดือน ครั้งละราว ${hrTxt(med)})</span></summary>${spanTable(moon,kindTh)}</details>`;
+}
+function spanTable(list,kindTh){
   if(!list.length) return `<div class="empty">ไม่มี${kindTh}ผ่านใกล้เมืองในช่วงนี้</div>`;
   return `<div class="tw"><table><tr><th>ดาว/เส้น</th><th>ช่วงที่อยู่ในระยะ</th><th>ใกล้สุด</th></tr>`+
     list.map(x=>`<tr><td><span class="sw" style="background:${COLORS[x.body]}"></span> ${esc(x.glyph)} ${esc(x.th)} · ${ANG_TH[x.angle]}`+
@@ -1151,8 +1162,9 @@ function step2Html(s2){
 }
 // ── v16 ป้ายข้อเท็จจริงต่อเส้น (ประกอบสิ่งที่คำนวณไว้ ไม่ให้คะแนน) ─────────────────────────────
 const DIGN_TH={"เกษตร":"อยู่ราศีเกษตร","อุจ":"ได้อุจ","ประ":"เสียเกณฑ์ (ประ)","นิจ":"ตกนิจ"};
-function ruleNote(r){return r?` <span class="cits">${(r.cites||[]).map(c=>`<a href="${esc(c.url)}" target="_blank" rel="noopener">▶${esc(c.ts)}</a>`).join(" ")}</span>`+
-  (r.kind==="ประสบการณ์"?` <span class="hint">[ประสบการณ์]</span>`:""):""}
+// ผู้ใช้สั่ง 5 ต.ค. 2026: ป้าย/คำเตือนชุดใหม่ไม่ต้องมีลิงก์เวลาคลิป แค่ความหมายพอ — ที่มายังเก็บในข้อมูลและเทสต์ตรวจครบ
+// คงป้าย [ประสบการณ์] ไว้ เพราะบอกน้ำหนักของข้อความ (ไม่ใช่ลิงก์)
+function ruleNote(r){return r&&r.kind==="ประสบการณ์"?` <span class="hint">[ประสบการณ์]</span>`:""}
 function factsBlock(f,fr){
   if(!f) return "";
   fr=fr||{};
@@ -1337,7 +1349,37 @@ function step6Html(s6){
   const woke=s6.natal_lines.filter(x=>x.windows.length||x.aspects.length).length, star=s6.natal_lines.filter(x=>x.best.length).length;
   return `<div class="rd"><p><b>${esc(s6.city.name)}</b> ระหว่าง ${esc(s6.date_from)} ถึง ${esc(s6.date_to)} (${s6.days} วัน) · ชั้นที่คิด: ${s6.kinds.map(k=>kindTh[k]).join(" + ")}</p>`+
     `<p>เส้นจร/โปรเกรสที่จะเข้าระยะเมือง <b>${nSpan}</b> ช่วง · เส้นกำเนิดที่ผ่านเมือง (ข้อ 3) ถูกปลุก <b>${woke}</b> จาก ${s6.natal_lines.length} เส้น · ★ ซ้อนกับมุมจร <b>${star}</b> เส้น</p>`+
+    (s6.cautions?`<p>ช่วงที่คำสอนเตือนให้ระวังซ้อนกับช่วงนี้: ฤดูคราส <b>${s6.cautions.eclipse_seasons.length}</b> · พุธถอยหลัง <b>${s6.cautions.mercury_rx.length}</b> · `+
+      `อังคารจรเรือน 9 <b>${s6.cautions.mars_9th?s6.cautions.mars_9th.spans.length:0}</b> ช่วง</p>`:"")+
     `<p>คำตอบเต็ม (ตารางช่วง วันใกล้สุด มุมจร) อยู่ที่แท็บ <b>ช่วงเวลา</b> <button class="chip" id="goWindow">เปิดแท็บช่วงเวลา ▸</button></p></div>`;
+}
+// ── v16 ชุด 2: ช่วงที่คำสอนเตือนให้ระวัง (ฤดูคราส · พุธถอยหลัง · อังคารจรเรือน 9) ──────────────────────
+function cautionsHtml(c){
+  if(!c) return "";
+  const R=c.rules||{},it=[];
+  for(const e of c.eclipse_seasons){
+    it.push(`<b>ฤดูคราส ${esc(e.from)} → ${esc(e.to)}</b>: `+e.eclipses.map(x=>`${x.kind==="solar"?"สุริยคราส":"จันทรคราส"}${esc(x.type)} ${esc(x.date)} ที่ ${esc(x.txt)}`).join(" · ")+ruleNote(R.eclipse)+
+      (e.solar&&c.node_line?`<div class="warn">⚠ เมืองนี้มีเส้นโหนดจันทร์ — ไม่แนะนำเริ่มเดินทางไปเส้นโหนดช่วงสุริยุปราคา${ruleNote(R.eclipse_node)}</div>`:""));
+  }
+  for(const m of c.mercury_rx){
+    const here=m.cover.filter(x=>x.line_here);
+    it.push(`<b>พุธถอยหลัง ${esc(m.from)} → ${esc(m.to)}</b> (${esc(m.txt_r)} ถอยถึง ${esc(m.txt_d)})`+
+      (c.mercury_line?`<div class="warn">⚠ เมืองนี้มีเส้นพุธ — คำสอนแนะนำไม่เซ็นสัญญา/จองตั๋วช่วงนี้ รอพุธเดินตรง${ruleNote(R.merc_line)}</div>`:"")+
+      (m.cover.length?`<div${here.length?' class="warn"':""}>พุธถอยหลังทับตำแหน่งดาวกำเนิด: ${m.cover.map(x=>esc(x.th)+(x.line_here?" (มีเส้นที่เมืองนี้ ⚠)":"")).join(", ")}${ruleNote(R.merc_cover)}</div>`:""));
+  }
+  if(c.mars_9th&&c.mars_9th.spans.length) for(const sp of c.mars_9th.spans)
+    it.push(`<b>อังคารจรเรือน 9 (ราศี${esc(c.mars_9th.sign_th)}) ${esc(sp.from)} → ${esc(sp.to)}</b>`+
+      (c.mars_9th.sect==="day"?` <span class="warn">· ดวงกลางวัน — คำสอนให้ระวังเป็นพิเศษ</span>`:"")+ruleNote(R.mars9));
+  return `<div class="citysum"><b>ช่วงที่คำสอนเตือนให้ระวัง</b> <span class="hint">(ซ้อนกับช่วงวันที่ที่เลือก · วันที่ตามเวลาสากล UT)</span><ul>`+
+    (it.length?it.map(x=>`<li>${x}</li>`).join(""):`<li>ไม่มีฤดูคราส พุธถอยหลัง หรืออังคารจรเรือน 9 ซ้อนกับช่วงนี้</li>`)+`</ul>`+
+    (R.dont_fear?`<div class="hint">${esc(R.dont_fear.text)}${ruleNote(R.dont_fear)}</div>`:"")+`</div>`;
+}
+// ตัวกระตุ้นจากดาวจรวงนอก — ช่วงก่อนองศาแน่นอน = เข้าใกล้ · หลัง = ผ่านไป (คำนวณจากวันที่ในข้อมูลเดิม)
+function triggersHtml(x,R){
+  if(!x.triggers||!x.triggers.length) return "";
+  return `<details class="teach"><summary>ดาวจรวงนอกมากระทบดาวเจ้าของเส้น (${x.triggers.length})</summary><ul>`+
+    x.triggers.slice(0,8).map(t=>`<li>${esc(t.mover_th)}จร ${esc(t.aspect_th)} ${esc(x.th)}กำเนิด: เข้าใกล้ ${esc(t.from)} → แน่นสุด ${esc(t.exact_date)} → ผ่านไปถึง ${esc(t.to)}</li>`).join("")+
+    `</ul>${R&&R.trigger?`<div class="hint">${esc(R.trigger.text)}${ruleNote(R.trigger)}</div>`:""}</details>`;
 }
 // (ข) ของจังหวะเวลา — เส้นกำเนิดที่ผ่านเมืองถูกปลุกเมื่อไร (แสดงในแท็บ "ช่วงเวลา")
 function awakenedHtml(t,kinds){
@@ -1354,6 +1396,7 @@ function awakenedHtml(t,kinds){
       `</td><td>${x.no_timing?`<span class="hint">ดาวสมมติยูเรเนียน — สกิลไม่มีกฎจังหวะจรของดาวกลุ่มนี้</span>`:
         (x.best.length?`<div class="rd"><p class="note">★ แรงที่สุด: `+x.best.slice(0,2).map(b=>`${esc(b.line.from)}→${esc(b.line.to)} ซ้อนกับมุม${esc(b.aspect.aspect_th)} แน่นสุด ${esc(b.aspect.exact_date)}`).join(" · ")+`</p></div>`:"")+
         (x.windows.length?`<ul style="margin:0;padding-left:16px">${x.windows.slice(0,4).map(w=>`<li>${win(w)}</li>`).join("")}</ul>`:`<span class="hint">เส้นจรของดาวนี้ไม่เข้าระยะเมืองในช่วงที่เลือก</span>`)+
+        triggersHtml(x,(t.cautions||{}).rules)+
         (x.aspects.length?`<details class="teach"><summary>มุมจรกับตัวเองในดวงกำเนิด (${x.aspects.length})</summary><ul>`+
           x.aspects.slice(0,6).map(a=>`<li>${kindTh[a.kind]} ${esc(a.aspect_th)} ${esc(a.from)}→${esc(a.to)} <span class="hint">แน่นสุด ${esc(a.exact_date)} คลาด ${a.off_deg}°</span></li>`).join("")+`</ul></details>`
           :`<div class="hint">ไม่มีมุมจรเข้า orb ${t.aspect_orb}° ในช่วงนี้</div>`)}</td></tr>`).join("")+`</table></div>`;
@@ -1433,6 +1476,7 @@ function windowHtml(){
   let html=`<div class="src"><b>ถ้าไป ${esc(w.city.name)} ระหว่าง ${esc(w.date_from)} ถึง ${esc(w.date_to)}</b> (${w.days} วัน) `+
     `จะเจอเส้นเหล่านี้ในระยะ ${Math.round(w.orb_km)} กม. · เส้นจรไล่ทุก 6 ชม. เวลา UT แล้วหาเวลาเข้า-ออกจริงด้วยการแบ่งครึ่ง · เส้นกำเนิดอยู่กับที่ตลอดช่วง`+
     (w.kinds_defaulted?` · <b>ยังไม่ได้ติ๊กชั้นเส้นจร/โปรเกรส</b> จึงใช้เส้นจรเป็นค่าเริ่ม (ติ๊ก "เส้นโปรเกรส" ในแถวบนถ้าต้องการ)`:"")+`</div>`;
+  if(w.timing) html+=cautionsHtml(w.timing.cautions);
   html+=`<h3>เส้นกำเนิด (เจอทุกวันที่อยู่ที่นั่น)</h3>`+
     (w.natal_near.length?`<div class="tw"><table><tr><th>ดาว/เส้น</th><th>ระยะ</th></tr>`+
       w.natal_near.map(h=>`<tr><td><span class="sw" style="background:${COLORS[h.body]}"></span> ${esc(h.glyph)} ${esc(h.th)} · ${ANG_TH[h.angle]}`+
