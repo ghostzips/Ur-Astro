@@ -12,9 +12,9 @@
   // นิยามเป้าหมาย (ชื่อ/มุม/คำค้น) เป็นค่าตั้ง ไม่ใช่ข้อความจากตำรา — ต้องมีเสมอแม้ไม่ได้ใส่ไฟล์คำอ่าน
   // เดิมอยู่ในไฟล์คำอ่านอย่างเดียว → deploy แบบไม่มีคำอ่าน ปุ่มเป้าหมายหายและส่งเป้าหมายถูกปฏิเสธ (ตรวจบั๊กรอบ 3)
   // ต้องตรง ui/meanings.py GOALS ทุกตัวอักษร (เทสต์บังคับ)
-  const GOALS = {"career": {"th": "งาน ชื่อเสียง ธุรกิจ", "angle": "MC", "kw": ["ชื่อเสียงในงาน", "เปิดธุรกิจ", "ประชาสัมพันธ์", "เปิดตัวผลงาน"]}, "love": {"th": "ความรัก คู่ครอง", "angle": "DC", "kw": ["ความรัก", "คู่ครอง"]}, "home": {"th": "บ้าน ครอบครัว ปักหลัก", "angle": "IC", "kw": ["บ้าน", "ครอบครัว", "ปักหลัก", "เกษียณ"]}, "self": {"th": "ตัวตน ร่างกาย สุขภาพ", "angle": "AC", "kw": ["ผ่าตัด", "หัตถการ", "ร่างกาย", "สุขภาพ"]}, "start": {"th": "เริ่มต้น ยังไม่รู้จะดูอะไร", "angle": null, "kw": ["ผู้เริ่มต้น", "มือใหม่"]}};
+  const GOALS = {"career": {"th": "งาน ชื่อเสียง ธุรกิจ", "angle": "MC", "kw": ["ชื่อเสียงในงาน", "เปิดธุรกิจ", "ประชาสัมพันธ์", "เปิดตัวผลงาน"]}, "love": {"th": "ความรัก คู่ครอง", "angle": "DC", "kw": ["ความรัก", "คู่ครอง"]}, "home": {"th": "บ้าน ครอบครัว ปักหลัก", "angle": "IC", "kw": ["บ้าน", "ครอบครัว", "ปักหลัก", "เกษียณ"]}, "self": {"th": "ตัวตน ร่างกาย สุขภาพ", "angle": "AC", "kw": ["ผ่าตัด", "หัตถการ", "ร่างกาย", "สุขภาพ"]}, "money": {"th": "เงิน ทรัพย์สิน", "angle": "MC", "kw": ["หาเงิน", "เงิน ความสำเร็จ"]}, "study": {"th": "การเรียน การเขียน", "angle": null, "kw": ["การเรียน"]}, "travel": {"th": "เที่ยว ฮันนีมูน", "angle": null, "kw": ["ไปเที่ยว", "ฮันนีมูน"]}, "start": {"th": "เริ่มต้น ยังไม่รู้จะดูอะไร", "angle": null, "kw": ["ผู้เริ่มต้น", "มือใหม่"]}};
   const EMPTY = () => ({ _missing: true, line_meanings: {}, paran_meanings: [], astrocom: {}, ac_code: {}, merged: {}, readings: {},
-                         goals: GOALS, goal_advice: [], sect_advice: [], orb_rules: [], timing_rules: [], tnp_factor: {} });
+                         goals: GOALS, fact_rules: {}, goal_advice: [], sect_advice: [], orb_rules: [], timing_rules: [], tnp_factor: {} });
   async function fetchJson(url) {
     const res = await fetch(url);
     if (!res.ok) { const e = new Error("HTTP " + res.status); e.status = res.status; throw e; }
@@ -87,6 +87,7 @@
     return d.goal_advice.filter((r) => kw.some((k) => r.text.includes(k)));
   }
   const goals = () => { const g = need().goals; return g && Object.keys(g).length ? g : GOALS; };
+  const factRules = () => need().fact_rules || {};      // v16 ป้ายข้อเท็จจริง — ไม่มีไฟล์คำอ่าน = ไม่มีข้อความสรุปคำสอน
   const sectAdvice = () => need().sect_advice;
   const orbRules = () => need().orb_rules;
   const timingRules = () => need().timing_rules;
@@ -110,5 +111,5 @@
   const enrich = (code, angle) => ({ reading: forReading(code, angle), astrocom: acLine(code, angle), tnp: tnpLineReading(code, angle) });
 
   root.MEANINGS = { load, ready, missing, loadError, forLine, forParan, acLine, acCrossing, forMerged, forReading, adviceFor,
-                    goals, sectAdvice, orbRules, timingRules, names, tnpLineReading, enrich, data: () => D };
+                    goals, factRules, sectAdvice, orbRules, timingRules, names, tnpLineReading, enrich, data: () => D };
 })(typeof globalThis !== "undefined" ? globalThis : this);

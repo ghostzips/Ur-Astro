@@ -116,6 +116,13 @@
   .legend input{display:none}
   @media (max-width:700px){.legend{gap:8px}.legend label{padding:9px 13px;font-size:14px}}   /* เป้าแตะ ≥38px — ต้องอยู่หลังกฎ .legend label ข้างบน ไม่งั้นถูกทับ (เจอจริง) */
   .teach{margin-top:6px;font-size:12.5px}
+  /* v16 ป้ายข้อเท็จจริงต่อเส้น + กล่องสรุปเมือง — พับไว้ก่อน แตะแล้วขยาย (จอมือถือไม่ยาวเกิน) */
+  details.facts{margin-top:4px;font-size:12.5px}
+  details.facts>summary{cursor:pointer;color:var(--accent)}
+  details.facts ul,.citysum ul{margin:4px 0 0;padding-left:18px}
+  details.facts li,.citysum li{margin:2px 0}
+  .warn{color:#b0451f;font-weight:600}
+  .citysum{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:8px 0;font-size:13px;background:#fff}
   .teach>summary{cursor:pointer;color:#2b5f9e;font-weight:600;list-style:none}
   .teach>summary::-webkit-details-marker{display:none}
   .teach>summary::before{content:"▸ ";}
@@ -1142,6 +1149,41 @@ function step2Html(s2){
       `<div class="hint">ในระยะที่ตั้งไว้ ${c.in_orb} เมือง</div></td></tr>`).join("")+`</table></div>`;
   return h;
 }
+// ── v16 ป้ายข้อเท็จจริงต่อเส้น (ประกอบสิ่งที่คำนวณไว้ ไม่ให้คะแนน) ─────────────────────────────
+const DIGN_TH={"เกษตร":"อยู่ราศีเกษตร","อุจ":"ได้อุจ","ประ":"เสียเกณฑ์ (ประ)","นิจ":"ตกนิจ"};
+function ruleNote(r){return r?` <span class="cits">${(r.cites||[]).map(c=>`<a href="${esc(c.url)}" target="_blank" rel="noopener">▶${esc(c.ts)}</a>`).join(" ")}</span>`+
+  (r.kind==="ประสบการณ์"?` <span class="hint">[ประสบการณ์]</span>`:""):""}
+function factsBlock(f,fr){
+  if(!f) return "";
+  fr=fr||{};
+  const hard=f.dignity.some(d=>d==="ประ"||d==="นิจ"),worst=/หนักที่สุด/.test(f.sect_role||""),cad=f.side&&!f.side.angular;
+  const flag=[cad?"เรือนกด":"",worst?"ดาวหนักประจำดวง":"",hard?DIGN_TH[f.dignity.find(d=>d==="ประ"||d==="นิจ")]:""].filter(Boolean);
+  const li=[];
+  li.push(`สภาพดาว: ${f.dignity.length?f.dignity.map(d=>esc(DIGN_TH[d]||d)).join(" · "):"ไม่ได้/ไม่เสียเกณฑ์"}`+
+    (f.hard.length?` · มุมหนัก: ${f.hard.map(a=>`${esc(a.other_th)} ${esc(a.aspect_th)} (${a.orb}°)`).join(", ")}`:"")+ruleNote(fr.condition));
+  li.push(`${f.sect==="day"?"ดวงกลางวัน":"ดวงกลางคืน"}: ${f.sect_role?`<span class="${worst?"warn":""}">${esc(f.sect_role)}</span>`:"ดาวดวงนี้ไม่ได้เป็นดาวดี/หนักที่สุดตาม sect"}`+ruleNote(fr.sect));
+  if(f.rules.length) li.push(`เป็นเจ้าเรือน ${f.rules.join(", ")} (ดวงกำเนิด) → ดึงเรื่องของเรือนนั้นเข้ามา`+ruleNote(fr.rules));
+  if(f.side) li.push(`<span class="${cad?"warn":""}">${f.side.east?"อยู่ฝั่งตะวันออกของเส้น":"อยู่ฝั่งตะวันตกของเส้น"} → ดาวอยู่ด้านเรือน ${f.side.house} `+
+    `(${f.side.angular?"เรือนมุม เห็นผลชัด":"เรือนกด เห็นผลน้อยกว่าที่คิด"})</span>`+ruleNote(fr.side)+ruleNote(fr.visible));
+  li.push(`ห่างมุมในดวงย้ายเมือง ${f.deg_from_angle}° (องศาสุริยยาตร์)`+ruleNote(fr.exact));
+  li.push(`ถ้าเวลาเกิดคลาด 15 นาที เส้นเลื่อนตะวันออก-ตก ราว ${Math.round(f.shift_km)} กม. ที่ละติจูดนี้`+ruleNote(fr.birth_time));
+  // ป้ายเตือนสั้นอยู่ใต้ชื่อเส้นทันที (ช่องแคบบนมือถือ) · รายละเอียดเป็น <details> ที่ liftReadings ยกไปแถวกว้างเต็ม
+  return (flag.length?`<div class="warn" style="font-size:12px">⚠ ${flag.map(esc).join(" · ")}</div>`:"")+
+    `<details class="facts"><summary>ข้อเท็จจริงของดาว${flag.length?` <span class="warn">(⚠ ${flag.length})</span>`:""}</summary><ul>`+
+    li.map(x=>`<li>${x}</li>`).join("")+`</ul></details>`;
+}
+function summaryBox(sm,err){
+  if(!sm) return "";
+  const it=[`เส้นใน 300 ไมล์ ${sm.n_lines} เส้น (เต็มกำลัง ${sm.n_full}) · paran ±1° ${sm.n_parans} คู่`];
+  if(sm.empty) it.push(`ไม่มีเส้นใน 300 ไมล์ → <b>เป็นกลาง</b> ไม่เสริมและไม่ขัด (ไม่ใช่ "ไม่ดี") ให้ดู paran และ local space ประกอบ`);
+  for(const x of sm.full_hard) it.push(`<span class="warn">⚠ อยู่ในระยะเต็มกำลังของเส้น${esc(x.th)} ${ANG_TH[x.angle]} (${Math.round(x.km)} กม.) และดาวดวงนี้สภาพยากในดวง</span>`);
+  if(sm.age!==null&&sm.age!==undefined) it.push(`อายุ ณ วันที่ดู ${sm.age} ปี — ดูคำสอนเรื่องวัยด้านล่าง`);
+  if(err) it.push(`<span class="hint">${esc(err)}</span>`);
+  return `<div class="citysum"><b>สรุปเมืองนี้</b> <span class="hint">(นับจำนวน ไม่ให้คะแนน — ตำราไม่ได้ให้ตัวเลขว่ากี่เส้นถึงเรียกว่ามาก)</span><ul>`+
+    it.map(x=>`<li>${x}</li>`).join("")+`</ul>`+
+    (sm.rules.length?`<details class="facts"><summary>คำสอนที่ใช้ประกอบ (${sm.rules.length})</summary><ul>`+
+      sm.rules.map(r=>`<li>${esc(r.text)}${ruleNote(r)}</li>`).join("")+`</ul></details>`:"")+`</div>`;
+}
 function step3Html(s3){
   if(!s3) return `<div class="empty">เลือกเมืองที่สนใจ (ช่องเมืองเหนือแผนที่) แล้วข้อนี้จะกรองเส้นให้</div>`;
   const lvl=r=>r.level==="เต็มกำลัง"?`<b style="color:#1d6b3a">เต็มกำลัง</b>`:`<b style="color:#8a6420">ปานกลาง</b>`;
@@ -1150,9 +1192,9 @@ function step3Html(s3){
     `<details class="teach"><summary>ที่มาของตัวเลขเกณฑ์ (${s3.rules.length} บรรทัดจากตำรา)</summary><ul>`+
     s3.rules.map(x=>`<li>${esc(x.value)} — ${esc(x.what)} <span class="hint">${esc(x.who)}</span> `+
       `<span class="cits">${x.cites.map(c=>`<a href="${esc(c.url)}" target="_blank" rel="noopener">▶${esc(c.ts)}</a>`).join(" ")}</span></li>`).join("")+
-    `</ul></details></div>`;
+    `</ul></details></div>`+summaryBox(s3.summary,s3.facts_error);
   h+= s3.kept.length?`<div class="tw"><table><tr><th>เส้นที่ส่งผลจริง</th><th>ระยะ</th></tr>`+
-    s3.kept.map(c=>`<tr><td><span class="sw" style="background:${COLORS[c.body]}"></span> ${esc(c.glyph)} ${esc(c.th)} · ${ANG_TH[c.angle]}`+
+    s3.kept.map(c=>`<tr><td><span class="sw" style="background:${COLORS[c.body]}"></span> ${esc(c.glyph)} ${esc(c.th)} · ${ANG_TH[c.angle]}`+factsBlock(c.facts,s3.fact_rules)+
       (c.reading?`<details class="teach"><summary>คำแปลของเส้นนี้</summary><div class="rd"><p>${esc(c.reading.text)}</p>`+
         c.reading.notes.map(n=>`<p class="note">${esc(n)}</p>`).join("")+`</div></details>`:
         (c.tnp?tnpBlock(c.tnp):`<div class="hint">${c.group==="uranian"?"ดาวสมมติยูเรเนียน — ไม่มีคำแปลเส้นในสองสำนัก":"ไม่มีคำแปลของเส้นนี้"}</div>`))+
@@ -1425,8 +1467,8 @@ function renderPanelRaw(){
   if(tab==="window"){p.innerHTML=head+windowHtml();return}   // ใช้ windowData อย่างเดียว ไม่ใช้ cityData เช่นกัน
   if(!d)return;
   if(tab==="near"){
-    p.innerHTML=head+`<div class="src">เส้นดาวกำเนิด (${d.method==="mundo"?"in mundo":"ecl. projection"}) ที่ห่างเมืองไม่เกิน ${d.orb_km} กม. · เป็นวิธีของ Jim Lewis/ตำราสากล ไม่ใช่ยูเรเนียน<br>คำแปลรวมสองสำนัก: <span class="tg both">ตรงกัน</span> ทั้งคู่พูดตรงกัน · <span class="tg h">H</span> สายคำสอน · <span class="tg a">A</span> ตำราสากล (สรุปย่อ) — กดที่ ▶เวลา หรือ astro: เพื่อเปิดต้นฉบับ</div>`+
-      (d.lines_near.length?`<div class="tw"><table><tr><th>ดาว</th><th>เส้น</th><th>ระยะ</th></tr>`+d.lines_near.map((h,i)=>`<tr><td><span class="sw" style="background:${COLORS[h.body]}"></span> ${esc(h.glyph)} ${esc(h.th)}${h.group==="uranian"?` <span class="hint">(ดาวสมมติยูเรเนียน · ไม่มีคำสอนความหมายของดาวดวงนี้ · มีเฉพาะความหมายของมุม)</span>`:""}${textBlock(h.text_reading)}${h.text_reading?"":tnpBlock(h.tnp)}${readBlock(h.reading)}${teachBlock(h,i)}${acBlock(h.astrocom)}</td><td>${ANG_TH[h.angle]}</td><td class="num">${Math.round(h.km)} กม.${strength(h.km)}</td></tr>`).join("")+`</table></div>`+SRC_NOTE:`<div class="empty">ไม่มีเส้นในระยะนี้ — ลองขยายระยะที่ช่อง "ระยะที่ถือว่าใกล้เมือง"</div>`)+
+    p.innerHTML=head+summaryBox(d.summary,d.facts_error)+`<div class="src">เส้นดาวกำเนิด (${d.method==="mundo"?"in mundo":"ecl. projection"}) ที่ห่างเมืองไม่เกิน ${d.orb_km} กม. · เป็นวิธีของ Jim Lewis/ตำราสากล ไม่ใช่ยูเรเนียน<br>คำแปลรวมสองสำนัก: <span class="tg both">ตรงกัน</span> ทั้งคู่พูดตรงกัน · <span class="tg h">H</span> สายคำสอน · <span class="tg a">A</span> ตำราสากล (สรุปย่อ) — กดที่ ▶เวลา หรือ astro: เพื่อเปิดต้นฉบับ</div>`+
+      (d.lines_near.length?`<div class="tw"><table><tr><th>ดาว</th><th>เส้น</th><th>ระยะ</th></tr>`+d.lines_near.map((h,i)=>`<tr><td><span class="sw" style="background:${COLORS[h.body]}"></span> ${esc(h.glyph)} ${esc(h.th)}${factsBlock(h.facts,d.fact_rules)}${h.group==="uranian"?` <span class="hint">(ดาวสมมติยูเรเนียน · ไม่มีคำสอนความหมายของดาวดวงนี้ · มีเฉพาะความหมายของมุม)</span>`:""}${textBlock(h.text_reading)}${h.text_reading?"":tnpBlock(h.tnp)}${readBlock(h.reading)}${teachBlock(h,i)}${acBlock(h.astrocom)}</td><td style="white-space:nowrap">${ANG_TH[h.angle]}</td><td class="num">${Math.round(h.km)} กม.${strength(h.km)}</td></tr>`).join("")+`</table></div>`+SRC_NOTE:`<div class="empty">ไม่มีเส้นในระยะนี้ — ลองขยายระยะที่ช่อง "ระยะที่ถือว่าใกล้เมือง"</div>`)+
       crossTable(d)+dynTable(d);   // เส้นจรเป็นชั้นแยก ต้องขึ้นแม้ไม่มีเส้นกำเนิด (ซิดนีย์ 12 ม.ค. 2026: จันทร์ MC จร 95 กม. เคยหายจากจอ)
   }else if(tab==="paran"){
     p.innerHTML=head+`<div class="src">ดาวสองดวงอยู่บนแกนพร้อมกัน ที่ละติจูดห่างเมืองไม่เกิน 1° (≈111 กม. · สายคำสอน ใช้ 1°)</div>`+
@@ -1583,7 +1625,7 @@ addEventListener("resize",size);
 </script>
 <script>
 // ── ออฟไลน์: ลงทะเบียน service worker (แยกแคชจากแอปยูเรเนียน: urmap-v*) ──
-const MAP_CACHE="urmap-v15";
+const MAP_CACHE="urmap-v16";
 (function(){
   const el=document.createElement("div");el.className="hint";el.style.cssText="margin:6px 4px 0";el.id="swstat";
   document.querySelector(".wrap").append(el);

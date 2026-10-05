@@ -107,6 +107,63 @@
     return out;
   }
   // ── ข้อ 3: เส้นที่ยังส่งผลจริง (_kept_lines) ────────────────────────────────
+  // ── ป้ายข้อเท็จจริงต่อเส้น (v16) — ตรง server.line_facts / city_summary ──────────────────────────────
+  const SIDE_HOUSE = { AC: [1, 12], MC: [10, 9], DC: [7, 6], IC: [4, 3] }, SHIFT_15MIN_DEG = 15 * 15 / 60;
+  const FACT_KEYS = ["condition", "sect", "rules", "side", "visible", "exact", "birth_time"];
+  const factRules = () => { const fr = M().factRules(), o = {}; for (const k of FACT_KEYS) if (fr[k]) o[k] = fr[k]; return o; };
+  function sideOf(angle, ra, dec, g, clat, clon) {
+    const ha = wrap180(g + clon - ra);
+    let passed;
+    if (angle === "MC") passed = ha > 0;
+    else if (angle === "IC") passed = ha < 0;
+    else { const h0 = RD().semiArc(dec, clat); if (h0 === null) return null; passed = angle === "AC" ? ha > -h0 : ha > h0; }
+    const [angH, cadH] = SIDE_HOUSE[angle];
+    return { east: passed, house: passed ? cadH : angH, angular: !passed };
+  }
+  function lineFacts(h, cond, cAsc, cMc, jd, method, clat, clon) {
+    const row = cond.rows.find((r) => r.code === h.body);
+    if (!row) return null;
+    const [ra, dec] = G().bodyEqu(jd, h.body, method);
+    const side = sideOf(h.angle, ra, dec, G().gast(jd), clat, clon);
+    const angLon = { AC: cAsc, DC: cAsc + 180, MC: cMc, IC: cMc + 180 }[h.angle];
+    return { dignity: row.dignity, dignity_note: row.dignity_note,
+             hard: row.aspects.filter((a) => a.kind === "หนัก").map((a) => ({ other: a.other, other_th: a.other_th, aspect: a.aspect, aspect_th: a.aspect_th, orb: a.orb })),
+             sect_role: row.sect_role, sect: cond.sect, rules: row.rules,
+             side, deg_from_angle: Math.round(Math.abs(wrap180(row.lon - angLon)) * 100) / 100,
+             shift_km: Math.round(SHIFT_15MIN_DEG * G().KM_PER_DEG * Math.cos(clat * Math.PI / 180) * 10) / 10 };
+  }
+  const WORST = "ดาวที่หนักที่สุดสำหรับดวงนี้";
+  const isHard = (f) => !!f && (f.dignity.some((d) => d === "ประ" || d === "นิจ") || f.sect_role === WORST);
+  function attachFacts(rows, jd, b, method, clat, clon) {
+    let cond, ang;
+    try { cond = conditionApi(jd, b.lat, b.lon); ang = root.AISTRO.anglesAt(jd, clat, clon); RD().assertHousable(clat, "เมืองปลายทาง"); }
+    catch (e) {
+      if (!(e instanceof RangeError)) throw e;
+      for (const r of rows) r.facts = null;
+      return "คำนวณสภาพดาว/ดวงย้ายเมืองไม่ได้ที่ละติจูดนี้ (ใกล้ขั้วโลกเกินไปสำหรับระบบเรือน)";
+    }
+    for (const r of rows) r.facts = lineFacts(r, cond, ang.asc, ang.mc, jd, method, clat, clon);
+    return null;
+  }
+  const isoOf = (v) => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null);
+  function citySummary(kept, nParans, b, dateIso) {
+    let age = null;
+    if (dateIso) { const [y, m, d] = dateIso.split("-").map(Number); age = y - b.y - ((m < b.m || (m === b.m && d < b.d)) ? 1 : 0); }
+    const fullHard = kept.filter((r) => r.level === "เต็มกำลัง" && isHard(r.facts)).map((r) => ({ body: r.body, th: r.th, angle: r.angle, km: r.km }));
+    const rk = ["combo", kept.length ? "condition" : "neutral", ...(fullHard.length ? ["on_line"] : []), "age", "far"];
+    return { n_lines: kept.length, n_full: kept.filter((r) => r.level === "เต็มกำลัง").length, n_parans: nParans,
+             empty: !kept.length, full_hard: fullHard, age, rules: rk.filter((k) => M().factRules()[k]).map((k) => ({ key: k, ...M().factRules()[k] })) };
+  }
+
+  /** ตรง server._goal_pairs: คู่ที่ตำราระบุ + ดาวที่ตำราเอ่ยแค่ชื่อ (ขยายตามมุม) · ไม่มีเลย → อาทิตย์ ศุกร์ พฤหัส */
+  function goalPairs(spec, advice) {
+    const pairs = advice.flatMap((r) => r.pairs.map((p) => [p[0], p[1]]));
+    let planets = [...new Set(advice.flatMap((r) => r.planets))];
+    if (!pairs.length && !planets.length) planets = ["SU", "VE", "JU"];
+    const angles = spec.angle ? [spec.angle] : G().ANGLES.slice();
+    return pairs.concat(planets.flatMap((c) => angles.map((a) => [c, a])));
+  }
+
   function keptLines(lines, clat, clon) {
     const n = N();
     const rows = G().linesNear(clat, clon, lines, MID_MI * MI).map((h) => {
@@ -145,12 +202,7 @@
       if (typeof goal !== "string" || !(goal in goals)) throw new BadInput(`เป้าหมายต้องเป็นหนึ่งใน [${Object.keys(goals).map((g) => `'${g}'`).join(", ")}]`);
       const spec = goals[goal], advice = M().adviceFor(goal);
       const sc = RD().sectOf(jd, b.lat, b.lon);
-      let pairs = advice.flatMap((r) => r.pairs.map((p) => [p[0], p[1]]));
-      if (!pairs.length) {
-        const planets = [...new Set(advice.flatMap((r) => r.planets))]; const pl = planets.length ? planets : ["SU", "VE", "JU"];
-        const angles = spec.angle ? [spec.angle] : G().ANGLES.slice();
-        pairs = pl.flatMap((c) => angles.map((a) => [c, a]));
-      }
+      const pairs = goalPairs(spec, advice);
       const seen = new Set(), cands = [], g = G().gast(jd), PL = places();
       for (const [code, angle] of pairs) {
         const k = code + angle;
@@ -187,6 +239,9 @@
       step4 = { city: step3.city, orb_deg: PARAN_ORB_DEG, parans: pn, n_with_teaching: pn.filter((x) => x.meanings.length).length,
                 rules: M().orbRules().filter((r) => (r.what + r.value).toLowerCase().includes("paran")).slice(0, 8),
                 taught_pairs: [...new Set(pm.map((x) => x.pair.join(" ")))].sort().map((k) => k.split(" ")) };
+      step3.facts_error = attachFacts(step3.kept, jd, b, method, clat, clon);
+      step3.summary = citySummary(step3.kept, pn.length, b, isoOf(body.date_from));
+      step3.fact_rules = factRules();
       // ── ข้อ 5 ──
       step5 = relocStep5(jd, b, step3.city, clat, clon);
       // ── ข้อ 6 ──
@@ -309,6 +364,14 @@
       meanings: M().forLine(h.body, h.angle), angle_meanings: M().forLine("ANG", h.angle), astrocom: M().acLine(h.body, h.angle),
       reading: M().forMerged(h.body, h.angle), text_reading: M().forReading(h.body, h.angle), tnp: M().tnpLineReading(h.body, h.angle) }));
     const parans = RD().mapParansNear(c.lat, RD().mapParans(jd, n.bodies, method), 1.0).map((p) => ({ ...p, a_th: n.th[p.a], b_th: n.th[p.b], meanings: M().forParan(p.a, p.b) }));
+    // ป้ายข้อเท็จจริงต่อเส้น + สรุปเมือง (v16) — ตรง server.api_city
+    const factsError = attachFacts(near, jd, b, method, c.lat, c.lon);
+    const [kept] = keptLines(lines, c.lat, c.lon);
+    const factsBy = new Map(near.map((r) => [r.body + "|" + r.angle, r.facts]));
+    for (const r of kept) r.facts = factsBy.has(r.body + "|" + r.angle) ? factsBy.get(r.body + "|" + r.angle) : null;
+    const missing = kept.filter((r) => !factsBy.has(r.body + "|" + r.angle));
+    if (missing.length) attachFacts(missing, jd, b, method, c.lat, c.lon);
+    const summary = citySummary(kept, parans.length, b, isoOf(body.date_on));
     const rel = RD().relocatedUranian(jd, b.lat, b.lon, c.lat, c.lon);
     const natal = rel.natal_positions, reloc = rel.positions;
     const singles = {}, singlesBirth = {};
@@ -340,7 +403,7 @@
         dyn[kind] = G().linesNear(c.lat, c.lon, sets, orbKm).map((h) => ({ ...h, th: n.th[h.body], glyph: n.glyph[h.body] }));
       }
     }
-    return { city: c, lines_near: near, parans_near: parans, crossings, dynamic_near: dyn, relocation: relView, orb_km: orbKm, method };
+    return { city: c, lines_near: near, parans_near: parans, crossings, summary, facts_error: factsError, fact_rules: factRules(), dynamic_near: dyn, relocation: relView, orb_km: orbKm, method };
   }
 
   // ── เมืองที่ควรไปในช่วงจร แยกตามหมวด (when_where) ───────────────────────────
@@ -349,12 +412,7 @@
     const cats = {};
     for (const gk in goals) {
       const spec = goals[gk], adv = M().adviceFor(gk);
-      let pairs = adv.flatMap((r) => r.pairs.map((p) => [p[0], p[1]]));
-      if (!pairs.length) {
-        const planets = [...new Set(adv.flatMap((r) => r.planets))]; const pl = planets.length ? planets : ["SU", "VE", "JU"];
-        const angs = spec.angle ? [spec.angle] : G().ANGLES.slice();
-        pairs = pl.flatMap((c) => angs.map((a) => [c, a]));
-      }
+      let pairs = goalPairs(spec, adv);
       const seenP = new Set(); pairs = pairs.filter(([c, a]) => { const k = c + a; if (seenP.has(k) || !n.bodies.includes(c)) return false; seenP.add(k); return true; });
       const spots = {}, order = [];
       for (const [code, angle] of pairs) {
