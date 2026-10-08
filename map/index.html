@@ -1188,6 +1188,11 @@ function factsBlock(f,fr){
   if(f.rules.length) li.push(`เป็นเจ้าเรือน ${f.rules.join(", ")} (ดวงกำเนิด) → ดึงเรื่องของเรือนนั้นเข้ามา`+ruleNote(fr.rules));
   if(f.side) li.push(`<span class="${cad?"warn":""}">${f.side.east?"อยู่ฝั่งตะวันออกของเส้น":"อยู่ฝั่งตะวันตกของเส้น"} → ดาวอยู่ด้านเรือน ${f.side.house} `+
     `(${f.side.angular?"เรือนมุม เห็นผลชัด":"เรือนกด เห็นผลน้อยกว่าที่คิด"})</span>`+ruleNote(fr.side)+ruleNote(fr.visible));
+  // ฝั่งของเส้น (v19): กฎ Jim Lewis + ฝั่งที่ ตำราสากล ว่าดีกว่า · ขัดกับเหตุผลทางเรือนเมื่อ ตำราสากล บอกฝั่งตะวันออก — แสดงทั้งคู่
+  if(f.side){const a=f.astro_side,sd=s=>s==="east"?"ตะวันออก":"ตะวันตก";
+    li.push(`ฝั่งของเส้น: Jim Lewis ว่า "ฝั่งตะวันตกดีกว่า" → ${f.side.east?"เมืองนี้อยู่ฝั่งตะวันออก":"✓ เมืองนี้อยู่ฝั่งตะวันตก"}`+
+      (a?` · ตำราสากล ว่าเส้นนี้ฝั่ง${sd(a.better)}ดีกว่า → ${a.here?"✓ เมืองนี้อยู่ฝั่งนั้น":"เมืองนี้อยู่อีกฝั่ง"}`+
+        (a.better==="east"?` <span class="hint">(สองแหล่งบอกต่างกัน — แสดงทั้งคู่ ไม่เลือกแทน)</span>`:""):""));}
   li.push(`ห่างมุมในดวงย้ายเมือง ${f.deg_from_angle}° (องศาสุริยยาตร์)`+ruleNote(fr.exact));
   li.push(`ถ้าเวลาเกิดคลาด 15 นาที เส้นเลื่อนตะวันออก-ตก ราว ${Math.round(f.shift_km)} กม. ที่ละติจูดนี้`+ruleNote(fr.birth_time));
   // ป้ายเตือนสั้นอยู่ใต้ชื่อเส้นทันที (ช่องแคบบนมือถือ) · รายละเอียดเป็น <details> ที่ liftReadings ยกไปแถวกว้างเต็ม
@@ -1753,7 +1758,7 @@ addEventListener("resize",size);
 </script>
 <script>
 // ── ออฟไลน์: ลงทะเบียน service worker (แยกแคชจากแอปยูเรเนียน: urmap-v*) ──
-const MAP_CACHE="urmap-v18";
+const MAP_CACHE="urmap-v19";
 (function(){
   const el=document.createElement("div");el.className="hint";el.style.cssText="margin:6px 4px 0";el.id="swstat";
   document.querySelector(".wrap").append(el);

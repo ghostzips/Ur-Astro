@@ -109,7 +109,7 @@
   // ── ข้อ 3: เส้นที่ยังส่งผลจริง (_kept_lines) ────────────────────────────────
   // ── ป้ายข้อเท็จจริงต่อเส้น (v16) — ตรง server.line_facts / city_summary ──────────────────────────────
   const SIDE_HOUSE = { AC: [1, 12], MC: [10, 9], DC: [7, 6], IC: [4, 3] }, SHIFT_15MIN_DEG = 15 * 15 / 60;
-  const FACT_KEYS = ["condition", "sect", "rules", "side", "visible", "exact", "birth_time",
+  const FACT_KEYS = ["condition", "sect", "rules", "side", "visible", "exact", "birth_time", "west_best", "astro_side",
                      "fam_parents", "fam_separate", "fam_conflict", "fam_composite", "partner_dc"];   // ตรง server.FACT_KEYS
   const factRules = () => { const fr = M().factRules(), o = {}; for (const k of FACT_KEYS) if (fr[k]) o[k] = fr[k]; return o; };
   function sideOf(angle, ra, dec, g, clat, clon) {
@@ -127,11 +127,15 @@
     const [ra, dec] = G().bodyEqu(jd, h.body, method);
     const side = sideOf(h.angle, ra, dec, G().gast(jd), clat, clon);
     const angLon = { AC: cAsc, DC: cAsc + 180, MC: cMc, IC: cMc + 180 }[h.angle];
+    const acl = M().acLine(h.body, h.angle) || {};     // ตรง server: ฝั่งที่ตำราสากลว่าดีกว่า (v19)
+    const bb = (acl.bullets || []).find((b) => b.includes("ของเส้นดีกว่า"));
+    const better = bb === undefined ? null : (bb.includes("ตะวันออก") ? "east" : "west");
     return { dignity: row.dignity, dignity_note: row.dignity_note,
              hard: row.aspects.filter((a) => a.kind === "หนัก").map((a) => ({ other: a.other, other_th: a.other_th, aspect: a.aspect, aspect_th: a.aspect_th, orb: a.orb })),
              sect_role: row.sect_role, sect: cond.sect, rules: row.rules,
              side, deg_from_angle: Math.round(Math.abs(wrap180(row.lon - angLon)) * 100) / 100,
-             shift_km: Math.round(SHIFT_15MIN_DEG * G().KM_PER_DEG * Math.cos(clat * Math.PI / 180) * 10) / 10 };
+             shift_km: Math.round(SHIFT_15MIN_DEG * G().KM_PER_DEG * Math.cos(clat * Math.PI / 180) * 10) / 10,
+             astro_side: better && side ? { better, here: side.east === (better === "east") } : null };
   }
   const WORST = "ดาวที่หนักที่สุดสำหรับดวงนี้";
   const isHard = (f) => !!f && (f.dignity.some((d) => d === "ประ" || d === "นิจ") || f.sect_role === WORST);
