@@ -126,6 +126,13 @@
   .famrow{display:flex;align-items:center;gap:6px;font-size:13.5px;color:var(--ink);margin:0}
   .famrow input{width:auto}
   .famrow select{width:auto;padding:2px 6px;font-size:12.5px}
+  details.gstep{border-bottom:1px solid var(--line);padding:6px 0}
+  details.gstep>summary{cursor:pointer;list-style:none;padding:6px 0}
+  details.gstep>summary::-webkit-details-marker{display:none}
+  details.gstep>summary .gtitle{display:block;font-weight:700;font-size:15px;color:var(--ink)}
+  details.gstep>summary .gtitle::before{content:"▸ ";color:var(--accent)}
+  details.gstep[open]>summary .gtitle::before{content:"▾ "}
+  details.gstep>summary .gline{display:block;font-size:12.5px;color:var(--mute);margin-top:2px}
   .citysum{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:8px 0;font-size:13px;background:#fff}
   .teach>summary{cursor:pointer;color:#2b5f9e;font-weight:600;list-style:none}
   .teach>summary::-webkit-details-marker{display:none}
@@ -1431,6 +1438,7 @@ function familyHtml(){
     `<details class="facts"><summary>คำสอนที่ใช้ประกอบ</summary><ul>`+["fam_parents","fam_separate","fam_conflict","fam_composite","partner_dc"].filter(k=>R[k]).map(k=>`<li>${esc(R[k].text)}${ruleNote(R[k])}</li>`).join("")+`</ul></details></div>`;
   return h;
 }
+$("#panel").addEventListener("toggle",e=>{const d=e.target;if(d.classList&&d.classList.contains("gstep")){d.open?gOpen.add(d.dataset.g):gOpen.delete(d.dataset.g)}},true);
 $("#panel").addEventListener("change",async e=>{       // แท็บครอบครัว: ติ๊กสมาชิก / เลือกบทบาท
   const c=e.target.closest(".fam-chk,.fam-role"); if(!c) return;
   const st=famState(),n=c.dataset.n;
@@ -1516,6 +1524,38 @@ function conditionHtml(c){
     `<div class="hint">${esc(c.system_note)}</div>`;
   return h;
 }
+// ── v20 อ่านตามลำดับแบบสรุป (ผู้ใช้สั่ง 8 ต.ค. 2026: "ยืดยาวมาก" — วัดจริง 17.4 หน้าจอ ข้อ 6 คนเดียว 60%) ──────
+// กล่องสรุปใจความดึงจากข้อเท็จจริงที่คำนวณไว้แล้วเท่านั้น (ไม่แต่งคำทำนาย) · ทุกข้อพับเหลือหัวข้อ+บรรทัดสรุป แตะแล้วขยาย
+// จำข้อที่เปิดไว้ (gOpen) — เลือกเป้าหมายแล้วแผงวาดใหม่ ข้อ 2 ต้องไม่หุบเอง
+const gOpen=new Set();
+function gStep(id,title,line,body,extraStyle){
+  return `<details class="gstep" data-g="${id}"${gOpen.has(id)?" open":""}><summary><span class="gtitle">${title}</span>`+
+    (line?`<span class="gline">${line}</span>`:"")+`</summary><div class="gbody">${body}</div></details>`;
+}
+function guideSummary(r){
+  const c=r.condition,it=[],SECT_TH={day:"ดวงกลางวัน",night:"ดวงกลางคืน"};
+  if(c){const best=c.rows.find(x=>/เป็นคุณที่สุด/.test(x.sect_role||"")),worst=c.rows.find(x=>/หนักที่สุด/.test(x.sect_role||""));
+    it.push(`${SECT_TH[c.sect]||""}${best?` · ดาวดีประจำดวง: <b>${esc(best.th)}</b>`:""}${worst?` · ดาวหนัก: <b>${esc(worst.th)}</b>`:""}`)}
+  const s2=r.step2;
+  if(s2&&s2.candidates.length){const k=s2.candidates.find(x=>x.cities.length);
+    if(k) it.push(`เป้าหมาย${esc(s2.goal_th)}: เส้น${esc(k.th)} ${esc(k.angle)} ใกล้เมือง <b>${esc(k.cities[0].name)}</b> ${Math.round(k.cities[0].km)} กม.`)}
+  const s3=r.step3;
+  if(s3){const fl=x=>{const f=x.facts;if(!f)return "";const w=[];if(f.side&&!f.side.angular)w.push("เรือนกด");if(/หนักที่สุด/.test(f.sect_role||""))w.push("ดาวหนัก");
+      if(f.dignity.some(d=>d==="ประ"||d==="นิจ"))w.push("เสียเกณฑ์");return w.length?` <span class="warn">⚠${w.join("·")}</span>`:""};
+    it.push(s3.kept.length?`ที่${esc(s3.city.name)}: `+s3.kept.slice(0,3).map(x=>`${esc(x.th)} ${esc(x.angle)} ${Math.round(x.km)} กม.${fl(x)}`).join(" · ")+(s3.kept.length>3?` (+${s3.kept.length-3})`:"")
+      :`ที่${esc(s3.city.name)}: ไม่มีเส้นใน 300 ไมล์ → เป็นกลาง`)}
+  if(r.step4) it.push(`paran ±${r.step4.orb_deg}°: ${r.step4.parans.length} คู่${r.step4.n_with_teaching?` (มีคำสอน ${r.step4.n_with_teaching})`:""}`);
+  const cl=r.step5&&r.step5.classic;
+  if(cl&&cl.asc_ruler) it.push(`ย้ายเมือง: ลัคนา${esc(cl.city_asc_sign)} · เจ้าลัคนา <b>${esc(cl.asc_ruler.th)}</b> อยู่เรือน ${cl.asc_ruler.house} · ดาวย้ายเรือน ${cl.n_moved} ดวง`);
+  const cz=r.step6&&r.step6.cautions;
+  if(cz){const n=[];if(cz.eclipse_seasons.length)n.push(`ฤดูคราส ${cz.eclipse_seasons.map(e=>`${e.from}→${e.to}`).join(", ")}`);
+    if(cz.mercury_rx.length)n.push(`พุธถอยหลัง ${cz.mercury_rx.map(m=>`${m.from}→${m.to}`).join(", ")}`);
+    if(cz.mars_9th&&cz.mars_9th.spans.length)n.push(`อังคารเรือน 9 ${cz.mars_9th.spans.map(m=>`${m.from}→${m.to}`).join(", ")}`);
+    it.push(n.length?`ช่วงระวัง: ${esc(n.join(" · "))}`:"ช่วงที่เลือก: ไม่มีช่วงที่คำสอนเตือน")}
+  if(!it.length) return "";
+  return `<div class="citysum"><b>สรุปใจความ</b>${s3?` · ${esc(s3.city.name)}`:""}${s2?` · ${esc(s2.goal_th)}`:""} <span class="hint">(ดึงจากข้อเท็จจริงด้านล่าง แตะแต่ละข้อเพื่อดูเต็ม)</span><ul>`+
+    it.map(x=>`<li>${x}</li>`).join("")+`</ul></div>`;
+}
 function guideHtml(){
   const r=readingData;
   if(!r) return `<div class="empty">กำลังโหลดคำอ่าน…</div>`;
@@ -1525,27 +1565,30 @@ function guideHtml(){
     GUIDE_STEPS.map((t,i)=>`${i?" · ":""}<b>${i+1}. ${esc(t)}</b>`).join("")+
     ` · จบที่ <b>จังหวะเวลา</b> ที่แท็บ "ช่วงเวลา"</div></div>`;
   // ── ข้อ 1: สภาพดาว ────────────────────────────────────────────────
-  html+=`<h3>1. สภาพดาวในดวงกำเนิด — ${esc(b.place)} ${ownerTag()}</h3>`+
+  html+=guideSummary(r);
+  const c=r.condition,nBad=c?c.rows.filter(x=>x.dignity.some(d=>d==="ประ"||d==="นิจ")).length:0;
+  html+=gStep("1",`1. สภาพดาวในดวงกำเนิด — ${esc(b.place)} ${ownerTag()}`,c?`${c.sect==="day"?"ดวงกลางวัน":"ดวงกลางคืน"} · ลัคนา${esc(c.asc_sign_th)} · เสียเกณฑ์ ${nBad} ดวง`:"",
     `<div class="hint">เกิด ${esc(b.date)} ${esc(b.time)} น. (UTC${b.tz>=0?"+":""}${b.tz}) · ${b.lat.toFixed(4)}, ${b.lon.toFixed(4)}</div>`+
-    conditionHtml(r.condition);
+    conditionHtml(r.condition));
   // ── ข้อ 2: เป้าหมาย ───────────────────────────────────────────────
-  html+=`<h3 style="margin-top:18px">2. อยากได้อะไร → ควรดูเส้นไหน</h3>`+goalBar(r.goals||{})+step2Html(r.step2);
+  const s2=r.step2;
+  html+=gStep("2","2. อยากได้อะไร → ควรดูเส้นไหน",s2?`${esc(s2.goal_th)} · ${s2.candidates.length} เส้น`:"ยังไม่ได้เลือกเป้าหมาย",goalBar(r.goals||{})+step2Html(r.step2));
   // ── ข้อ 3: เมืองเกิด (ใช้ตรวจว่าวิธีนี้ตรงกับชีวิตจริงของคุณไหม) ────────
-  html+=`<h3 style="margin-top:18px">3. เมืองเกิดของคุณ: เส้นที่พาดผ่าน</h3>`+
-    `<div class="hint">ใช้ตรวจสอบกับประสบการณ์จริง — ตำราแนะนำให้ดูที่ที่เคยอยู่ก่อน ว่าธีมของเส้นตรงกับที่เกิดขึ้นจริงไหม `+
+  html+=gStep("3","3. เมืองเกิดของคุณ: เส้นที่พาดผ่าน",`${s1.near.length} เส้นในระยะ ${Math.round(s1.orb_km)} กม.`,`<div class="hint">ใช้ตรวจสอบกับประสบการณ์จริง — ตำราแนะนำให้ดูที่ที่เคยอยู่ก่อน ว่าธีมของเส้นตรงกับที่เกิดขึ้นจริงไหม `+
     `· ระยะที่ถือว่าใกล้ ${Math.round(s1.orb_km)} กม.</div>`+
     (s1.near.length
       ? `<div class="tw"><table><tr><th>เส้นที่พาดผ่านเมืองเกิด</th><th>ระยะ</th></tr>`+s1.near.map(h=>lineRow(h)).join("")+`</table></div>`
       : `<div class="empty">ไม่มีเส้นดาวพาดผ่านเมืองเกิดในระยะนี้ — ตามคำสอน ไม่มีเส้นไม่ได้แปลว่าไม่มีพลังงาน ให้ดู paran ต่อ (ข้อ 5)</div>`)+
     `<details class="teach"><summary>เส้นที่ใกล้เมืองเกิดที่สุด (แม้เกินระยะ)</summary>`+
-    `<div class="tw"><table><tr><th>เส้น</th><th>ระยะ</th></tr>`+s1.nearest.map(h=>lineRow(h)).join("")+`</table></div></details>`;
+    `<div class="tw"><table><tr><th>เส้น</th><th>ระยะ</th></tr>`+s1.nearest.map(h=>lineRow(h)).join("")+`</table></div></details>`);
   // ── จุดเปลี่ยนโหมด: ระดับโลก → ระดับเมือง ───────────────────────────
   html+=cityGate(r.step3);
-  html+=`<h3 style="margin-top:14px">4. เส้นที่ส่งผลจริงที่เมืองที่เลือก</h3>`+step3Html(r.step3);
-  html+=`<h3 style="margin-top:18px">5. paran ที่ละติจูดนั้น</h3>`+step4Html(r.step4);
-  html+=`<h3 style="margin-top:18px">6. ดวงย้ายเมืองเทียบดวงกำเนิด</h3>`+step5Html(r.step5);
-  html+=`<h3 style="margin-top:18px">จังหวะเวลา: ดาวจรช่วงที่จะไป <span class="hint">(คำตอบเต็มอยู่ที่แท็บ "ช่วงเวลา")</span></h3>`+step6Html(r.step6);
-  html+=`<h3 style="margin-top:18px">เมืองที่ควรไปในช่วงจร (แยกตามหมวด)</h3>`+whenWhereHtml(r.when_where);
+  const s3=r.step3,s4=r.step4,cl=r.step5&&r.step5.classic,s6=r.step6;
+  html+=gStep("4","4. เส้นที่ส่งผลจริงที่เมืองที่เลือก",s3?`${s3.kept.length} เส้น${s3.summary&&s3.summary.full_hard.length?` <span class="warn">(⚠ ${s3.summary.full_hard.length})</span>`:""}`:"ยังไม่ได้เลือกเมือง",step3Html(r.step3));
+  html+=gStep("5","5. paran ที่ละติจูดนั้น",s4?`${s4.parans.length} คู่`:"",step4Html(r.step4));
+  html+=gStep("6","6. ดวงย้ายเมืองเทียบดวงกำเนิด",cl?`ลัคนา${esc(cl.natal_asc_sign)} → ${esc(cl.city_asc_sign)} · ดาวย้ายเรือน ${cl.n_moved} ดวง`:"",step5Html(r.step5));
+  html+=gStep("t",`จังหวะเวลา: ดาวจรช่วงที่จะไป <span class="hint">(คำตอบเต็มอยู่ที่แท็บ "ช่วงเวลา")</span>`,s6?`${esc(s6.date_from)} → ${esc(s6.date_to)}`:"",step6Html(r.step6));
+  html+=gStep("w","เมืองที่ควรไปในช่วงจร (แยกตามหมวด)","",whenWhereHtml(r.when_where));
   return html;
 }
 // แถบคั่น "ข้อ 1-3 ระดับโลก → ข้อ 4-6 ต้องเลือกเมืองก่อน" — เดิมผู้ใช้ไม่รู้ว่าต้องไปกดช่องเมืองเหนือแผนที่
@@ -1758,7 +1801,7 @@ addEventListener("resize",size);
 </script>
 <script>
 // ── ออฟไลน์: ลงทะเบียน service worker (แยกแคชจากแอปยูเรเนียน: urmap-v*) ──
-const MAP_CACHE="urmap-v19";
+const MAP_CACHE="urmap-v20";
 (function(){
   const el=document.createElement("div");el.className="hint";el.style.cssText="margin:6px 4px 0";el.id="swstat";
   document.querySelector(".wrap").append(el);
