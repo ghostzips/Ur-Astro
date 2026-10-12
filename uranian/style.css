@@ -86,8 +86,15 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
 /* ── หัวหน้า ──────────────────────────────────────────────────────────── */
 header.top{border:1px solid var(--rule);border-radius:var(--r-md);
   background:var(--panel);box-shadow:var(--shadow-1);
-  padding:var(--s5) var(--s5) var(--s4);margin-bottom:var(--s5)}
-header.top h1{margin:0 0 var(--s2);font-size:var(--t-xl);font-weight:700;
+  padding:var(--s5) var(--s5) var(--s4);margin-bottom:var(--s5);
+  display:flex;align-items:center;justify-content:space-between;gap:var(--s3)}
+/* v136: ปุ่ม "ดวงที่บันทึก" บนหัวแอป — ปุ่มรองแบบเส้นขอบ ไม่แย่งสายตาจากปุ่มคำนวณ */
+header.top .hbtn{flex:0 0 auto;background:none;color:var(--accent);
+  border:1px solid var(--accent-line);border-radius:var(--r-sm);
+  padding:var(--s2) var(--s3);font:inherit;font-size:var(--t-sm);font-weight:600;
+  cursor:pointer;white-space:nowrap}
+header.top .hbtn:hover{background:var(--accent-soft)}
+header.top h1{margin:0;font-size:var(--t-xl);font-weight:700;
   letter-spacing:-.01em;display:flex;align-items:center;gap:var(--s3);
   flex-wrap:wrap}
 header.top h1 .tag{font-size:10px;font-weight:700;color:var(--accent);
@@ -109,8 +116,9 @@ header.top h1 .tag{font-size:10px;font-weight:700;color:var(--accent);
   box-shadow:var(--shadow-1);padding:var(--s5);margin-bottom:var(--s5);
   display:flex;flex-wrap:wrap;gap:var(--s4) var(--s5);align-items:end}
 .form .fg{display:flex;flex-direction:column;gap:var(--s1)}
-.form label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--faint);font-weight:700;font-family:var(--mono)}
+/* v136 (ผู้ใช้เลือกข้อ 5): ป้ายช่องเดิมเป็นฟอนต์พิมพ์ดีด 10px ตัวห่าง ดูเป็นหน้าโปรแกรม และ uppercase ไม่มีผลกับอักษรไทย
+   → ฟอนต์ไทยตัวเล็กสีจาง · ฟอนต์พิมพ์ดีด (--mono) เหลือไว้กับตัวเลของศา/วันเวลาเท่านั้น */
+.form label{font-size:var(--t-sm);color:var(--dim);font-weight:500}
 .form input,.form select{background:var(--bg);color:var(--ink);
   border:1px solid var(--rule);border-radius:var(--r-sm);
   padding:var(--s2) var(--s3);font-size:14px;font-family:inherit;min-width:0;
@@ -124,6 +132,9 @@ header.top h1 .tag{font-size:10px;font-weight:700;color:var(--accent);
   font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;
   box-shadow:var(--shadow-1);transition:filter .12s}
 .form button:hover{filter:brightness(1.1)}
+/* v136 (ข้อ 3): ปุ่มรองในฟอร์ม — เส้นขอบสีหลัก พื้นใส · ปุ่มทึบเหลือ "คำนวณ" ปุ่มเดียว */
+.form button.btn2{background:none;color:var(--accent);border-color:var(--accent-line);box-shadow:none}
+.form button.btn2:hover{background:var(--accent-soft);filter:none}
 .form button:active{filter:brightness(.94)}
 .form .note{font-size:var(--t-sm);color:var(--faint);width:100%;margin-top:calc(var(--s1) * -1)}
 /* v119: ฟอร์มพับได้ — จอ 375px ฟอร์มสูง 606px ต้องเลื่อนผ่านทุกครั้งกว่าจะถึงเนื้อหา */
@@ -179,8 +190,7 @@ header.top h1 .tag{font-size:10px;font-weight:700;color:var(--accent);
   box-shadow:var(--shadow-1);
   padding:var(--s3) var(--s4);margin-bottom:var(--s5);
   display:flex;flex-wrap:wrap;gap:var(--s3) var(--s5);align-items:center}
-.tools .lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--faint);font-weight:700;font-family:var(--mono)}
+.tools .lbl{font-size:var(--t-sm);color:var(--dim);font-weight:500}
 .tools label{display:inline-flex;align-items:center;gap:var(--s2);font-size:var(--t-md);
   color:var(--dim);cursor:pointer;user-select:none}
 .tools input{accent-color:var(--accent);cursor:pointer;margin:0}
@@ -251,9 +261,8 @@ header.top h1 .tag{font-size:10px;font-weight:700;color:var(--accent);
 /* ── กล่องคำอธิบาย / แผงควบคุมของแต่ละแท็บ ───────────────────────────── */
 .legend{border:1px solid var(--rule);border-radius:var(--r-md);background:var(--panel);
   box-shadow:var(--shadow-1);padding:var(--s4) var(--s5);margin-bottom:var(--s5)}
-.legend h3{margin:0 0 var(--s3);font-size:10px;letter-spacing:.12em;
-  text-transform:uppercase;color:var(--faint);font-family:var(--mono);
-  font-weight:700;display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap}
+.legend h3{margin:0 0 var(--s3);font-size:var(--t-base);
+  color:var(--ink);font-weight:700;display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap}
 .legend h3 .hint{font-size:var(--t-sm);letter-spacing:0;text-transform:none;
   font-weight:400;font-family:var(--sans);color:var(--faint)}
 .lgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(228px,1fr));
@@ -505,8 +514,7 @@ p.hint:empty{display:none}
 /* ── เทียบกับเว็บ ─────────────────────────────────────────────────────── */
 .cmp{display:flex;flex-direction:column;gap:var(--s3)}
 .cmprow{display:flex;gap:var(--s3);align-items:center;flex-wrap:wrap}
-.cmprow label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--faint);font-weight:700;font-family:var(--mono)}
+.cmprow label{font-size:var(--t-sm);color:var(--dim);font-weight:500}
 .cmprow select,.cmprow button{background:var(--bg);color:var(--ink);
   border:1px solid var(--rule);border-radius:var(--r-sm);
   padding:var(--s2) var(--s3);font:inherit;font-size:var(--t-md);cursor:pointer;
@@ -577,8 +585,7 @@ p.hint:empty{display:none}
 .fxside{flex:1 1 320px}
 .fxmid{flex:0 0 auto}
 .fxpick .fxgo{flex-direction:row;align-items:end;gap:var(--s3);flex-wrap:wrap}
-.fxpick .lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--faint);font-weight:700;font-family:var(--mono)}
+.fxpick .lbl{font-size:var(--t-sm);color:var(--dim);font-weight:500}
 .fxpick select{background:var(--bg);color:var(--ink);border:1px solid var(--rule);
   border-radius:var(--r-sm);padding:var(--s2) var(--s3);font:inherit;
   font-size:var(--t-md);cursor:pointer;transition:border-color .12s;max-width:100%}
@@ -1363,3 +1370,42 @@ p.hint:empty{display:none}
 .rdlife,.rdnow{font-size:var(--t-xs);padding:1px 6px;border-radius:999px;white-space:nowrap}
 .rdlife{color:var(--dim);border:1px solid var(--rule)}
 .rdnow{color:var(--warn-ink);background:var(--warn-soft)}
+
+/* ── v136 (ผู้ใช้เลือกข้อ 6): จานเต็มจอ + ซูม ─────────────────────────────────
+ * กรอบ .dialwrap กลายเป็นชั้นเต็มจอที่เลื่อนได้เอง (overflow:auto) — จานซูมใหญ่กว่าจอได้
+ * canvas จัดกลางด้วย margin:auto ในกล่อง flex — ต้องล้าง justify-content:center ของ .dialwrap เดิมด้วย
+ *   (ไม่งั้นจานที่ซูมเกินจอล้นออกซ้าย/บน left −28px แล้วเลื่อนไปไม่ถึง — เจอจากการวัดจริงตอนทดสอบ)
+ * selector สองคลาสเพื่อชนะกฎ grid ของ .dialwrap ที่จอ ≤640px */
+.dialwrap.dlfull{position:fixed;inset:0;z-index:60;display:flex;overflow:auto;
+  justify-content:flex-start;align-items:flex-start;
+  background:var(--bg);padding:calc(var(--dlfh, 64px) + 8px) 8px 8px;
+  overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.dialwrap.dlfull canvas{max-width:none;margin:auto;flex:0 0 auto}
+.dialwrap.dlfull .dialinfo{display:none}
+html.dlfull-open{overflow:hidden}
+.dlfbar{position:fixed;top:0;left:0;right:0;z-index:61;background:var(--panel);
+  border-bottom:1px solid var(--rule);box-shadow:var(--shadow-1);
+  padding:calc(env(safe-area-inset-top, 0px) + 8px) 10px 8px;
+  display:flex;flex-direction:column;gap:6px}
+.dlfbar[hidden]{display:none}
+.dlfbtns{display:flex;align-items:center;gap:6px}
+.dlfbtns button{background:var(--sunk);color:var(--ink);border:1px solid var(--rule);
+  border-radius:var(--r-sm);padding:6px 12px;font:inherit;font-size:var(--t-md);
+  font-weight:600;cursor:pointer;min-width:40px}
+.dlfbtns button:hover{border-color:var(--accent)}
+.dlfbtns .dlzpct{min-width:46px;text-align:center;font-family:var(--mono);
+  font-size:var(--t-sm);color:var(--dim);font-variant-numeric:tabular-nums}
+.dlfbtns .dlfclose{margin-left:auto;background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.dlfinfo{font-size:var(--t-sm);color:var(--dim);min-height:1.4em;line-height:1.4;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dlfinfo b{color:var(--ink);font-family:var(--mono);font-weight:600}
+.dlfinfo sub{font-size:9px;color:var(--faint)}
+/* ปุ่มลอย −1/+1 วัน ใช้ต่อได้ในโหมดเต็มจอ (ดูดาวขยับบนจานใหญ่) — ยกให้อยู่เหนือชั้นจาน
+   และเว้นที่ล่างให้จานพอดีจอไม่โดนปุ่มทับ */
+html.dlfull-open .daystep{z-index:62}
+@media (max-width:640px){
+  .dialwrap.dlfull{padding-bottom:64px}
+  /* v136: ฟอร์มพับเองแล้วแถบสรุปคือที่เดียวที่บอกว่ากำลังดูดวงใคร วันจรไหน — บรรทัดเดียวตัด "จร …" ทิ้งที่จอ 375px
+     → ให้ขึ้นได้ 2 บรรทัด */
+  .fbar .fsum{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.45}
+}

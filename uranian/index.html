@@ -15,12 +15,15 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v135">
+<link rel="stylesheet" href="style.css?v=urain-v136">
 </head>
 <body>
 <div class="wrap">
 <header class="top">
   <h1>ยูเรเนียนออฟไลน์ <span class="tag">OFFLINE</span></h1>
+  <!-- v136: "ดวงที่บันทึกไว้" ย้ายจากท้ายฟอร์มมาหัวแอป — ฟอร์มพับเองหลังคำนวณแล้ว (จอแคบ)
+       ปุ่มในฟอร์มจะหายไปด้วย · หัวแอปเห็นทุกสถานะ · id เดิม (เทสต์/โค้ดผูกกับ copen) -->
+  <button type="button" id="copen" class="hbtn" title="เปิดรายการดวงที่บันทึกไว้">📂 ดวงที่บันทึก</button>
 </header>
 
 <button type="button" class="fbar" id="fbar" hidden>
@@ -67,12 +70,12 @@
       <!-- v107: flex:0 0 auto — ตั้งถึงวินาทีแล้ว HH:MM:SS ต้องการพื้นที่ ~69px แต่ flex บีบช่องเหลือ 55px
            บนจอ 375px ตัวเลขถูกตัดเหลือ "19:15:" (เห็นจากภาพจริง) · inline ตามกติกากันแคช CSS เก่า -->
       <input id="tt" style="width:84px;flex:0 0 auto">
-      <button type="button" id="tnow" class="tnow"
+      <button type="button" id="tnow" class="tnow btn2"
         title="เซตวัน-เวลาดวงจรเป็นปัจจุบัน แล้วคำนวณใหม่">ตอนนี้</button>
     </div></div>
-  <div class="fg"><button id="go">คำนวณ</button></div>
-  <div class="fg"><button type="button" id="csave" title="บันทึกดวงกำเนิดในฟอร์มเก็บไว้ในเครื่องนี้">💾 บันทึกดวง</button></div>
-  <div class="fg"><button type="button" id="copen" title="เปิดรายการดวงที่บันทึกไว้">📂 ดวงที่บันทึกไว้</button></div>
+  <!-- v136: ปุ่มหลักมีปุ่มเดียว (คำนวณ = พื้นทึบ) · ปุ่มรองเป็นเส้นขอบ (.btn2) — เดิมฟ้าทึบเท่ากันทั้ง 4 ปุ่ม ตาไม่รู้ว่าปุ่มไหนหลัก -->
+  <div class="fg fgo"><button id="go">คำนวณ</button></div>
+  <div class="fg fgsave"><button type="button" id="csave" class="btn2" title="บันทึกดวงกำเนิดในฟอร์มเก็บไว้ในเครื่องนี้">💾 บันทึกดวง</button></div>
   <div class="note">ปีใส่ได้ทั้ง พ.ศ. (เช่น 2530) และ ค.ศ. (เช่น 1987) ·
     เลือกช่วงเดือนของตารางได้ในแท็บ "ตารางดูดวงจร"</div>
 </form>
@@ -297,6 +300,18 @@
       <div class="dl-bl" id="dlBL"></div>
       <div class="dl-br" id="dlBR"></div>
     </div>
+  </div>
+  <!-- v136 (ผู้ใช้เลือกข้อ 6): จานเต็มจอ — ชื่อดาวรอบจานบนมือถือเล็กเกินอ่าน
+       แถบนี้โผล่เฉพาะตอนเต็มจอ · นิ้วเดียวยังหมุนเข็ม/แตะเลือกดาวเหมือนเดิม · สองนิ้วถ่าง = ซูม+เลื่อน -->
+  <div id="dlfbar" class="dlfbar" hidden>
+    <div class="dlfbtns">
+      <button type="button" data-dlz="-1" aria-label="ซูมออก">−</button>
+      <span class="dlzpct" id="dlzpct">100%</span>
+      <button type="button" data-dlz="1" aria-label="ซูมเข้า">+</button>
+      <button type="button" data-dlz="0">พอดีจอ</button>
+      <button type="button" id="dlfclose" class="dlfclose">✕ ปิด</button>
+    </div>
+    <div class="dlfinfo" id="dlfinfo"></div>
   </div>
   <canvas id="dlkey" class="dialkey" width="1200" height="120"></canvas>
   <!-- เดินอัตโนมัติ — **ไม่ใช่ modal** (`show()` ไม่ใช่ `showModal()`)
@@ -706,10 +721,10 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v135"></script>
-<script src="places.js?v=urain-v135"></script>
-<script src="engine.js?v=urain-v135"></script>
-<script src="render.js?v=urain-v135"></script>
+<script src="glyphs.js?v=urain-v136"></script>
+<script src="places.js?v=urain-v136"></script>
+<script src="engine.js?v=urain-v136"></script>
+<script src="render.js?v=urain-v136"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -754,9 +769,11 @@ function pyrWarn(kinds) {
     (pyrTier(kinds) === "3" ? ` · A/B=C/D ยังนับเป็นหลักฐานชั้น ③ ได้ แต่น้ำหนักน้อย` : "") +
     ` · สูตรยังคำนวณครบตามเดิม</p>`;
 }
-const SW_CACHE = "urain-v135";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v136";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
+// v136: จานเต็มจอ — on = เปิดอยู่ · z = ซูม (1 = พอดีจอ)
+const DLZ = { on: false, z: 1, MAX: 4 };
 let DIALMARKS = null, _markTimer = 0;   // วงเส้นประกะพริบครอบดาวของสูตร (v80)
 let DIALFROM = null;   // สูตรที่กด "ไปวันนั้น" มา เช่น "KR.v1=AR.v2" (v83)
 // ตัวจับเวลาของ "เดินอัตโนมัติ" — ประกาศไว้บนสุดเพราะ drawDial() อ่านค่านี้
@@ -1952,7 +1969,7 @@ function setTransitNow(prefix) {
 }
 $("tnow").addEventListener("click", () => {
   setTransitNow();
-  if (!$("go").disabled) run();
+  if (!$("go").disabled) runFromForm();
 });
 
 // ── ก้าววันดวงจร ±1 (แถบลอยบนมือถือ + เผื่อปุ่มเสียง) ────────────────────
@@ -2249,6 +2266,17 @@ function setFold(on, remember) {
 $("ffold").addEventListener("click", () => setFold(true, true));
 $("fbar").addEventListener("click", () => setFold(false, true));
 try { if (localStorage.getItem(FOLD_KEY) === "1") setFold(true, false); } catch (e) {}
+// v136 (ผู้ใช้เลือกข้อ 2): จอแคบ ฟอร์มสูง 519px = 64% ของจอแรก เปิดมาแทบไม่เห็นผล
+// → ผู้ใช้กด "คำนวณ"/"ตอนนี้" แล้วสำเร็จ = พับเหลือแถบสรุปเอง (จำไว้ เปิดแอปครั้งหน้าก็พับ)
+// เฉพาะการกดของผู้ใช้ ไม่ใช่ run() ทุกครั้ง (เปลี่ยนจาน/ช่วงเดือน/เดินวัน ไม่ควรไปยุ่งกับฟอร์ม)
+// คำนวณผิดพลาด → ไม่พับ (run() กางคืนให้เห็นช่องที่ผิดอยู่แล้ว) · จอกว้างฟอร์มแค่ 2 แถว ไม่พับเอง
+const FORM_AUTOFOLD_MQ = "(max-width:640px)";
+function runFromForm() {
+  run();
+  if (!matchMedia(FORM_AUTOFOLD_MQ).matches) return;
+  if (!TL || $("status").classList.contains("err")) return;
+  setFold(true, true);
+}
 
 const MDIALS = [[360, "360°"], [90, "90°"], [45, "45°"],
                 [22.5, "22°30′"], [11.25, "11°15′"]];
@@ -2886,10 +2914,15 @@ function drawDial() {
   const csW = getComputedStyle(cv.parentElement);
   const box = cv.parentElement.clientWidth -
     (parseFloat(csW.paddingLeft) || 0) - (parseFloat(csW.paddingRight) || 0);
-  const size = Math.max(240, Math.min(760, box - 2));
+  // v136: เต็มจอ = พอดีด้านสั้นของจอ × ซูม (ไม่มีเพดาน 760) · วาดใหม่ที่ขนาดจริงทุกครั้ง ตัวหนังสือจึงคมทุกระดับซูม
+  // ไม่ใช้ CSS transform ขยาย — ภาพแตก และพิกัดแตะดาว (DIALHITS) จะคลาดตามสเกล
+  const size = DLZ.on ? Math.round(dlfBase() * DLZ.z)
+    : Math.max(240, Math.min(760, box - 2));
   cv.style.width = size + "px"; cv.style.height = size + "px";
-  cv.width = size * dpr; cv.height = size * dpr;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  // ความละเอียดพื้นหลังไม่เกิน 4096px ต่อด้าน — ซูม 4 เท่าบนจอ dpr 3 จะได้ ~4,400px (iOS จำกัดพื้นที่ canvas ~16.7 ล้านพิกเซล)
+  const bd = Math.min(dpr, 4096 / size);
+  cv.width = Math.round(size * bd); cv.height = Math.round(size * bd);
+  ctx.setTransform(bd, 0, 0, bd, 0, 0);
 
   // BAND_G: วงนอกสุดเดิมโปร่งใส ดาวสีเข้มวางบนพื้นหน้าเว็บสีเข้ม จมหาย
   // (ผู้ใช้ขอ 31 ส.ค. 2026) — เติมแถบเขียวอ่อนรองรับ อ่านชัดทุกสีดาว
@@ -3212,7 +3245,12 @@ function drawDial() {
     // ปุ่มค้นหา — เหมือนปุ่มเดินอัตโนมัติ ต้องใส่ pointer-events inline ด้วย
     // (.dialinfo ตั้ง none ไว้ · ดู RULES ข้อ 10)
     `<button type="button" style="pointer-events:auto" class="dl-auto" data-find>` +
-    `🔍 ค้นหาวันที่</button>`;
+    `🔍 ค้นหาวันที่</button>` +
+    `<button type="button" style="pointer-events:auto" class="dl-auto" data-full>` +
+    `⛶ ขยายจาน</button>`;
+  if (DLZ.on) $("dlfinfo").innerHTML = `เข็ม ${hand.toFixed(2)}° · ` +
+    (pick ? `<b>${pick.c}<sub>${pick.lay}</sub> ${dms(pick.lon, ":")} ${zodStr(pick.lon)}</b>`
+          : "ลากนิ้วเดียว = หมุนเข็ม · แตะดาว = ตั้งแกน · สองนิ้วถ่าง = ซูม");
   $("dlBR").innerHTML =
     `<b>${DL === 22.5 ? "22°30'" : DL + "°"} Dial</b><span>Dial Chart</span>` +
     `<span>${DL === 90 ? "4th Harmonic" : DL === 45 ? "8th Harmonic"
@@ -3461,8 +3499,39 @@ function setHandFromEvent(e) {
 {
   const cv = $("dlcv");
   let dragging = false;
+  // v136: สองนิ้วบนจานเต็มจอ = ซูม+เลื่อน · pts = นิ้วที่แตะอยู่ · handAtDown = เข็มก่อนนิ้วแรกแตะ
+  // (นิ้วแรกลงก่อนนิ้วที่สองเสี้ยววินาที เข็มกระโดดไปตามนิ้วแรกแล้ว → คืนค่าเดิมเมื่อกลายเป็นการซูม)
+  const pts = new Map();
+  let pinch = null, handAtDown = null, pinchRaf = 0;
+  const two = () => { const [a, b] = [...pts.values()];
+    return { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; };
+  // วาดตามจังหวะจอ (rAF) — pointermove มาถี่กว่าเฟรม · ยกนิ้วระหว่างรอเฟรม ต้องวาดค่าสุดท้ายทันที ไม่งั้นซูมหยุดก่อนที่นิ้วถ่างไปจริง
+  const pinchApply = () => {
+    if (pinchRaf) { cancelAnimationFrame(pinchRaf); pinchRaf = 0; }
+    if (!pinch || pts.size < 2) return;
+    const g = two();
+    dlZoomAt(pinch.z0 * g.d / pinch.d0, pinch.fx, pinch.fy, g.x, g.y);
+  };
   cv.style.touchAction = "none";
   cv.addEventListener("pointerdown", (e) => {
+    // นิ้วแรกของการแตะชุดใหม่ (isPrimary) = ล้างของค้าง — pointerup ที่หลุดนอกจานจะไม่ถึงเรา
+    // ถ้าไม่ล้าง แตะครั้งหน้านิ้วเดียวจะถูกนับเป็นสองนิ้ว แล้วหมุนเข็มไม่ได้อีกเลย
+    if (e.isPrimary) pts.clear();
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pts.size >= 2) {
+      e.preventDefault();
+      if (!DLZ.on || pinch || pts.size > 2) return;
+      dragging = false;
+      // เฟรมลากเข็มที่ค้างคิวอยู่ (rAF) ต้องยกเลิกก่อน — ไม่งั้นมันเขียนเข็มทับค่าที่คืนไปหลังจากนี้
+      // (เจอจากเทสต์หมวด 13: rAF ช้าในแท็บพื้นหลัง เข็มเลื่อนทั้งที่กลายเป็นการซูมแล้ว)
+      if (_dialRaf) { cancelAnimationFrame(_dialRaf); _dialRaf = 0; }
+      if (handAtDown !== null && $("dlhand").value !== handAtDown) { $("dlhand").value = handAtDown; drawDial(); }
+      try { cv.setPointerCapture(e.pointerId); } catch (err) { /* ซูมต่อได้ */ }
+      const g = two(), r = cv.getBoundingClientRect();
+      pinch = { z0: DLZ.z, d0: g.d, fx: (g.x - r.left) / r.width, fy: (g.y - r.top) / r.height };
+      return;
+    }
+    handAtDown = $("dlhand").value;
     // แตะโดนสัญลักษณ์ดาว = เลือก/ยกเลิกแกน (ไม่เริ่มลากเข็ม)
     if (DIALSTATE && DIALHITS.length) {
       const r = cv.getBoundingClientRect();
@@ -3489,11 +3558,22 @@ function setHandFromEvent(e) {
     try { cv.setPointerCapture(e.pointerId); } catch (err) { /* ลากต่อได้ */ }
     setHandFromEvent(e); e.preventDefault();
   });
-  cv.addEventListener("pointermove", (e) => { if (dragging) setHandFromEvent(e); });
+  cv.addEventListener("pointermove", (e) => {
+    if (pts.has(e.pointerId)) pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinch) {
+      if (pts.size >= 2 && !pinchRaf) pinchRaf = requestAnimationFrame(pinchApply);
+      return;
+    }
+    if (dragging) setHandFromEvent(e);
+  });
   const stop = (e) => {
+    if (pinch && pinchRaf) pinchApply();
+    pts.delete(e.pointerId);
+    try { cv.releasePointerCapture(e.pointerId); } catch (err) { /* ปล่อยไปแล้ว */ }
+    // ยกนิ้วหนึ่งหลังซูม — นิ้วที่เหลือห้ามกลายเป็นการลากเข็ม (เข็มจะกระโดดตอนปล่อยมือ)
+    if (pinch) { if (pts.size < 2) { pinch = null; dragging = false; } return; }
     if (!dragging) return;
     dragging = false;
-    try { cv.releasePointerCapture(e.pointerId); } catch (err) { /* ปล่อยไปแล้ว */ }
   };
   cv.addEventListener("pointerup", stop);
   cv.addEventListener("pointercancel", stop);
@@ -3503,6 +3583,66 @@ function setHandFromEvent(e) {
     autoStop("แตะจานแล้ว"); dialMarksClear();
   }, true);
 }
+
+// ── v136: จานเต็มจอ + ซูม ────────────────────────────────────────────────
+// พื้นที่ว่างจริงในกรอบเต็มจอ (หัก padding ที่เว้นให้แถบเครื่องมือบน/ปุ่มลอยล่าง) — ด้านสั้นคือขนาดจานที่ซูม 100%
+function dlfBase() {
+  const w = $("dlcv").parentElement, cs = getComputedStyle(w);
+  const iw = w.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
+  const ih = w.clientHeight - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0);
+  return Math.max(240, Math.min(iw, ih));
+}
+// ซูมเป็น z แล้วเลื่อนกรอบให้จุดบนจานที่สัดส่วน (fx,fy) ไปอยู่ใต้พิกัดจอ (toX,toY)
+// — ถ่างนิ้ว: จุดใต้นิ้วตอนเริ่มตามนิ้วไป (ซูม+เลื่อนในท่าเดียว) · ปุ่ม +/−: ยึดกลางจอ
+function dlZoomAt(z, fx, fy, toX, toY) {
+  const w = $("dlcv").parentElement, cv = $("dlcv");
+  DLZ.z = Math.max(1, Math.min(DLZ.MAX, z));
+  drawDial();
+  const r = cv.getBoundingClientRect();
+  w.scrollLeft += r.left + fx * r.width - toX;
+  w.scrollTop += r.top + fy * r.height - toY;
+  $("dlzpct").textContent = Math.round(DLZ.z * 100) + "%";
+}
+function dlZoomCenter(z) {
+  const w = $("dlcv").parentElement.getBoundingClientRect(), r = $("dlcv").getBoundingClientRect();
+  const x = Math.max(r.left, Math.min(r.right, (w.left + w.right) / 2));
+  const y = Math.max(r.top, Math.min(r.bottom, (w.top + w.bottom) / 2 + $("dlfbar").offsetHeight / 2));
+  dlZoomAt(z, (x - r.left) / r.width, (y - r.top) / r.height, x, y);
+}
+function dlFull(on) {
+  if (on && !DIALSTATE) return;
+  const w = $("dlcv").parentElement;
+  DLZ.on = on; DLZ.z = 1;
+  $("dlfbar").hidden = !on;
+  w.classList.toggle("dlfull", on);
+  document.documentElement.classList.toggle("dlfull-open", on);
+  if (on) w.style.setProperty("--dlfh", $("dlfbar").offsetHeight + "px");
+  $("dlzpct").textContent = "100%";
+  drawDial();
+  if (on) { w.scrollTop = 0; w.scrollLeft = 0; $("dlfclose").focus({ preventScroll: true }); }
+}
+$("dlfclose").addEventListener("click", () => dlFull(false));
+$("dlfbar").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-dlz]");
+  if (!b) return;
+  const k = +b.dataset.dlz;
+  if (k === 0) { dlFull(true); return; }
+  dlZoomCenter(k > 0 ? DLZ.z * 1.5 : DLZ.z / 1.5);
+});
+// ทัชแพด/Ctrl+ล้อเมาส์ = ซูมรอบเคอร์เซอร์ · ล้อเปล่า = เลื่อนกรอบตามปกติ
+$("dlcv").parentElement.addEventListener("wheel", (e) => {
+  if (!DLZ.on || !e.ctrlKey) return;
+  e.preventDefault();
+  const r = $("dlcv").getBoundingClientRect();
+  dlZoomAt(DLZ.z * Math.exp(-e.deltaY / 200), (e.clientX - r.left) / r.width,
+    (e.clientY - r.top) / r.height, e.clientX, e.clientY);
+}, { passive: false });
+addEventListener("resize", () => {
+  if (DLZ.on) $("dlcv").parentElement.style.setProperty("--dlfh", $("dlfbar").offsetHeight + "px");
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && DLZ.on && !$("autodlg").open) { dlFull(false); e.preventDefault(); }
+});
 
 // ── เดินอัตโนมัติบนจาน ───────────────────────────────────────────────────
 // สองโหมดทำคนละเรื่อง:
@@ -3892,6 +4032,7 @@ $("fsang").addEventListener("click", (e) => {
 document.querySelector(".dialinfo").addEventListener("click", (e) => {
   if (e.target.closest("[data-auto]")) autoOpen();
   else if (e.target.closest("[data-find]")) fsOpen();
+  else if (e.target.closest("[data-full]")) dlFull(true);
 });
 // ── คำแปลผสมดาว — โหลดเมื่อกดครั้งแรก แล้วขยายใต้แถวที่กด ────────────────
 // ไม่แสดงพรืดทุกแถว (รก) และไม่แต่งคำแปลเอง — ใช้เฉพาะข้อความจากพจนานุกรมเว็บ
@@ -3963,7 +4104,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v135")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v136")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
@@ -7276,7 +7417,7 @@ $("cmpclear").addEventListener("click", () => {
 
 document.querySelectorAll(".tools input").forEach((b) =>
   b.addEventListener("change", applyFilters));
-$("go").addEventListener("click", run);
+$("go").addEventListener("click", runFromForm);
 // เปลี่ยนช่วงตารางแล้วคำนวณใหม่เลย — ไม่ต้องกดคำนวณซ้ำ
 // เงื่อนไขต้องเป็น "ตารางดาวโหลดเสร็จแล้ว" ไม่ใช่ "มีผลลัพธ์อยู่" (TL)
 // เพราะ error จะล้าง TL ทิ้ง แล้วผู้ใช้จะแก้ช่วงเพื่อกู้สถานการณ์ไม่ได้เลย
