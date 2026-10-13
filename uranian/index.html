@@ -15,7 +15,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v137">
+<link rel="stylesheet" href="style.css?v=urain-v138">
 </head>
 <body>
 <div class="wrap">
@@ -724,10 +724,10 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v137"></script>
-<script src="places.js?v=urain-v137"></script>
-<script src="engine.js?v=urain-v137"></script>
-<script src="render.js?v=urain-v137"></script>
+<script src="glyphs.js?v=urain-v138"></script>
+<script src="places.js?v=urain-v138"></script>
+<script src="engine.js?v=urain-v138"></script>
+<script src="render.js?v=urain-v138"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -772,7 +772,7 @@ function pyrWarn(kinds) {
     (pyrTier(kinds) === "3" ? ` · A/B=C/D ยังนับเป็นหลักฐานชั้น ③ ได้ แต่น้ำหนักน้อย` : "") +
     ` · สูตรยังคำนวณครบตามเดิม</p>`;
 }
-const SW_CACHE = "urain-v137";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v138";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 // v136: จานเต็มจอ — on = เปิดอยู่ · z = ซูม (1 = พอดีจอ)
@@ -3506,13 +3506,21 @@ function setHandFromEvent(e) {
 {
   const cv = $("dlcv");
   let dragging = false;
-  // v136: สองนิ้วบนจานเต็มจอ = ซูม+เลื่อน · pts = นิ้วที่แตะอยู่ · handAtDown = เข็มก่อนนิ้วแรกแตะ
+  // v136: สองนิ้วบนจานเต็มจอ = ซูม+เลื่อน · pts = นิ้วที่แตะอยู่ · atDown = สภาพจานก่อนนิ้วแรกแตะ
   // (นิ้วแรกลงก่อนนิ้วที่สองเสี้ยววินาที เข็มกระโดดไปตามนิ้วแรกแล้ว → คืนค่าเดิมเมื่อกลายเป็นการซูม)
   const pts = new Map();
-  let pinch = null, handAtDown = null, pinchRaf = 0;
+  // atDown = สภาพจานก่อนนิ้วแรกแตะ (เข็ม · แกนที่เลือก · ช่องแกนองศา) — นิ้วแรกลงก่อนนิ้วที่สองเสี้ยววินาที
+  // ถ้าลงบนดาว แกนเปลี่ยน/ช่ององศาถูกล้างไปแล้ว → กลายเป็นการซูมต้องคืน "ทั้งชุด" ไม่ใช่แค่เข็ม (v138 · รีวิว ChatGPT ข้อ 1)
+  let pinch = null, atDown = null, pinchRaf = 0;
   const two = () => { const [a, b] = [...pts.values()];
     return { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; };
   // วาดตามจังหวะจอ (rAF) — pointermove มาถี่กว่าเฟรม · ยกนิ้วระหว่างรอเฟรม ต้องวาดค่าสุดท้ายทันที ไม่งั้นซูมหยุดก่อนที่นิ้วถ่างไปจริง
+  // ตั้งจุดอ้างอิงของการถ่างจากคู่นิ้วปัจจุบัน — เรียกตอนเริ่ม และทุกครั้งที่ชุดนิ้วเปลี่ยน
+  // (แตะนิ้วที่สาม แล้วยกนิ้วแรก → two() เปลี่ยนไปใช้คู่ใหม่ ถ้าใช้ d0/fx/fy ของคู่เดิม ซูมกระโดด · รีวิว ChatGPT ข้อ 2)
+  const pinchBase = () => {
+    const g = two(), r = cv.getBoundingClientRect();
+    pinch = { z0: DLZ.z, d0: g.d, fx: (g.x - r.left) / r.width, fy: (g.y - r.top) / r.height };
+  };
   const pinchApply = () => {
     if (pinchRaf) { cancelAnimationFrame(pinchRaf); pinchRaf = 0; }
     if (!pinch || pts.size < 2) return;
@@ -3527,18 +3535,26 @@ function setHandFromEvent(e) {
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pts.size >= 2) {
       e.preventDefault();
-      if (!DLZ.on || pinch || pts.size > 2) return;
+      if (!DLZ.on) return;
+      // จับทุกนิ้วที่เพิ่ม (รวมนิ้วที่สาม) — ไม่งั้นยกนอกจานแล้ว pointerup ไม่ถึงเรา นิ้วค้างใน pts
+      try { cv.setPointerCapture(e.pointerId); } catch (err) { /* ซูมต่อได้ */ }
+      if (pinch) { if (pinchRaf) pinchApply(); return; }   // นิ้วที่สาม: คู่ที่ใช้ (สองตัวแรกใน Map) ไม่เปลี่ยน
       dragging = false;
       // เฟรมลากเข็มที่ค้างคิวอยู่ (rAF) ต้องยกเลิกก่อน — ไม่งั้นมันเขียนเข็มทับค่าที่คืนไปหลังจากนี้
       // (เจอจากเทสต์หมวด 13: rAF ช้าในแท็บพื้นหลัง เข็มเลื่อนทั้งที่กลายเป็นการซูมแล้ว)
       if (_dialRaf) { cancelAnimationFrame(_dialRaf); _dialRaf = 0; }
-      if (handAtDown !== null && $("dlhand").value !== handAtDown) { $("dlhand").value = handAtDown; drawDial(); }
-      try { cv.setPointerCapture(e.pointerId); } catch (err) { /* ซูมต่อได้ */ }
-      const g = two(), r = cv.getBoundingClientRect();
-      pinch = { z0: DLZ.z, d0: g.d, fx: (g.x - r.left) / r.width, fy: (g.y - r.top) / r.height };
+      if (atDown) {
+        const selChanged = DIALSEL !== atDown.sel || $("axdeg").value !== atDown.ax;
+        if (selChanged || $("dlhand").value !== atDown.hand) {
+          DIALSEL = atDown.sel; $("axdeg").value = atDown.ax; $("dlhand").value = atDown.hand;
+          drawDial();
+          if (selChanged) renderAxisPanel();
+        }
+      }
+      pinchBase();
       return;
     }
-    handAtDown = $("dlhand").value;
+    atDown = { hand: $("dlhand").value, sel: DIALSEL, ax: $("axdeg").value };
     // แตะโดนสัญลักษณ์ดาว = เลือก/ยกเลิกแกน (ไม่เริ่มลากเข็ม)
     if (DIALSTATE && DIALHITS.length) {
       const r = cv.getBoundingClientRect();
@@ -3578,7 +3594,7 @@ function setHandFromEvent(e) {
     pts.delete(e.pointerId);
     try { cv.releasePointerCapture(e.pointerId); } catch (err) { /* ปล่อยไปแล้ว */ }
     // ยกนิ้วหนึ่งหลังซูม — นิ้วที่เหลือห้ามกลายเป็นการลากเข็ม (เข็มจะกระโดดตอนปล่อยมือ)
-    if (pinch) { if (pts.size < 2) { pinch = null; dragging = false; } return; }
+    if (pinch) { if (pts.size < 2) { pinch = null; dragging = false; } else pinchBase(); return; }
     if (!dragging) return;
     dragging = false;
   };
@@ -4111,7 +4127,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v137")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v138")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
