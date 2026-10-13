@@ -1399,6 +1399,7 @@ html.dlfull-open{overflow:hidden}
 .dlfinfo{font-size:var(--t-sm);color:var(--dim);min-height:1.4em;line-height:1.4;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dlfinfo b{color:var(--ink);font-family:var(--mono);font-weight:600}
+.dlfhint{font-size:var(--t-xs);color:var(--faint);line-height:1.35}
 .dlfinfo sub{font-size:9px;color:var(--faint)}
 /* ปุ่มลอย −1/+1 วัน ใช้ต่อได้ในโหมดเต็มจอ (ดูดาวขยับบนจานใหญ่) — ยกให้อยู่เหนือชั้นจาน
    และเว้นที่ล่างให้จานพอดีจอไม่โดนปุ่มทับ */

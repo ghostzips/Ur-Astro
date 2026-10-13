@@ -15,7 +15,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v136">
+<link rel="stylesheet" href="style.css?v=urain-v137">
 </head>
 <body>
 <div class="wrap">
@@ -312,6 +312,9 @@
       <button type="button" id="dlfclose" class="dlfclose">✕ ปิด</button>
     </div>
     <div class="dlfinfo" id="dlfinfo"></div>
+    <!-- v136 ตรวจบั๊ก: ซูมแล้วนิ้วเดียว = หมุนเข็ม (ไม่ใช่เลื่อนจอ) — คำแนะนำเดิมอยู่ใน dlfinfo ซึ่งแทบไม่เคยแสดง
+         (มีดาวใต้เข็มเกือบตลอด) ผู้ใช้จะไม่รู้ว่าเลื่อนจานด้วยสองนิ้ว → แสดงถาวร -->
+    <div class="dlfhint">สองนิ้ว: ถ่างซูม · ลากเลื่อนจาน — นิ้วเดียว: หมุนเข็ม · แตะดาวตั้งแกน</div>
   </div>
   <canvas id="dlkey" class="dialkey" width="1200" height="120"></canvas>
   <!-- เดินอัตโนมัติ — **ไม่ใช่ modal** (`show()` ไม่ใช่ `showModal()`)
@@ -721,10 +724,10 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v136"></script>
-<script src="places.js?v=urain-v136"></script>
-<script src="engine.js?v=urain-v136"></script>
-<script src="render.js?v=urain-v136"></script>
+<script src="glyphs.js?v=urain-v137"></script>
+<script src="places.js?v=urain-v137"></script>
+<script src="engine.js?v=urain-v137"></script>
+<script src="render.js?v=urain-v137"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -769,7 +772,7 @@ function pyrWarn(kinds) {
     (pyrTier(kinds) === "3" ? ` · A/B=C/D ยังนับเป็นหลักฐานชั้น ③ ได้ แต่น้ำหนักน้อย` : "") +
     ` · สูตรยังคำนวณครบตามเดิม</p>`;
 }
-const SW_CACHE = "urain-v136";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v137";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 // v136: จานเต็มจอ — on = เปิดอยู่ · z = ซูม (1 = พอดีจอ)
@@ -830,6 +833,9 @@ function parseTime(v) {
 // ล้างผลลัพธ์ทุกแท็บ — ถ้าไม่ล้าง ผลของดวงก่อนหน้าจะค้างอยู่และอ่านผิดคน
 // (เคยเกิดจริง: กรอกเวลาผิด ขึ้น error แต่ทุกแท็บยังโชว์ตัวเลขของดวงเดิมครบ)
 function clearResults() {
+  // v136 ตรวจบั๊ก: คำนวณพลาดขณะจานเต็มจอ (เช่นกด +1 วันจนเกินช่วงตาราง) → กล่องจานถูกซ่อน ชั้นเต็มจอหายไปด้วย
+  // แต่ <html> ยังล็อกเลื่อน + ปุ่มปิดหายไป = หน้าค้างเลื่อนไม่ได้ (เจอจากการทดสอบ) → ออกจากเต็มจอก่อนเสมอ
+  if (DLZ.on) dlFull(false);
   TL = null; LIFE = null; LAST = null; DIALSTATE = null; DIALPOS = null;
   DIALSEL = null; AXLAY = null; CTRLAY = null; $("axbox").style.display = "none";
   $("ctrout").innerHTML = "";
@@ -2501,6 +2507,7 @@ PANEL_DRAW.pscore = renderScore;   // แท็บแนวโน้ม — ว�
 let CUR_PANEL = "pdial";
 
 function showPanel(id) {
+  if (DLZ.on && id !== "pdial") dlFull(false);   // v136: ชั้นเต็มจออยู่ในแผงจาน — ออกจากแผงต้องปลดล็อกหน้าด้วย
   CUR_PANEL = id;
   document.querySelectorAll(".panel").forEach(
     (p) => p.classList.toggle("on", p.id === id));
@@ -3250,7 +3257,7 @@ function drawDial() {
     `⛶ ขยายจาน</button>`;
   if (DLZ.on) $("dlfinfo").innerHTML = `เข็ม ${hand.toFixed(2)}° · ` +
     (pick ? `<b>${pick.c}<sub>${pick.lay}</sub> ${dms(pick.lon, ":")} ${zodStr(pick.lon)}</b>`
-          : "ลากนิ้วเดียว = หมุนเข็ม · แตะดาว = ตั้งแกน · สองนิ้วถ่าง = ซูม");
+          : "ยังไม่มีดาวตรงเข็ม");
   $("dlBR").innerHTML =
     `<b>${DL === 22.5 ? "22°30'" : DL + "°"} Dial</b><span>Dial Chart</span>` +
     `<span>${DL === 90 ? "4th Harmonic" : DL === 45 ? "8th Harmonic"
@@ -4104,7 +4111,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v136")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v137")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
