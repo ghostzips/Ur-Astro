@@ -15,7 +15,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v138">
+<link rel="stylesheet" href="style.css?v=urain-v139">
 </head>
 <body>
 <div class="wrap">
@@ -724,10 +724,10 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v138"></script>
-<script src="places.js?v=urain-v138"></script>
-<script src="engine.js?v=urain-v138"></script>
-<script src="render.js?v=urain-v138"></script>
+<script src="glyphs.js?v=urain-v139"></script>
+<script src="places.js?v=urain-v139"></script>
+<script src="engine.js?v=urain-v139"></script>
+<script src="render.js?v=urain-v139"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -772,7 +772,7 @@ function pyrWarn(kinds) {
     (pyrTier(kinds) === "3" ? ` · A/B=C/D ยังนับเป็นหลักฐานชั้น ③ ได้ แต่น้ำหนักน้อย` : "") +
     ` · สูตรยังคำนวณครบตามเดิม</p>`;
 }
-const SW_CACHE = "urain-v138";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v139";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 // v136: จานเต็มจอ — on = เปิดอยู่ · z = ซูม (1 = พอดีจอ)
@@ -828,6 +828,14 @@ function parseTime(v) {
   // ต้องดักขอบเขต ไม่งั้น "25:99" ผ่านแล้วเลื่อนไปวันถัดไปเงียบ ๆ
   if (h > 23 || mi > 59 || se > 59) return null;
   return h + mi / 60 + se / 3600;
+}
+
+// ขนาดพื้นที่เนื้อหาจริงของกล่อง (clientWidth/Height หัก padding) — ใช้ทั้งจานปกติและจานเต็มจอ
+// clientWidth นับรวม padding: ลืมหักแล้ว max-width:100% บีบเฉพาะแนวกว้าง จานกลายเป็นวงรี (เจอจริงบนมือถือ)
+function contentBox(el) {
+  const cs = getComputedStyle(el);
+  return { w: el.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0),
+           h: el.clientHeight - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0) };
 }
 
 // ล้างผลลัพธ์ทุกแท็บ — ถ้าไม่ล้าง ผลของดวงก่อนหน้าจะค้างอยู่และอ่านผิดคน
@@ -1085,12 +1093,14 @@ function run() {
     // v119: ฟอร์มถูกพับอยู่ → ข้อความสรุปต้องเป็นดวงที่เพิ่งคำนวณ ไม่ใช่ของเดิม
     FORM_SUM_CALC = formSummary();          // v121: ค่าที่ผลบนจอคำนวณจริง (ช่องกรอก ณ ตอนนี้ = ดวงที่เพิ่งคำนวณ)
     if ($("f").classList.contains("fold")) setFold(true, false);
+    return true;       // v139: บอกผู้เรียกตรง ๆ ว่าสำเร็จ (เดิม runFromForm เดาจากคลาสของ #status ซึ่งที่อื่นก็เขียนได้)
   } catch (e) {
     clearResults();          // อย่าปล่อยผลของดวงก่อนหน้าค้างไว้คู่กับข้อความผิดพลาด
     st.className = "err";
     st.textContent = "ผิดพลาด: " + e.message;
     // v119: กรอกผิดขณะฟอร์มพับอยู่ จะไม่เห็นช่องที่ต้องแก้ — กางคืนให้เสมอ (ไม่จำค่านี้)
     if ($("f").classList.contains("fold")) setFold(false, false);
+    return false;
   }
 }
 
@@ -2278,9 +2288,7 @@ try { if (localStorage.getItem(FOLD_KEY) === "1") setFold(true, false); } catch 
 // คำนวณผิดพลาด → ไม่พับ (run() กางคืนให้เห็นช่องที่ผิดอยู่แล้ว) · จอกว้างฟอร์มแค่ 2 แถว ไม่พับเอง
 const FORM_AUTOFOLD_MQ = "(max-width:640px)";
 function runFromForm() {
-  run();
-  if (!matchMedia(FORM_AUTOFOLD_MQ).matches) return;
-  if (!TL || $("status").classList.contains("err")) return;
+  if (!run() || !matchMedia(FORM_AUTOFOLD_MQ).matches) return;
   setFold(true, true);
 }
 
@@ -2916,11 +2924,7 @@ function drawDial() {
 
   const cv = $("dlcv"), ctx = cv.getContext("2d");
   const dpr = window.devicePixelRatio || 1;
-  // clientWidth นับรวม padding — ต้องหักออก ไม่งั้นตั้ง style.width เกินที่จริง
-  // แล้ว max-width:100% บีบเฉพาะแนวกว้าง จานกลายเป็นวงรี (เจอจริงบนมือถือ)
-  const csW = getComputedStyle(cv.parentElement);
-  const box = cv.parentElement.clientWidth -
-    (parseFloat(csW.paddingLeft) || 0) - (parseFloat(csW.paddingRight) || 0);
+  const box = contentBox(cv.parentElement).w;
   // v136: เต็มจอ = พอดีด้านสั้นของจอ × ซูม (ไม่มีเพดาน 760) · วาดใหม่ที่ขนาดจริงทุกครั้ง ตัวหนังสือจึงคมทุกระดับซูม
   // ไม่ใช้ CSS transform ขยาย — ภาพแตก และพิกัดแตะดาว (DIALHITS) จะคลาดตามสเกล
   const size = DLZ.on ? Math.round(dlfBase() * DLZ.z)
@@ -2928,7 +2932,19 @@ function drawDial() {
   cv.style.width = size + "px"; cv.style.height = size + "px";
   // ความละเอียดพื้นหลังไม่เกิน 4096px ต่อด้าน — ซูม 4 เท่าบนจอ dpr 3 จะได้ ~4,400px (iOS จำกัดพื้นที่ canvas ~16.7 ล้านพิกเซล)
   const bd = Math.min(dpr, 4096 / size);
-  cv.width = Math.round(size * bd); cv.height = Math.round(size * bd);
+  // v139: จองพื้นที่ภาพใหม่เฉพาะตอนขนาดเปลี่ยน — เดิมตั้ง cv.width ทุกครั้ง (ทุกเฟรมที่ลากเข็ม) = ทิ้ง+จองบิตแมปใหม่
+  // ที่ซูม 400% บนจอ dpr 3 คือ ~4096² (~64 MB) ต่อเฟรม → iOS ชนเพดานหน่วยความจำแคนวาส จานว่าง/กระตุก
+  const bw = Math.round(size * bd);
+  if (cv.width !== bw || cv.height !== bw) { cv.width = bw; cv.height = bw; }
+  else {
+    // ตั้ง cv.width เองจะล้างสถานะปากกาทั้งหมดให้ด้วย — ไม่ตั้งแล้วต้องล้างเอง ไม่งั้นค่าที่เฟรมก่อนทิ้งไว้
+    // (เส้นประ · ความโปร่ง · การจัดตัวอักษร) ไหลมาเฟรมนี้ · เทสต์หมวด 13 เทียบพิกเซลกับการวาดบนบิตแมปใหม่
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, bw, bw);
+    ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
+    ctx.setLineDash([]); ctx.lineDashOffset = 0; ctx.lineWidth = 1; ctx.lineCap = "butt"; ctx.lineJoin = "miter";
+    ctx.shadowBlur = 0; ctx.shadowColor = "rgba(0,0,0,0)"; ctx.textAlign = "start"; ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = "#000"; ctx.strokeStyle = "#000"; ctx.font = "10px sans-serif";
+  }
   ctx.setTransform(bd, 0, 0, bd, 0, 0);
 
   // BAND_G: วงนอกสุดเดิมโปร่งใส ดาวสีเข้มวางบนพื้นหน้าเว็บสีเข้ม จมหาย
@@ -3505,27 +3521,29 @@ function setHandFromEvent(e) {
 }
 {
   const cv = $("dlcv");
-  let dragging = false;
-  // v136: สองนิ้วบนจานเต็มจอ = ซูม+เลื่อน · pts = นิ้วที่แตะอยู่ · atDown = สภาพจานก่อนนิ้วแรกแตะ
-  // (นิ้วแรกลงก่อนนิ้วที่สองเสี้ยววินาที เข็มกระโดดไปตามนิ้วแรกแล้ว → คืนค่าเดิมเมื่อกลายเป็นการซูม)
+  // v139: dragId = นิ้วที่เริ่มลากเข็ม — เดิมนิ้วใดยก/ขยับก็มีผลกับการลาก (นิ้วที่สองแตะโดนแล้วยก เข็มหยุดตามนิ้วแรก ·
+  // นิ้วที่สองขยับ เข็มกระโดดไปหานิ้วนั้น) ในโหมดปกติซึ่งไม่มีการซูม
+  let dragging = false, dragId = null;
+  // v136: สองนิ้วบนจานเต็มจอ = ซูม+เลื่อน · pts = นิ้วที่แตะอยู่
   const pts = new Map();
   // atDown = สภาพจานก่อนนิ้วแรกแตะ (เข็ม · แกนที่เลือก · ช่องแกนองศา) — นิ้วแรกลงก่อนนิ้วที่สองเสี้ยววินาที
   // ถ้าลงบนดาว แกนเปลี่ยน/ช่ององศาถูกล้างไปแล้ว → กลายเป็นการซูมต้องคืน "ทั้งชุด" ไม่ใช่แค่เข็ม (v138 · รีวิว ChatGPT ข้อ 1)
   let pinch = null, atDown = null, pinchRaf = 0;
   const two = () => { const [a, b] = [...pts.values()];
     return { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; };
-  // วาดตามจังหวะจอ (rAF) — pointermove มาถี่กว่าเฟรม · ยกนิ้วระหว่างรอเฟรม ต้องวาดค่าสุดท้ายทันที ไม่งั้นซูมหยุดก่อนที่นิ้วถ่างไปจริง
   // ตั้งจุดอ้างอิงของการถ่างจากคู่นิ้วปัจจุบัน — เรียกตอนเริ่ม และทุกครั้งที่ชุดนิ้วเปลี่ยน
   // (แตะนิ้วที่สาม แล้วยกนิ้วแรก → two() เปลี่ยนไปใช้คู่ใหม่ ถ้าใช้ d0/fx/fy ของคู่เดิม ซูมกระโดด · รีวิว ChatGPT ข้อ 2)
   const pinchBase = () => {
     const g = two(), r = cv.getBoundingClientRect();
     pinch = { z0: DLZ.z, d0: g.d, fx: (g.x - r.left) / r.width, fy: (g.y - r.top) / r.height };
   };
+  // วาดตามจังหวะจอ (rAF) — pointermove มาถี่กว่าเฟรม · ยกนิ้วระหว่างรอเฟรม ต้องวาดค่าสุดท้ายทันที ไม่งั้นซูมหยุดก่อนที่นิ้วถ่างไปจริง
+  // ระหว่างถ่างใช้ "พรีวิว" (ยืดภาพเดิมด้วย CSS ไม่จองบิตแมปใหม่ทุกเฟรม) แล้ววาดคมครั้งเดียวตอนจบท่า (ใน stop)
   const pinchApply = () => {
     if (pinchRaf) { cancelAnimationFrame(pinchRaf); pinchRaf = 0; }
     if (!pinch || pts.size < 2) return;
     const g = two();
-    dlZoomAt(pinch.z0 * g.d / pinch.d0, pinch.fx, pinch.fy, g.x, g.y);
+    dlZoomAt(pinch.z0 * g.d / pinch.d0, pinch.fx, pinch.fy, g.x, g.y, true);
   };
   cv.style.touchAction = "none";
   cv.addEventListener("pointerdown", (e) => {
@@ -3575,7 +3593,7 @@ function setHandFromEvent(e) {
         e.preventDefault(); return;
       }
     }
-    dragging = true;
+    dragging = true; dragId = e.pointerId;
     // จับพอยน์เตอร์อาจล้มเหลวได้ (พอยน์เตอร์หลุดไปก่อน เช่นปากกา/สัมผัสบางเครื่อง)
     // ถ้าจับไม่ได้ก็แค่ลากแบบไม่ capture — ห้ามโยน error ทิ้งทั้งการลาก
     try { cv.setPointerCapture(e.pointerId); } catch (err) { /* ลากต่อได้ */ }
@@ -3587,16 +3605,20 @@ function setHandFromEvent(e) {
       if (pts.size >= 2 && !pinchRaf) pinchRaf = requestAnimationFrame(pinchApply);
       return;
     }
-    if (dragging) setHandFromEvent(e);
+    if (dragging && e.pointerId === dragId) setHandFromEvent(e);
   });
   const stop = (e) => {
     if (pinch && pinchRaf) pinchApply();
     pts.delete(e.pointerId);
     try { cv.releasePointerCapture(e.pointerId); } catch (err) { /* ปล่อยไปแล้ว */ }
     // ยกนิ้วหนึ่งหลังซูม — นิ้วที่เหลือห้ามกลายเป็นการลากเข็ม (เข็มจะกระโดดตอนปล่อยมือ)
-    if (pinch) { if (pts.size < 2) { pinch = null; dragging = false; } else pinchBase(); return; }
-    if (!dragging) return;
-    dragging = false;
+    if (pinch) {
+      if (pts.size < 2) { pinch = null; dragging = false; drawDial(); }   // จบท่า → วาดคมที่ขนาดจริงครั้งเดียว
+      else pinchBase();
+      return;
+    }
+    if (!dragging || e.pointerId !== dragId) return;
+    dragging = false; dragId = null;
   };
   cv.addEventListener("pointerup", stop);
   cv.addEventListener("pointercancel", stop);
@@ -3610,21 +3632,22 @@ function setHandFromEvent(e) {
 // ── v136: จานเต็มจอ + ซูม ────────────────────────────────────────────────
 // พื้นที่ว่างจริงในกรอบเต็มจอ (หัก padding ที่เว้นให้แถบเครื่องมือบน/ปุ่มลอยล่าง) — ด้านสั้นคือขนาดจานที่ซูม 100%
 function dlfBase() {
-  const w = $("dlcv").parentElement, cs = getComputedStyle(w);
-  const iw = w.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
-  const ih = w.clientHeight - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0);
-  return Math.max(240, Math.min(iw, ih));
+  const b = contentBox($("dlcv").parentElement);
+  return Math.max(240, Math.min(b.w, b.h));
 }
 // ซูมเป็น z แล้วเลื่อนกรอบให้จุดบนจานที่สัดส่วน (fx,fy) ไปอยู่ใต้พิกัดจอ (toX,toY)
 // — ถ่างนิ้ว: จุดใต้นิ้วตอนเริ่มตามนิ้วไป (ซูม+เลื่อนในท่าเดียว) · ปุ่ม +/−: ยึดกลางจอ
-function dlZoomAt(z, fx, fy, toX, toY) {
+// preview = ยืดภาพเดิมด้วยขนาด CSS อย่างเดียว (ระหว่างถ่าง/หมุนล้อ) — ผู้เรียกต้องวาดจริงตามเมื่อจบท่า
+function dlZoomAt(z, fx, fy, toX, toY, preview) {
   const w = $("dlcv").parentElement, cv = $("dlcv");
   DLZ.z = Math.max(1, Math.min(DLZ.MAX, z));
-  drawDial();
+  if (preview) { const sz = Math.round(dlfBase() * DLZ.z) + "px"; cv.style.width = sz; cv.style.height = sz; }
+  else drawDial();
   const r = cv.getBoundingClientRect();
   w.scrollLeft += r.left + fx * r.width - toX;
   w.scrollTop += r.top + fy * r.height - toY;
   $("dlzpct").textContent = Math.round(DLZ.z * 100) + "%";
+  if (DLZ.on) dlTrackView();   // เหตุการณ์ scroll มาช้ากว่า (รอเฟรม) — จำจุดที่ดูทันทีหลังซูม
 }
 function dlZoomCenter(z) {
   const w = $("dlcv").parentElement.getBoundingClientRect(), r = $("dlcv").getBoundingClientRect();
@@ -3632,17 +3655,49 @@ function dlZoomCenter(z) {
   const y = Math.max(r.top, Math.min(r.bottom, (w.top + w.bottom) / 2 + $("dlfbar").offsetHeight / 2));
   dlZoomAt(z, (x - r.left) / r.width, (y - r.top) / r.height, x, y);
 }
+// v139 (รีวิวโค้ด): ตอนเต็มจอย้ายกรอบจาน + แถบเครื่องมือไปไว้ใต้ <body> (DLHOME = ที่คั่นตำแหน่งเดิม)
+// เดิมชั้นเต็มจออยู่ในแผงจาน — โค้ดไหนซ่อน #dialbox/#pdial ชั้นนั้นหายไปด้วยแต่หน้ายังล็อกเลื่อน (บั๊ก v137)
+// แก้รายจุดได้แค่จุดที่รู้ · อยู่ใต้ body = มองเห็นเสมอตราบที่ล็อกอยู่ ปุ่มปิดไม่มีวันหาย
+let DLHOME = null;
+function dlWheel(e) {
+  if (!e.ctrlKey) return;
+  e.preventDefault();
+  const r = $("dlcv").getBoundingClientRect();
+  dlZoomAt(DLZ.z * Math.exp(-e.deltaY / 200), (e.clientX - r.left) / r.width,
+    (e.clientY - r.top) / r.height, e.clientX, e.clientY, true);
+  clearTimeout(DLZ.wheelT);
+  DLZ.wheelT = setTimeout(() => { if (DLZ.on) dlZoomCenter(DLZ.z); }, 160);   // หยุดหมุนล้อ → วาดคม
+}
+// จุดกลางจอ (สัดส่วนบนจาน) ที่กำลังดูอยู่ — หมุนจอแล้วกลับมาดูจุดเดิมได้
+function dlTrackView() {
+  const w = $("dlcv").parentElement, r = $("dlcv").getBoundingClientRect(), b = w.getBoundingClientRect();
+  if (!r.width) return;
+  DLZ.vx = ((b.left + b.right) / 2 - r.left) / r.width;
+  DLZ.vy = ((b.top + b.bottom) / 2 + $("dlfbar").offsetHeight / 2 - r.top) / r.height;
+}
 function dlFull(on) {
   if (on && !DIALSTATE) return;
-  const w = $("dlcv").parentElement;
+  const w = $("dlcv").parentElement, bar = $("dlfbar");
+  if (on && !DLHOME) {
+    DLHOME = document.createComment("dialwrap-home");
+    w.before(DLHOME);
+    document.body.append(w, bar);
+  } else if (!on && DLHOME) {
+    DLHOME.replaceWith(w);
+    w.after(bar);
+    DLHOME = null;
+  }
   DLZ.on = on; DLZ.z = 1;
-  $("dlfbar").hidden = !on;
+  bar.hidden = !on;
   w.classList.toggle("dlfull", on);
   document.documentElement.classList.toggle("dlfull-open", on);
-  if (on) w.style.setProperty("--dlfh", $("dlfbar").offsetHeight + "px");
+  // ล้อเมาส์: ผูกเฉพาะตอนเต็มจอ — listener แบบ passive:false ค้างไว้ตลอดทำให้เลื่อนหน้าผ่านจานต้องรอ JS ทุกครั้ง
+  if (on) w.addEventListener("wheel", dlWheel, { passive: false });
+  else { w.removeEventListener("wheel", dlWheel); clearTimeout(DLZ.wheelT); }
+  if (on) w.style.setProperty("--dlfh", bar.offsetHeight + "px");
   $("dlzpct").textContent = "100%";
   drawDial();
-  if (on) { w.scrollTop = 0; w.scrollLeft = 0; $("dlfclose").focus({ preventScroll: true }); }
+  if (on) { w.scrollTop = 0; w.scrollLeft = 0; dlTrackView(); $("dlfclose").focus({ preventScroll: true }); }
 }
 $("dlfclose").addEventListener("click", () => dlFull(false));
 $("dlfbar").addEventListener("click", (e) => {
@@ -3652,16 +3707,21 @@ $("dlfbar").addEventListener("click", (e) => {
   if (k === 0) { dlFull(true); return; }
   dlZoomCenter(k > 0 ? DLZ.z * 1.5 : DLZ.z / 1.5);
 });
-// ทัชแพด/Ctrl+ล้อเมาส์ = ซูมรอบเคอร์เซอร์ · ล้อเปล่า = เลื่อนกรอบตามปกติ
-$("dlcv").parentElement.addEventListener("wheel", (e) => {
-  if (!DLZ.on || !e.ctrlKey) return;
-  e.preventDefault();
-  const r = $("dlcv").getBoundingClientRect();
-  dlZoomAt(DLZ.z * Math.exp(-e.deltaY / 200), (e.clientX - r.left) / r.width,
-    (e.clientY - r.top) / r.height, e.clientX, e.clientY);
-}, { passive: false });
+// ทัชแพด/Ctrl+ล้อเมาส์ = ซูมรอบเคอร์เซอร์ (dlWheel ผูกใน dlFull) · ล้อเปล่า = เลื่อนกรอบตามปกติ
+$("dlcv").parentElement.addEventListener("scroll", () => { if (DLZ.on) dlTrackView(); }, { passive: true });
+// หมุนจอ/ย่อหน้าต่าง: อัปเดตความสูงแถบก่อน แล้ววาดใหม่ให้จุดที่ดูอยู่กลับมากลางจอ
+// (listener นี้ลงทะเบียนก่อนตัว resize → drawDial ของแผงจาน จึงทำงานก่อนเสมอ)
 addEventListener("resize", () => {
-  if (DLZ.on) $("dlcv").parentElement.style.setProperty("--dlfh", $("dlfbar").offsetHeight + "px");
+  if (!DLZ.on) return;
+  const w = $("dlcv").parentElement, vx = DLZ.vx, vy = DLZ.vy;
+  w.style.setProperty("--dlfh", $("dlfbar").offsetHeight + "px");
+  drawDial();
+  const r = $("dlcv").getBoundingClientRect(), b = w.getBoundingClientRect();
+  if (vx !== undefined) {
+    w.scrollLeft += r.left + vx * r.width - (b.left + b.right) / 2;
+    w.scrollTop += r.top + vy * r.height - ((b.top + b.bottom) / 2 + $("dlfbar").offsetHeight / 2);
+  }
+  dlTrackView();
 });
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && DLZ.on && !$("autodlg").open) { dlFull(false); e.preventDefault(); }
@@ -4127,7 +4187,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v138")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v139")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
