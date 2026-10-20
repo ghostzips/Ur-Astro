@@ -15,7 +15,7 @@
      ไม่งั้นแคช HTTP ของเบราว์เซอร์เสิร์ฟของเก่าคู่กับ index.html ใหม่ แล้วพังเงียบ ๆ
      (เจอจริง 2 ครั้ง: กฎ .dl-auto หาย และ transitAspectDates ไม่มี)
      test_binary.js ตรวจว่าเลขตรงกับ sw.js เสมอ -->
-<link rel="stylesheet" href="style.css?v=urain-v139">
+<link rel="stylesheet" href="style.css?v=urain-v140">
 </head>
 <body>
 <div class="wrap">
@@ -724,10 +724,10 @@
   <span id="swstat"></span></footer>
 </div>
 
-<script src="glyphs.js?v=urain-v139"></script>
-<script src="places.js?v=urain-v139"></script>
-<script src="engine.js?v=urain-v139"></script>
-<script src="render.js?v=urain-v139"></script>
+<script src="glyphs.js?v=urain-v140"></script>
+<script src="places.js?v=urain-v140"></script>
+<script src="engine.js?v=urain-v140"></script>
+<script src="render.js?v=urain-v140"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -772,7 +772,7 @@ function pyrWarn(kinds) {
     (pyrTier(kinds) === "3" ? ` · A/B=C/D ยังนับเป็นหลักฐานชั้น ③ ได้ แต่น้ำหนักน้อย` : "") +
     ` · สูตรยังคำนวณครบตามเดิม</p>`;
 }
-const SW_CACHE = "urain-v139";   // ต้องตรงกับ CACHE ใน sw.js
+const SW_CACHE = "urain-v140";   // ต้องตรงกับ CACHE ใน sw.js
 let TL = null, LIFE = null, DIALSTATE = null, DIALPOS = null;
 let DIALHITS = [], DIALSEL = null, AXLAY = null;
 // v136: จานเต็มจอ — on = เปิดอยู่ · z = ซูม (1 = พอดีจอ)
@@ -1985,7 +1985,9 @@ function setTransitNow(prefix) {
 }
 $("tnow").addEventListener("click", () => {
   setTransitNow();
-  if (!$("go").disabled) runFromForm();
+  // v140 (ผู้ใช้สั่ง): "ตอนนี้" แค่ตั้งวันเวลาจร + คำนวณให้เห็นผล แต่ไม่พับฟอร์ม — ผู้ใช้ยังกรอกช่องอื่นไม่ครบ
+  // พับเฉพาะตอนกด "คำนวณ" (v136 เคยพับทั้งสองปุ่ม)
+  if (!$("go").disabled) run();
 });
 
 // ── ก้าววันดวงจร ±1 (แถบลอยบนมือถือ + เผื่อปุ่มเสียง) ────────────────────
@@ -2283,7 +2285,7 @@ $("ffold").addEventListener("click", () => setFold(true, true));
 $("fbar").addEventListener("click", () => setFold(false, true));
 try { if (localStorage.getItem(FOLD_KEY) === "1") setFold(true, false); } catch (e) {}
 // v136 (ผู้ใช้เลือกข้อ 2): จอแคบ ฟอร์มสูง 519px = 64% ของจอแรก เปิดมาแทบไม่เห็นผล
-// → ผู้ใช้กด "คำนวณ"/"ตอนนี้" แล้วสำเร็จ = พับเหลือแถบสรุปเอง (จำไว้ เปิดแอปครั้งหน้าก็พับ)
+// → ผู้ใช้กด "คำนวณ" แล้วสำเร็จ = พับเหลือแถบสรุปเอง (จำไว้ เปิดแอปครั้งหน้าก็พับ) · "ตอนนี้" ไม่พับ (v140 ผู้ใช้สั่ง)
 // เฉพาะการกดของผู้ใช้ ไม่ใช่ run() ทุกครั้ง (เปลี่ยนจาน/ช่วงเดือน/เดินวัน ไม่ควรไปยุ่งกับฟอร์ม)
 // คำนวณผิดพลาด → ไม่พับ (run() กางคืนให้เห็นช่องที่ผิดอยู่แล้ว) · จอกว้างฟอร์มแค่ 2 แถว ไม่พับเอง
 const FORM_AUTOFOLD_MQ = "(max-width:640px)";
@@ -3557,7 +3559,7 @@ function setHandFromEvent(e) {
       // จับทุกนิ้วที่เพิ่ม (รวมนิ้วที่สาม) — ไม่งั้นยกนอกจานแล้ว pointerup ไม่ถึงเรา นิ้วค้างใน pts
       try { cv.setPointerCapture(e.pointerId); } catch (err) { /* ซูมต่อได้ */ }
       if (pinch) { if (pinchRaf) pinchApply(); return; }   // นิ้วที่สาม: คู่ที่ใช้ (สองตัวแรกใน Map) ไม่เปลี่ยน
-      dragging = false;
+      dragging = false; dragId = null;
       // เฟรมลากเข็มที่ค้างคิวอยู่ (rAF) ต้องยกเลิกก่อน — ไม่งั้นมันเขียนเข็มทับค่าที่คืนไปหลังจากนี้
       // (เจอจากเทสต์หมวด 13: rAF ช้าในแท็บพื้นหลัง เข็มเลื่อนทั้งที่กลายเป็นการซูมแล้ว)
       if (_dialRaf) { cancelAnimationFrame(_dialRaf); _dialRaf = 0; }
@@ -3613,7 +3615,7 @@ function setHandFromEvent(e) {
     try { cv.releasePointerCapture(e.pointerId); } catch (err) { /* ปล่อยไปแล้ว */ }
     // ยกนิ้วหนึ่งหลังซูม — นิ้วที่เหลือห้ามกลายเป็นการลากเข็ม (เข็มจะกระโดดตอนปล่อยมือ)
     if (pinch) {
-      if (pts.size < 2) { pinch = null; dragging = false; drawDial(); }   // จบท่า → วาดคมที่ขนาดจริงครั้งเดียว
+      if (pts.size < 2) { pinch = null; dragging = false; dragId = null; drawDial(); }   // จบท่า → วาดคมที่ขนาดจริงครั้งเดียว
       else pinchBase();
       return;
     }
@@ -4187,7 +4189,7 @@ function dictReady() {
   if (DICT_STATE === "ready") return Promise.resolve();
   if (!DICT_PROMISE) {
     DICT_STATE = "loading";
-    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v139")
+    DICT_PROMISE = AISTRO.loadDict("dict.json.gz?v=urain-v140")
       .then(() => { DICT_STATE = "ready"; })
       .catch((e) => { DICT_STATE = "error"; DICT_PROMISE = null; throw e; });
   }
